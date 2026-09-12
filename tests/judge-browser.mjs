@@ -3,10 +3,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import { problems } from "../scripts/test-problems.mjs";
 import { pythonSolutions } from "./fixtures/python-solutions.mjs";
+const base = process.env.BASE_URL || "http://localhost:3000";
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage();
-  await page.goto("http://localhost:3000");
+  await page.goto(base);
   let total = 0;
   for (const p of problems) {
     const suite = JSON.parse(

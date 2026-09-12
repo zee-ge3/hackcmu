@@ -6,3 +6,5 @@ dist/
 playwright-report/
 test-results/
 .DS_Store
+data/pairwise.sqlite*
+data/.secret

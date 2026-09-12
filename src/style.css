@@ -1880,3 +1880,247 @@ select {
     bottom: -14px;
   }
 }
+.account-link {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  font-weight: 600;
+}
+img.avatar {
+  object-fit: cover;
+  border: 1px solid #dfe4d9;
+}
+.avatar.big {
+  width: 56px;
+  height: 56px;
+  font-size: 16px;
+}
+.google-signin {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+  min-height: 40px;
+}
+.signin-gate {
+  max-width: 560px;
+  padding-top: 70px;
+}
+.signin-gate .card {
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.signin-gate h1 {
+  font-size: 32px;
+  letter-spacing: -1.2px;
+  margin: 6px 0 0;
+}
+.signin-gate p {
+  color: #80867c;
+  line-height: 1.7;
+  margin: 0;
+}
+.key-notice {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: #994d3d;
+  background: #fff5ef;
+  border: 1px solid #ecd3c6;
+  border-radius: 7px;
+  padding: 10px 12px;
+  margin-top: 12px;
+}
+.key-notice a {
+  text-decoration: underline;
+  font-weight: 600;
+}
+.profile-page {
+  padding-top: 38px;
+}
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 26px;
+  align-items: start;
+}
+.profile-card {
+  padding: 28px;
+}
+.profile-card h2 {
+  margin: 4px 0 0;
+}
+.account-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+}
+.account-card h2 {
+  margin: 0 0 4px;
+  font-size: 20px;
+  letter-spacing: -0.6px;
+}
+.account-card p {
+  margin: 0;
+  font-size: 12px;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-left: auto;
+  font-size: 11px;
+}
+.danger {
+  background: #fff0e9;
+  border-color: #e8c8b9;
+  color: #994d3d;
+  font-size: 11px;
+}
+.danger-text {
+  color: #994d3d;
+}
+.key-status {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: #66864a;
+  margin: 18px 0 12px;
+}
+.key-form {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.key-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 1px solid #dce3d3;
+  border-radius: 7px;
+  background: #fbfcf7;
+  font-size: 12px;
+}
+.notice {
+  background: #edf3e4;
+  color: #455e31;
+  border: 1px solid #c5d8ad;
+  border-radius: 7px;
+  padding: 12px;
+  font-size: 12px;
+  margin-top: 14px;
+}
+.list-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+.list-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid #e1e5da;
+  border-radius: 8px;
+  background: #fbfcf7;
+  font-size: 12px;
+}
+.list-row > div {
+  flex: 1;
+  min-width: 0;
+}
+.list-row strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.list-row small {
+  color: #8e9788;
+  font-size: 10px;
+}
+.list-row .mode-tag {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 1.3px;
+  color: #7f8b74;
+  margin-bottom: 3px;
+}
+.list-row .score {
+  font-family: Manrope, sans-serif;
+  font-weight: 700;
+  color: #455e31;
+  background: #edf3e4;
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.list-row button {
+  padding: 7px 9px;
+}
+.feedback-summary-line {
+  font-size: 11px;
+  color: #69715f;
+  margin: 6px 0 0;
+  line-height: 1.55;
+}
+.resume-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 20px;
+}
+.resume-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  padding: 12px 14px;
+  background: #fbfcf7;
+}
+.resume-option.selected {
+  background: #edf3e4;
+  border-color: #91aa75;
+}
+.resume-option > div {
+  flex: 1;
+  min-width: 0;
+}
+.resume-option strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.resume-option small {
+  font-size: 10px;
+  color: #8e9788;
+}
+.resume-delete {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  color: #8e9788;
+}
+.resume-delete:hover {
+  background: #fff0e9;
+  color: #994d3d;
+}
+@media (max-width: 900px) {
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -4,25 +4,35 @@ A local web application for speech-to-speech coding and behavioral interview pra
 
 ## Run
 
-Requires Node.js 22.6 or newer.
+Requires Node.js 22.13 or newer (the account store uses the built-in `node:sqlite` module).
 
 ```sh
 git clone https://github.com/zee-ge3/hackcmu.git
 cd hackcmu
 npm ci
 cp .env.example .env
-# Set OPENAI_API_KEY in .env.
+# Set GOOGLE_CLIENT_ID in .env (see Accounts below).
 npm run dev
 ```
 
-Open http://localhost:3000 and choose Coding or Behavioral. Each mode has its own setup page. On `/coding`, choose company tags, difficulty, topics, problem count (1–10), and JavaScript or Python. Choose an interviewer style (Supportive coach, Realistic interview, Socratic guide, or Senior-level deep dive), optionally edit its system prompt, and enter the room. Microphone access is requested automatically; Alex greets you once connected. This is speech-to-speech only: ask for hints, reviews, tests, and edits out loud. There is no chat input.
+Open http://localhost:3000, sign in with Google, add your OpenAI API key on the profile page, then choose Coding or Behavioral. Each mode has its own setup page. On `/coding`, choose company tags, difficulty, topics, problem count (1–10), and JavaScript or Python. Choose an interviewer style (Supportive coach, Realistic interview, Socratic guide, or Senior-level deep dive), optionally edit its system prompt, and enter the room. Microphone access is requested automatically; Alex greets you once connected. This is speech-to-speech only: ask for hints, reviews, tests, and edits out loud. There is no chat input.
 
 ```sh
 npm run build
 npm start
 ```
 
-The server binds to loopback. The project API key stays in the server environment; `.env` is ignored by Git. Browser sessions have an HTTP-only owner cookie. This is a local application, not an internet deployment with user accounts, durable storage, and billing controls.
+The server binds to loopback. To serve it under another hostname (for example through a Cloudflare Tunnel), list that origin in `PUBLIC_ORIGIN`; API writes from any other browser origin are rejected. `.env` is ignored by Git.
+
+## Accounts, keys, and storage
+
+Sign-in uses Google Identity Services. Create an OAuth 2.0 **Web application** client in the Google Cloud Console (APIs & Services → Credentials), add every origin the app is served from to *Authorized JavaScript origins* (for example `http://localhost:3000` and your public hostname), and put the client ID in `GOOGLE_CLIENT_ID`. The browser sends Google's ID token to `/api/auth/google`, the server verifies it with `google-auth-library`, and a 30-day HTTP-only session cookie is issued. Set `ALLOWED_EMAILS` to a comma-separated list to restrict who can sign in; leave it empty to allow any Google account.
+
+Every model call — résumé parsing, whiteboard descriptions, the voice session, the reasoning backend, and grading — runs on the signed-in user's **own OpenAI API key**. Keys are entered on `/profile`, verified against `GET /v1/models`, encrypted with AES-256-GCM, and never returned to the browser beyond a `sk-…xxxx` hint. The encryption secret comes from `PAIRWISE_SECRET` or is generated once into `data/.secret`. There is no server-wide key in production.
+
+Per-account data lives in `data/pairwise.sqlite` (ignored by Git): users, sessions, parsed résumés with their reviewed text, and the feedback from finished interviews. The profile page lists saved résumés and past feedback, and can delete either or the whole account. Live interviews (editor contents, transcripts, whiteboard images) stay in server memory and are discarded after three idle hours or on restart; export a session from the feedback screen to keep its code and conversation.
+
+For development and the browser tests, set `DEV_USER_EMAIL` to sign every request in as that address without Google. That user falls back to `OPENAI_API_KEY` from `.env` when no key is saved on the profile. Both are ignored when `NODE_ENV=production`.
 
 ## Problem library
 
@@ -52,7 +62,7 @@ npm run test:browser
 LIVE_SMOKE=1 npm run test:browser
 ```
 
-The browser smoke test requires a running development server on port 3000. It covers filtered session creation, Monaco editing, JavaScript and Python execution. The opt-in live test uses a bundled synthetic speech fixture to verify automatic voice startup and greeting, nonzero received audio, spoken-request delegation, an actual editor change, grouped captions, structured rubric feedback, and graceful voice shutdown. Default tests mock voice and grading to avoid API usage.
+The browser tests require a running development server (`BASE_URL` overrides `http://localhost:3000`) started with `DEV_USER_EMAIL` set, plus `OPENAI_API_KEY` for the live variants. It covers filtered session creation, Monaco editing, JavaScript and Python execution. The opt-in live test uses a bundled synthetic speech fixture to verify automatic voice startup and greeting, nonzero received audio, spoken-request delegation, an actual editor change, grouped captions, structured rubric feedback, and graceful voice shutdown. Default tests mock voice and grading to avoid API usage.
 
 ## API references
 
@@ -87,13 +97,13 @@ To add a problem, define its inputs, independent oracle, reference implementatio
 
 ## Behavioral practice and whiteboard
 
-On `/behavioral`, upload a PDF, DOCX, or TXT résumé (up to 5 MB). The server uses `OPENAI_CONTEXT_MODEL` (default `gpt-5.6-luna`) to extract factual experience into a structured profile. Review and correct the extracted text, select a target role and focus, and choose Story coach, Hiring manager, or Leadership deep dive. The system prompt is editable. The reviewed résumé is supplied to both the voice interviewer and reasoning backend; Alex starts with a question about your background when connected.
+On `/behavioral`, pick a saved résumé or upload a PDF, DOCX, or TXT file (up to 5 MB). The server uses `OPENAI_CONTEXT_MODEL` (default `gpt-5.6-luna`) to extract factual experience into a structured profile saved to your account. Review and correct the extracted text (edits are stored with the résumé when you enter the room), select a target role and focus, and choose Story coach, Hiring manager, or Leadership deep dive. The system prompt is editable. The reviewed résumé is supplied to both the voice interviewer and reasoning backend; Alex starts with a question about your background when connected.
 
 Behavioral feedback uses story structure, ownership and judgment, impact and evidence, collaboration and learning, and communication clarity. Scores reflect observed answers; résumé claims alone do not earn a score. The behavioral room shows résumé context and a whiteboard, without coding controls.
 
 Both modes include a whiteboard with pen, arrows, labels, eraser, undo, and clear. After a 1.4-second drawing pause, a PNG snapshot goes to the context model for a short description. The voice agent receives that description silently through `session.thinking.append`; the reasoning backend also receives the image when handling a spoken request. The UI reports pending, shared, and failed states and offers retry. Revision checks discard superseded image analysis. Code and drawing survive tab switches; each coding problem has its own drawing. Finishing or advancing flushes pending drawing changes before continuing.
 
-Uploaded documents are processed by OpenAI. Parsed résumé context and canvas snapshots live in server memory, scoped to the browser's owner cookie, and disappear on server restart. They are not written to the repository. Feedback exports include reviewed résumé text and drawing strokes, so exports may contain personal information.
+Uploaded documents are processed by OpenAI with your key. Parsed résumé context is stored in `data/pairwise.sqlite` under your account; canvas snapshots live in server memory and disappear on restart. Neither is written to the repository. Feedback exports include reviewed résumé text and drawing strokes, so exports may contain personal information.
 
 ```sh
 npm run test:modes                # Mocked résumé, voice, vision, and feedback UI checks

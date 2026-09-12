@@ -2,6 +2,7 @@ import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
 import { resolve } from "node:path";
 import { rubric } from "../src/interviewer.mjs";
+const base = process.env.BASE_URL || "http://localhost:3000";
 const liveTest = process.env.LIVE_SMOKE === "1";
 const browser = await chromium.launch({
   headless: true,
@@ -80,7 +81,7 @@ if (!liveTest) {
   );
 }
 try {
-  await page.goto("http://localhost:3000/coding");
+  await page.goto(base + "/coding");
   await page.waitForSelector(".problem-row");
   await page
     .getByRole("button", { name: "Realistic interview", exact: false })
@@ -107,7 +108,9 @@ try {
     0,
   );
   await page.locator(".monaco-editor textarea").first().focus();
-  await page.keyboard.press("Meta+A");
+  await page.keyboard.press(
+    process.platform === "darwin" ? "Meta+A" : "Control+A",
+  );
   await page.keyboard.insertText(
     "function twoSum(nums,target){const seen=new Map();for(let i=0;i<nums.length;i++){if(seen.has(target-nums[i]))return [seen.get(target-nums[i]),i];seen.set(nums[i],i);}} console.log(twoSum([2,7,11,15],9));",
   );

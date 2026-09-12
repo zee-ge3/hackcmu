@@ -1,6 +1,7 @@
 import { chromium } from "@playwright/test";
 import assert from "node:assert/strict";
 import { behavioralRubric } from "../src/behavioral.mjs";
+const base = process.env.BASE_URL || "http://localhost:3000";
 const real = process.env.LIVE_MODES === "1";
 const browser = await chromium.launch({
   args: [
@@ -41,18 +42,22 @@ await page.addInitScript(() => {
 });
 if (!real) {
   await page.route("**/api/resumes", (route) =>
-    route.fulfill({
-      json: {
-        id: "synthetic",
-        filename: "synthetic-resume.txt",
-        profile: {
-          name: "Sam Example",
-          summary: "Software engineer with API migration experience.",
-          skills: ["Python", "SQL"],
-          fullText: resumeText,
-        },
-      },
-    }),
+    route.request().method() === "GET"
+      ? route.fulfill({ json: { resumes: [] } })
+      : route.fulfill({
+          json: {
+            id: "synthetic",
+            filename: "synthetic-resume.txt",
+            profile: {
+              name: "Sam Example",
+              summary: "Software engineer with API migration experience.",
+              skills: ["Python", "SQL"],
+              fullText: resumeText,
+            },
+            reviewedText: resumeText,
+            updatedAt: Date.now(),
+          },
+        }),
   );
   await page.route("**/api/interviews", (route) => {
     const body = route.request().postDataJSON();
@@ -113,7 +118,7 @@ if (!real) {
     if (req.url().endsWith("/canvas")) canvasCalls.push(req.postDataJSON());
   });
 try {
-  await page.goto("http://localhost:3000");
+  await page.goto(base);
   assert.equal(await page.locator(".mode-card").count(), 2);
   assert.equal(await page.locator(".config").count(), 0);
   await page.screenshot({ path: "/tmp/pairwise-home.png", fullPage: true });
@@ -176,9 +181,9 @@ try {
       /Sam|experience|Acme|migration|billing|background|project/i,
     );
     const agent = await context.request.post(
-      `http://localhost:3000/api/interviews/${session.id}/agent`,
+      `${base}/api/interviews/${session.id}/agent`,
       {
-        headers: { Origin: "http://localhost:3000" },
+        headers: { Origin: base },
         data: {
           index: 0,
           request:

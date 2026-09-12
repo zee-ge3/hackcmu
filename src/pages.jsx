@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Braces,
   Code2,
@@ -9,10 +9,40 @@ import {
   FileText,
   Check,
   PenTool,
+  Trash2,
+  KeyRound,
 } from "lucide-react";
+import { useAccount, GoogleSignIn } from "./account.jsx";
 import { behavioralPresets } from "./behavioral.mjs";
 import { api } from "./api.mjs";
+export function KeyNotice({ navigate }) {
+  return (
+    <p className="key-notice">
+      <KeyRound size={13} />
+      Add your OpenAI API key on your{" "}
+      <a
+        href="/profile"
+        onClick={(e) => {
+          e.preventDefault();
+          navigate("/profile");
+        }}
+      >
+        profile
+      </a>{" "}
+      to enter the room.
+    </p>
+  );
+}
 export function SiteHeader({ path, navigate }) {
+  const { user, loading } = useAccount();
+  const initials = user
+    ? (user.name || user.email)
+        .split(/\s+/)
+        .map((w) => w[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "";
   return (
     <header className="topbar">
       <a
@@ -33,6 +63,7 @@ export function SiteHeader({ path, navigate }) {
           ["/", "Overview"],
           ["/coding", "Coding"],
           ["/behavioral", "Behavioral"],
+          ...(user ? [["/profile", "Profile"]] : []),
         ].map(([url, label]) => (
           <a
             key={url}
@@ -47,7 +78,32 @@ export function SiteHeader({ path, navigate }) {
           </a>
         ))}
       </nav>
-      <div className="avatar">You</div>
+      {loading ? (
+        <div className="avatar" />
+      ) : user ? (
+        <a
+          className="account-link"
+          href="/profile"
+          onClick={(e) => {
+            e.preventDefault();
+            navigate("/profile");
+          }}
+        >
+          {user.picture ? (
+            <img
+              className="avatar"
+              src={user.picture}
+              alt=""
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <span className="avatar">{initials}</span>
+          )}
+          <span>{user.name?.split(" ")[0] || user.email}</span>
+        </a>
+      ) : (
+        <GoogleSignIn size="medium" />
+      )}
     </header>
   );
 }
@@ -139,8 +195,11 @@ export function Home({ navigate }) {
     </main>
   );
 }
-export function BehavioralSetup({ onStart }) {
-  const [resume, setResume] = useState(null),
+export function BehavioralSetup({ onStart, navigate }) {
+  const { user } = useAccount();
+  const hasKey = !!user?.openaiKeyHint;
+  const [resumes, setResumes] = useState(null),
+    [selected, setSelected] = useState(null),
     [resumeText, setResumeText] = useState(""),
     [role, setRole] = useState("Software engineer"),
     [focus, setFocus] = useState(
@@ -152,12 +211,23 @@ export function BehavioralSetup({ onStart }) {
     [starting, setStarting] = useState(false),
     [error, setError] = useState("");
   const uploadVersion = useRef(0);
+  const resume = resumes?.find((r) => r.id === selected) || null;
+  function choose(record) {
+    setSelected(record?.id || null);
+    setResumeText(record?.reviewedText ?? record?.profile?.fullText ?? "");
+  }
+  useEffect(() => {
+    api("/api/resumes", undefined, "GET")
+      .then((d) => {
+        setResumes(d.resumes);
+        choose(d.resumes[0]);
+      })
+      .catch((e) => setError(e.message));
+  }, []);
   async function upload(file) {
     if (!file) return;
     const version = ++uploadVersion.current;
     setError("");
-    setResume(null);
-    setResumeText("");
     if (
       !/\.(pdf|docx|txt)$/i.test(file.name) ||
       file.size > 5 * 1024 * 1024 ||
@@ -176,13 +246,24 @@ export function BehavioralSetup({ onStart }) {
       });
       const result = await api("/api/resumes", { filename: file.name, data });
       if (version === uploadVersion.current) {
-        setResume(result);
-        setResumeText(result.profile.fullText);
+        setResumes((list) => [result, ...(list || [])]);
+        choose(result);
       }
     } catch (e) {
       if (version === uploadVersion.current) setError(e.message);
     } finally {
       if (version === uploadVersion.current) setUploading(false);
+    }
+  }
+  async function remove(record) {
+    setError("");
+    try {
+      await api(`/api/resumes/${record.id}`, undefined, "DELETE");
+      const rest = resumes.filter((r) => r.id !== record.id);
+      setResumes(rest);
+      if (selected === record.id) choose(rest[0]);
+    } catch (e) {
+      setError(e.message);
     }
   }
   async function start() {
@@ -192,7 +273,7 @@ export function BehavioralSetup({ onStart }) {
       onStart(
         await api("/api/interviews", {
           mode: "behavioral",
-          resumeId: resume.id,
+          resumeId: selected,
           resumeText,
           targetRole: role,
           focus,
@@ -222,13 +303,53 @@ export function BehavioralSetup({ onStart }) {
             </div>
             <FileText size={21} />
           </div>
+          {resumes?.length > 0 && (
+            <div className="resume-picker" role="radiogroup">
+              {resumes.map((r) => (
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={r.id === selected}
+                  key={r.id}
+                  className={
+                    "resume-option " + (r.id === selected ? "selected" : "")
+                  }
+                  onClick={() => choose(r)}
+                >
+                  {r.id === selected ? (
+                    <Check size={14} />
+                  ) : (
+                    <FileText size={14} />
+                  )}
+                  <div>
+                    <strong>{r.filename}</strong>
+                    <small>
+                      {r.profile.name || "Unnamed"} · saved{" "}
+                      {new Date(r.updatedAt).toLocaleDateString()}
+                    </small>
+                  </div>
+                  <span
+                    role="button"
+                    aria-label={`Delete ${r.filename}`}
+                    className="resume-delete"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      remove(r);
+                    }}
+                  >
+                    <Trash2 size={13} />
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
           <label className={"upload-zone " + (uploading ? "uploading" : "")}>
             <Upload size={24} />
             <strong>
               {uploading
                 ? "Reading your résumé…"
-                : resume
-                  ? "Replace résumé"
+                : resumes?.length
+                  ? "Upload another résumé"
                   : "Choose your résumé"}
             </strong>
             <span>PDF, DOCX, or TXT · up to 5 MB</span>
@@ -236,13 +357,13 @@ export function BehavioralSetup({ onStart }) {
               type="file"
               aria-label="Upload résumé"
               accept=".pdf,.docx,.txt"
-              disabled={uploading}
+              disabled={uploading || !hasKey}
               onChange={(e) => upload(e.target.files?.[0])}
             />
           </label>
           <p className="upload-note">
-            Processed by OpenAI to prepare your interview. Review the extracted
-            text before starting.
+            Parsed with your OpenAI key and saved to your profile. Review the
+            extracted text before starting.
           </p>
           {resume && (
             <div className="resume-review">
@@ -270,8 +391,8 @@ export function BehavioralSetup({ onStart }) {
                 onChange={(e) => setResumeText(e.target.value)}
               />
               <p className="upload-note">
-                Alex uses the reviewed text above, including any corrections you
-                make.
+                Alex uses the reviewed text above. Your edits are saved to this
+                résumé when you enter the room.
               </p>
             </div>
           )}
@@ -336,7 +457,8 @@ export function BehavioralSetup({ onStart }) {
                 !resumeText.trim() ||
                 !prompt.trim() ||
                 uploading ||
-                starting
+                starting ||
+                !hasKey
               }
               onClick={start}
             >
@@ -344,6 +466,7 @@ export function BehavioralSetup({ onStart }) {
               <ArrowRight size={18} />
             </button>
             <p>Alex connects and greets you when you enter.</p>
+            {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
             <div className="error" role="alert">

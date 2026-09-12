@@ -39,6 +39,9 @@ import { api } from "./api.mjs";
 import { SiteHeader, Home, BehavioralSetup, ResumePane } from "./pages.jsx";
 import { behavioralRubric } from "./behavioral.mjs";
 import Whiteboard from "./Whiteboard.jsx";
+import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
+import { Profile } from "./profile.jsx";
+import { KeyNotice } from "./pages.jsx";
 self.MonacoEnvironment = {
   getWorker: (_moduleId, label) =>
     ["javascript", "typescript"].includes(label)
@@ -53,9 +56,10 @@ const defaultFilters = {
   difficulty: "all",
   search: "",
 };
-function CodingSetup({ onStart }) {
+function CodingSetup({ onStart, navigate }) {
+  const { user } = useAccount();
+  const hasKey = !!user?.openaiKeyHint;
   const [catalog, setCatalog] = useState([]),
-    [configured, setConfigured] = useState(false),
     [filters, setFilters] = useState(defaultFilters),
     [count, setCount] = useState(2),
     [language, setLanguage] = useState("javascript"),
@@ -68,7 +72,6 @@ function CodingSetup({ onStart }) {
     api("/api/catalog", undefined, "GET")
       .then((d) => {
         setCatalog(d.problems);
-        setConfigured(d.configured);
         setReady(true);
       })
       .catch((e) => setError(e.message));
@@ -382,7 +385,7 @@ function CodingSetup({ onStart }) {
                   loading ||
                   matching.length < count ||
                   !prompt.trim() ||
-                  !configured
+                  !hasKey
                 }
               >
                 {loading ? "Preparing your interview…" : "Enter interview room"}
@@ -392,6 +395,7 @@ function CodingSetup({ onStart }) {
                 Your microphone connects on entry. Alex will greet you when the
                 room is ready.
               </p>
+              {!hasKey && <KeyNotice navigate={navigate} />}
             </div>
             {error && (
               <div role="alert" className="error">
@@ -452,6 +456,7 @@ function CodingSetup({ onStart }) {
   );
 }
 function App() {
+  const { user, loading } = useAccount();
   const [path, setPath] = useState(window.location.pathname),
     [session, setSession] = useState(null);
   function navigate(url) {
@@ -470,13 +475,22 @@ function App() {
   }, []);
   if (session)
     return <Workspace session={session} onExit={() => setSession(null)} />;
+  const gated = ["/coding", "/behavioral", "/profile"].includes(path);
   return (
     <div className="app-shell">
       <SiteHeader path={path} navigate={navigate} />
-      {path === "/coding" ? (
-        <CodingSetup onStart={setSession} />
+      {gated && loading ? (
+        <main className="setup">
+          <p className="muted">Checking your account…</p>
+        </main>
+      ) : gated && !user ? (
+        <SignInGate />
+      ) : path === "/coding" ? (
+        <CodingSetup onStart={setSession} navigate={navigate} />
       ) : path === "/behavioral" ? (
-        <BehavioralSetup onStart={setSession} />
+        <BehavioralSetup onStart={setSession} navigate={navigate} />
+      ) : path === "/profile" ? (
+        <Profile navigate={navigate} />
       ) : (
         <Home navigate={navigate} />
       )}
@@ -545,12 +559,6 @@ function Workspace({ session: initial, onExit }) {
     state.current.code = value;
     setCode(value);
     setSaved("Unsaved");
-    try {
-      localStorage.setItem(
-        `pairwise-${initial.id}-${state.current.index}`,
-        value,
-      );
-    } catch {}
   }
   function save() {
     if (isBehavioral) return Promise.resolve();
@@ -1299,4 +1307,8 @@ function Workspace({ session: initial, onExit }) {
     </div>
   );
 }
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <AccountProvider>
+    <App />
+  </AccountProvider>,
+);
