@@ -1,13 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  Check,
-  FileText,
-  History,
-  KeyRound,
-  LogOut,
-  Trash2,
-  TrendingUp,
-} from "lucide-react";
+import { Check, LogOut, Trash2 } from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 const when = (ms) =>
@@ -39,25 +31,21 @@ const Bar = ({ value }) => (
 function Insights({ insights }) {
   return (
     <section className="card profile-card insights-card">
-      <div className="section-title">
-        <div>
-          <span className="eyebrow muted">
-            ACROSS {insights.sessions} SESSION
-            {insights.sessions === 1 ? "" : "S"}
-          </span>
-          <h2>Where you struggle most</h2>
-        </div>
-        <TrendingUp size={20} />
-      </div>
+      <h2>
+        Insights{" "}
+        <small>
+          {insights.sessions} session{insights.sessions === 1 ? "" : "s"}
+        </small>
+      </h2>
       <div className="insight-columns">
         <div>
-          <h4>Criteria to work on</h4>
+          <h4>Weakest criteria</h4>
           {insights.weakestCriteria.map((c) => (
             <div className="insight-row" key={c.mode + c.id}>
               <span className="insight-label">
                 {c.label}
                 <small>
-                  {modeNames[c.mode]} · {c.n} session{c.n === 1 ? "" : "s"}
+                  {modeNames[c.mode]} · {c.n}
                 </small>
               </span>
               <Bar value={c.avg} />
@@ -65,11 +53,11 @@ function Insights({ insights }) {
             </div>
           ))}
           {!insights.weakestCriteria.length && (
-            <p className="muted">Finish a graded session to see criteria.</p>
+            <p className="muted">No graded sessions yet.</p>
           )}
         </div>
         <div>
-          <h4>Subject areas</h4>
+          <h4>Weakest topics</h4>
           {insights.weakest.map((t) => (
             <div className="insight-row" key={t.topic}>
               <span className="insight-label">
@@ -83,13 +71,13 @@ function Insights({ insights }) {
             </div>
           ))}
           {!insights.weakest.length && (
-            <p className="muted">Topics appear once sessions are graded.</p>
+            <p className="muted">No graded sessions yet.</p>
           )}
         </div>
       </div>
       {insights.trend.length > 1 && (
         <div className="trend">
-          <h4>Recent sessions</h4>
+          <h4>Recent scores</h4>
           <div className="trend-bars">
             {insights.trend.map((t) => (
               <span
@@ -155,7 +143,7 @@ export function Profile({ navigate }) {
       const d = await api("/api/me/openai-key", { key }, "PUT");
       setUser(d.user);
       setKey("");
-      setNotice("Key verified with OpenAI and saved.");
+      setNotice("Key verified and saved.");
     });
     setKeyBusy(false);
   }
@@ -166,14 +154,10 @@ export function Profile({ navigate }) {
     .slice(0, 2)
     .toUpperCase();
   return (
-    <main className="setup profile-page">
-      <div className="page-heading">
-        <span className="eyebrow muted">YOUR PROFILE</span>
-        <h1>Everything you bring to the room.</h1>
-        <p>
-          Résumés, your OpenAI key, and past feedback stay with your account.
-        </p>
-      </div>
+    <main className="setup profile-page page">
+      <header className="page-head">
+        <h1>Profile</h1>
+      </header>
       <div className="profile-grid">
         <section className="card profile-card account-card">
           {user.picture ? (
@@ -200,7 +184,7 @@ export function Profile({ navigate }) {
             </button>
             {confirmDelete ? (
               <>
-                <span>Delete your account and all saved data?</span>
+                <span>Delete account and all data?</span>
                 <button
                   className="danger"
                   onClick={() =>
@@ -211,7 +195,7 @@ export function Profile({ navigate }) {
                     })
                   }
                 >
-                  Yes, delete
+                  Delete
                 </button>
                 <button
                   className="quiet"
@@ -233,13 +217,7 @@ export function Profile({ navigate }) {
         </section>
         {insights && insights.sessions > 0 && <Insights insights={insights} />}
         <section className="card profile-card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">BRING YOUR OWN KEY</span>
-              <h2>OpenAI API key</h2>
-            </div>
-            <KeyRound size={20} />
-          </div>
+          <h2>OpenAI API key</h2>
           <div className="key-status">
             {user.openaiKeyHint ? (
               <>
@@ -249,7 +227,7 @@ export function Profile({ navigate }) {
                 )}
               </>
             ) : (
-              "No key yet"
+              "No key"
             )}
           </div>
           <form className="key-form" onSubmit={saveKey}>
@@ -262,11 +240,7 @@ export function Profile({ navigate }) {
               onChange={(e) => setKey(e.target.value)}
             />
             <button className="primary" disabled={keyBusy || !key.trim()}>
-              {keyBusy
-                ? "Checking…"
-                : user.openaiKeyHint
-                  ? "Replace key"
-                  : "Save key"}
+              {keyBusy ? "Checking…" : user.openaiKeyHint ? "Replace" : "Save"}
             </button>
           </form>
           {user.openaiKeyHint && (
@@ -293,20 +267,14 @@ export function Profile({ navigate }) {
           )}
         </section>
         <section className="card profile-card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">SAVED CONTEXT</span>
-              <h2>Résumés</h2>
-            </div>
-            <FileText size={20} />
-          </div>
+          <h2>Résumés</h2>
           <div className="list-rows">
             {resumes?.map((r) => (
               <div className="list-row" key={r.id}>
                 <div>
                   <strong>{r.filename}</strong>
                   <small>
-                    {r.profile.name || "Unnamed"} · updated {when(r.updatedAt)}
+                    {r.profile.name || "Unnamed"} · {when(r.updatedAt)}
                   </small>
                 </div>
                 <button
@@ -322,19 +290,11 @@ export function Profile({ navigate }) {
                 </button>
               </div>
             ))}
-            {resumes && !resumes.length && (
-              <p className="muted">No résumés saved yet.</p>
-            )}
+            {resumes && !resumes.length && <p className="muted">None.</p>}
           </div>
         </section>
         <section className="card profile-card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">PAST INTERVIEWS</span>
-              <h2>Feedback history</h2>
-            </div>
-            <History size={20} />
-          </div>
+          <h2>History</h2>
           <div className="list-rows">
             {history?.map((h) => {
               const score = average(h.feedback);
@@ -342,8 +302,8 @@ export function Profile({ navigate }) {
                 <div className="list-row" key={h.id}>
                   <div>
                     <span className="mode-tag">
-                      {h.mode === "behavioral" ? "BEHAVIORAL" : "CODING"}
-                      {h.language ? ` · ${h.language.toUpperCase()}` : ""}
+                      {modeNames[h.mode]}
+                      {h.language ? ` · ${h.language}` : ""}
                     </span>
                     <strong>{h.title}</strong>
                     <small>{when(h.finishedAt)}</small>
@@ -353,7 +313,7 @@ export function Profile({ navigate }) {
                   </div>
                   {score && (
                     <span className="score" title="Average rubric score">
-                      {score} / 5
+                      {score}
                     </span>
                   )}
                   <button
@@ -370,11 +330,7 @@ export function Profile({ navigate }) {
                 </div>
               );
             })}
-            {history && !history.length && (
-              <p className="muted">
-                Finish an interview and its feedback will be kept here.
-              </p>
-            )}
+            {history && !history.length && <p className="muted">None.</p>}
           </div>
         </section>
       </div>

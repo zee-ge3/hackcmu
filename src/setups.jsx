@@ -1,12 +1,5 @@
 import React, { useEffect, useState } from "react";
-import {
-  ArrowRight,
-  Check,
-  Dices,
-  Network,
-  SlidersHorizontal,
-  X,
-} from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 import { KeyNotice } from "./pages.jsx";
@@ -26,9 +19,7 @@ export function PresetPicker({
 }) {
   return (
     <div className="interviewer-config">
-      <label className="field-label">
-        Interviewer style <span>Choose a starting point</span>
-      </label>
+      <label className="field-label">Interviewer</label>
       <div className="preset-grid">
         {presets.map((p) => (
           <button
@@ -46,7 +37,7 @@ export function PresetPicker({
         ))}
       </div>
       <details className="prompt-details">
-        <summary>Customize interviewer system prompt</summary>
+        <summary>System prompt</summary>
         <label htmlFor={id}>Instructions for this interview</label>
         <textarea
           id={id}
@@ -76,13 +67,13 @@ const conceptLabels = {
   strategy: "Strategy",
 };
 const sourceLabels = {
-  quantprof: "QuantProf (trading firms)",
+  quantprof: "QuantProf",
   quantprof_youtube: "QuantProf video",
-  aops_wiki: "AoPS wiki",
-  MATH: "MATH (AMC-derived)",
+  aops_wiki: "AoPS",
+  MATH: "MATH",
   AIME: "AIME",
-  AIMO_AMC: "AMC validation",
-  AIMO_AIME: "AIME validation",
+  AIMO_AMC: "AMC",
+  AIMO_AIME: "AIME (validation)",
 };
 export const conceptLabel = (c) => conceptLabels[c] || c;
 export function ProbabilitySetup({ onStart, navigate }) {
@@ -145,20 +136,13 @@ export function ProbabilitySetup({ onStart, navigate }) {
     }
   }
   return (
-    <main className="setup coding-setup">
-      <div className="page-heading">
-        <span className="eyebrow muted">PROBABILITY PRACTICE</span>
-        <h1>Reason under uncertainty, out loud.</h1>
-      </div>
+    <main className="setup page">
+      <header className="page-head">
+        <h1>Probability</h1>
+      </header>
       <div className="setup-grid">
         <section className="config card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">PICK YOUR QUESTIONS</span>
-              <h2>Set up the session</h2>
-            </div>
-            <Dices size={20} />
-          </div>
+          <h2>Questions</h2>
           <label className="field-label">Difficulty</label>
           <div className="segmented">
             {[
@@ -177,9 +161,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
               </button>
             ))}
           </div>
-          <label className="field-label">
-            Concepts <span>Optional · choose any</span>
-          </label>
+          <label className="field-label">Concepts</label>
           <div className="chips">
             {Object.entries(conceptCounts)
               .sort((a, b) => b[1] - a[1])
@@ -194,9 +176,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
                 </button>
               ))}
           </div>
-          <label className="field-label">
-            Asked at <span>Optional · trading firms from QuantProf</span>
-          </label>
+          <label className="field-label">Asked at</label>
           <div className="chips">
             {Object.entries(firmCounts)
               .sort((a, b) => b[1] - a[1])
@@ -211,9 +191,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
                 </button>
               ))}
           </div>
-          <label className="field-label">
-            Sources <span>Optional</span>
-          </label>
+          <label className="field-label">Sources</label>
           <div className="chips">
             {Object.entries(sourceCounts).map(([src, n]) => (
               <button
@@ -225,6 +203,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
               </button>
             ))}
           </div>
+          <h2>Session</h2>
           <div className="two-fields">
             <div>
               <label className="field-label" htmlFor="prob-count">
@@ -269,12 +248,6 @@ export function ProbabilitySetup({ onStart, navigate }) {
             id="probability-prompt"
           />
           <div className="start-area">
-            <div className="match-count">
-              <span className="live-dot" />
-              {catalog
-                ? `${matching.length.toLocaleString()} matching questions`
-                : "Loading the question bank…"}
-            </div>
             <button
               className="primary start"
               onClick={start}
@@ -282,9 +255,14 @@ export function ProbabilitySetup({ onStart, navigate }) {
                 loading || matching.length < count || !prompt.trim() || !hasKey
               }
             >
-              {loading ? "Preparing your interview…" : "Enter probability room"}
-              <ArrowRight size={18} />
+              {loading ? "Starting…" : "Start"}
+              <ArrowRight size={16} />
             </button>
+            <span className="match-count">
+              {catalog
+                ? `${matching.length.toLocaleString()} match`
+                : "Loading…"}
+            </span>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
@@ -295,30 +273,23 @@ export function ProbabilitySetup({ onStart, navigate }) {
         </section>
         <aside>
           <section className="library card">
-            <div className="library-title">
-              <div>
-                <span className="eyebrow muted">QUESTION BANK</span>
-                <h3>
-                  {(catalog?.length || 0).toLocaleString()} questions with
-                  reference answers.
-                </h3>
-              </div>
-              <span className="tiny-tag">QUANT</span>
-            </div>
+            <h2>
+              Matches <small>{matching.length.toLocaleString()}</small>
+            </h2>
             <div className="problem-list">
-              {matching.slice(0, 5).map((q) => (
+              {matching.slice(0, 8).map((q) => (
                 <div className="problem-row" key={q.id}>
                   <span className="problem-id">
                     {q.difficulty10 ? `L${q.difficulty10}` : "—"}
                   </span>
                   <span>{q.title}</span>
                   <span className="difficulty">
-                    {sourceLabels[q.source]?.split(" ")[0] || q.source}
+                    {sourceLabels[q.source] || q.source}
                   </span>
                 </div>
               ))}
               {catalog && !matching.length && (
-                <p className="muted">No matches. Try fewer filters.</p>
+                <p className="muted">No matches.</p>
               )}
             </div>
           </section>
@@ -371,20 +342,13 @@ export function DesignSetup({ onStart, navigate }) {
     }
   }
   return (
-    <main className="setup coding-setup">
-      <div className="page-heading">
-        <span className="eyebrow muted">SYSTEM DESIGN PRACTICE</span>
-        <h1>Design it before the clock runs out.</h1>
-      </div>
+    <main className="setup page">
+      <header className="page-head">
+        <h1>System design</h1>
+      </header>
       <div className="setup-grid single">
         <section className="config card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">THE PROBLEM</span>
-              <h2>Choose a system</h2>
-            </div>
-            <Network size={20} />
-          </div>
+          <h2>System</h2>
           <div className="design-grid">
             {(problems || []).map((p) => (
               <button
@@ -395,12 +359,11 @@ export function DesignSetup({ onStart, navigate }) {
                 }
                 onClick={() => setProblemId(p.id)}
               >
-                <span className="eyebrow muted">
-                  {p.category.toUpperCase()}
-                </span>
                 <strong>{p.title}</strong>
                 <span>{p.summary}</span>
-                <small>{p.stageCount} added constraints</small>
+                <small>
+                  {p.category} · {p.stageCount} constraints
+                </small>
               </button>
             ))}
             <button
@@ -410,13 +373,9 @@ export function DesignSetup({ onStart, navigate }) {
               }
               onClick={() => setProblemId("custom")}
             >
-              <span className="eyebrow muted">YOUR OWN</span>
-              <strong>Custom brief</strong>
-              <span>
-                Bring a prompt from a real interview or a system you want to
-                practice.
-              </span>
-              <small>Alex invents the constraints</small>
+              <strong>Custom</strong>
+              <span>Write your own brief.</span>
+              <small>Constraints are improvised</small>
             </button>
           </div>
           {useCustom && (
@@ -431,7 +390,7 @@ export function DesignSetup({ onStart, navigate }) {
                 onChange={(e) =>
                   setCustom({ ...custom, title: e.target.value })
                 }
-                placeholder="e.g. Multiplayer leaderboard"
+                placeholder="Multiplayer leaderboard"
               />
               <label className="field-label" htmlFor="design-brief">
                 Brief
@@ -444,11 +403,12 @@ export function DesignSetup({ onStart, navigate }) {
                 onChange={(e) =>
                   setCustom({ ...custom, brief: e.target.value })
                 }
-                placeholder="What should the candidate design? Mention the users, core features, and any scale you already know."
+                placeholder="Users, core features, known scale."
               />
             </div>
           )}
-          <label className="field-label">Time limit</label>
+          <h2>Session</h2>
+          <label className="field-label">Duration</label>
           <div className="segmented">
             {designDurations.map((m) => (
               <button
@@ -474,8 +434,8 @@ export function DesignSetup({ onStart, navigate }) {
               onClick={start}
               disabled={loading || !ready || !prompt.trim() || !hasKey}
             >
-              {loading ? "Preparing your interview…" : "Enter design room"}
-              <ArrowRight size={18} />
+              {loading ? "Starting…" : "Start"}
+              <ArrowRight size={16} />
             </button>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>

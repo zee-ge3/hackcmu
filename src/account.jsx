@@ -74,12 +74,7 @@ export function GoogleSignIn({ size = "large" }) {
     };
   }, [googleClientId]);
   if (!googleClientId)
-    return (
-      <p className="upload-note">
-        Google sign-in is not configured. Set GOOGLE_CLIENT_ID in .env and
-        restart the server.
-      </p>
-    );
+    return <p className="muted">GOOGLE_CLIENT_ID is not set.</p>;
   return (
     <div className="google-signin">
       <div ref={slot} />
@@ -93,14 +88,9 @@ export function GoogleSignIn({ size = "large" }) {
 }
 export function SignInGate() {
   return (
-    <main className="setup signin-gate">
+    <main className="setup signin-gate page">
       <section className="card">
-        <span className="eyebrow muted">SIGN IN</span>
-        <h1>Your practice, saved to you.</h1>
-        <p>
-          Sign in with Google to keep your résumés, OpenAI key, and interview
-          feedback in one profile.
-        </p>
+        <h1>Sign in</h1>
         <GoogleSignIn />
       </section>
     </main>

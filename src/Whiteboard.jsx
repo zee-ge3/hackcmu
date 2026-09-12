@@ -270,7 +270,7 @@ export default function Whiteboard({
           <input
             className="board-label"
             aria-label="Whiteboard label"
-            placeholder="Type a label, then click the canvas"
+            placeholder="Label, then click the canvas"
             maxLength={120}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
@@ -293,11 +293,11 @@ export default function Whiteboard({
         <span className="live-dot" />
         {
           {
-            empty: "Shared with Alex as you draw.",
-            pending: "Drawing updated · waiting for a pause…",
-            sharing: "Sharing the latest drawing with Alex…",
-            shared: "Alex has the latest drawing.",
-            error: "Drawing not shared.",
+            empty: "Synced as you draw",
+            pending: "Pending",
+            sharing: "Syncing…",
+            shared: "Synced",
+            error: "Not synced",
           }[status]
         }
         {status === "error" && (
@@ -310,7 +310,7 @@ export default function Whiteboard({
       {error && <div className="board-error">{error}</div>}
       {summary && (
         <details className="board-summary">
-          <summary>What Alex can see</summary>
+          <summary>Description</summary>
           <p>{summary}</p>
         </details>
       )}

@@ -4,24 +4,32 @@ import {
   Code2,
   Mic,
   ArrowRight,
-  ArrowUpRight,
   Upload,
   FileText,
   Check,
-  PenTool,
   Trash2,
   KeyRound,
   Dices,
   Network,
 } from "lucide-react";
-import { useAccount, GoogleSignIn } from "./account.jsx";
 import { behavioralPresets } from "./behavioral.mjs";
 import { api } from "./api.mjs";
+import { useAccount, GoogleSignIn } from "./account.jsx";
+const modeNames = {
+  coding: "Coding",
+  behavioral: "Behavioral",
+  probability: "Probability",
+  design: "System design",
+};
+const when = (ms) =>
+  new Date(ms).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
 export function KeyNotice({ navigate }) {
   return (
     <p className="key-notice">
       <KeyRound size={13} />
-      Add your OpenAI API key on your{" "}
       <a
         href="/profile"
         onClick={(e) => {
@@ -29,9 +37,9 @@ export function KeyNotice({ navigate }) {
           navigate("/profile");
         }}
       >
-        profile
+        Add an OpenAI API key
       </a>{" "}
-      to enter the room.
+      to start.
     </p>
   );
 }
@@ -56,18 +64,16 @@ export function SiteHeader({ path, navigate }) {
         }}
       >
         <span className="brand-mark">
-          <Braces size={23} />
+          <Braces size={20} />
         </span>
-        pairwise<span className="beta">BETA</span>
+        pairwise
       </a>
       <nav>
         {[
-          ["/", "Overview"],
           ["/coding", "Coding"],
           ["/probability", "Probability"],
           ["/design", "System design"],
           ["/behavioral", "Behavioral"],
-          ...(user ? [["/profile", "Profile"]] : []),
         ].map(([url, label]) => (
           <a
             key={url}
@@ -86,7 +92,9 @@ export function SiteHeader({ path, navigate }) {
         <div className="avatar" />
       ) : user ? (
         <a
-          className="account-link"
+          className={
+            "account-link " + (path === "/profile" ? "nav-active" : "")
+          }
           href="/profile"
           onClick={(e) => {
             e.preventDefault();
@@ -111,154 +119,146 @@ export function SiteHeader({ path, navigate }) {
     </header>
   );
 }
+const modes = [
+  {
+    url: "/coding",
+    title: "Coding",
+    icon: Code2,
+    line: "LeetCode problems in a shared editor with your own testcases.",
+    facts: ["4,042 problems", "Blind 75 · NeetCode 150", "JavaScript · Python"],
+  },
+  {
+    url: "/probability",
+    title: "Probability",
+    icon: Dices,
+    line: "Quant interview questions checked against hidden answers.",
+    facts: ["679 questions", "Levels 1–10", "Citadel, Jane Street, SIG…"],
+  },
+  {
+    url: "/design",
+    title: "System design",
+    icon: Network,
+    line: "A brief, a clock, and constraints that arrive as you design.",
+    facts: ["12 systems or your own", "20–45 minutes"],
+  },
+  {
+    url: "/behavioral",
+    title: "Behavioral",
+    icon: Mic,
+    line: "Questions grounded in your résumé.",
+    facts: ["PDF · DOCX · TXT", "Story-structure rubric"],
+  },
+];
+const average = (feedback) => {
+  const scores = Object.values(feedback?.criteria || {})
+    .map((c) => c.score)
+    .filter((s) => typeof s === "number");
+  return scores.length
+    ? scores.reduce((a, b) => a + b, 0) / scores.length
+    : null;
+};
 export function Home({ navigate }) {
+  const { user, loading } = useAccount();
+  const [recent, setRecent] = useState(null);
+  const [insights, setInsights] = useState(null);
+  useEffect(() => {
+    if (!user) return;
+    Promise.all([
+      api("/api/history", undefined, "GET"),
+      api("/api/insights", undefined, "GET"),
+    ])
+      .then(([h, i]) => {
+        setRecent(h.interviews.slice(0, 6));
+        setInsights(i);
+      })
+      .catch(() => setRecent([]));
+  }, [user]);
   const go = (url) => (e) => {
     e.preventDefault();
     navigate(url);
   };
-  const rooms = [
-    {
-      url: "/coding",
-      n: "01",
-      title: "Coding",
-      icon: Code2,
-      lead: "LeetCode problems in a shared editor with prepared tests and a step-through debugger.",
-      detail:
-        "JavaScript or Python · Blind 75 and NeetCode 150 filters · 677 prepared test cases",
-    },
-    {
-      url: "/probability",
-      n: "02",
-      title: "Probability",
-      icon: Dices,
-      lead: "Quant-style questions from trading-firm screens and competition math, checked against reference answers.",
-      detail:
-        "679 questions · hints only until you solve · notes pad and whiteboard",
-    },
-    {
-      url: "/design",
-      n: "03",
-      title: "System design",
-      icon: Network,
-      lead: "A brief, a clock, and constraints that keep arriving while you draw the architecture.",
-      detail:
-        "12 systems or your own brief · 20–45 minutes · timed constraint reveals",
-    },
-    {
-      url: "/behavioral",
-      n: "04",
-      title: "Behavioral",
-      icon: Mic,
-      lead: "Questions grounded in your own résumé, with follow-ups on ownership, impact, and judgment.",
-      detail:
-        "PDF, DOCX, or TXT résumé · saved to your profile · story-structure rubric",
-    },
-  ];
   return (
-    <main className="home-page">
-      <section className="hero">
-        <div className="hero-copy">
-          <span className="eyebrow">
-            <span className="live-dot" /> VOICE INTERVIEW PRACTICE
-          </span>
-          <h1>An interviewer that listens, pushes back, and grades you.</h1>
-          <p>
-            Pairwise runs a real-time spoken interview in four formats. You
-            talk, code, and draw; Alex asks follow-ups, edits alongside you, and
-            scores the session on a fixed rubric so you know what to fix next.
-          </p>
-          <div className="hero-actions">
-            <a
-              className="primary hero-cta"
-              href="/coding"
-              onClick={go("/coding")}
-            >
-              Start a coding session <ArrowRight size={17} />
-            </a>
-            <a className="hero-link" href="/profile" onClick={go("/profile")}>
-              See your progress <ArrowUpRight size={14} />
-            </a>
-          </div>
-        </div>
-        <div className="hero-panel" aria-hidden="true">
-          <div className="hero-row">
-            <span className="hero-speaker">Alex</span>
-            <p>
-              Walk me through what happens when two intervals overlap only at an
-              endpoint.
-            </p>
-          </div>
-          <div className="hero-row you">
-            <span className="hero-speaker">You</span>
-            <p>
-              Then the intersection is a single point — measure zero, so it
-              doesn't change the probability.
-            </p>
-          </div>
-          <div className="hero-row">
-            <span className="hero-speaker">Alex</span>
-            <p>Good. So what's the sample space you're counting over?</p>
-          </div>
-          <div className="hero-meter">
-            <span>Problem framing</span>
-            <i style={{ width: "72%" }} />
-            <span>Reasoning</span>
-            <i style={{ width: "58%" }} />
-            <span>Verification</span>
-            <i style={{ width: "40%" }} />
-          </div>
-        </div>
-      </section>
-      <section className="rooms">
-        {rooms.map((r) => (
-          <a key={r.url} className="room" href={r.url} onClick={go(r.url)}>
-            <div className="room-head">
-              <span className="room-n">{r.n}</span>
-              <r.icon size={18} />
+    <main className="home page">
+      <section className="modes">
+        {modes.map((m, i) => (
+          <a
+            key={m.url}
+            className="mode"
+            href={m.url}
+            onClick={go(m.url)}
+            style={{ "--i": i }}
+          >
+            <div className="mode-head">
+              <m.icon size={18} />
+              <h2>{m.title}</h2>
             </div>
-            <h2>{r.title}</h2>
-            <p>{r.lead}</p>
-            <small>{r.detail}</small>
-            <span className="room-cta">
-              Enter <ArrowRight size={14} />
+            <p>{m.line}</p>
+            <ul>
+              {m.facts.map((f) => (
+                <li key={f}>{f}</li>
+              ))}
+            </ul>
+            <span className="mode-go">
+              Start <ArrowRight size={14} />
             </span>
           </a>
         ))}
       </section>
-      <section className="how">
-        <div>
-          <span className="eyebrow muted">HOW A SESSION RUNS</span>
-          <h3>Three steps, then a report you can act on.</h3>
-        </div>
-        <ol>
-          <li>
-            <strong>Set up</strong>
-            <span>
-              Pick the format, filters, and interviewer style. Your microphone
-              connects on entry.
-            </span>
-          </li>
-          <li>
-            <strong>Work it through</strong>
-            <span>
-              Speak, code, draw. Alex sees the editor and the whiteboard and
-              delegates hard reasoning to a backend model.
-            </span>
-          </li>
-          <li>
-            <strong>Get graded</strong>
-            <span>
-              Five fixed criteria per format, evidence for each score, and
-              history that shows where you keep slipping.
-            </span>
-          </li>
-        </ol>
-      </section>
-      <footer className="home-foot">
-        <span>Runs on your own OpenAI key</span>
-        <span>Google sign-in · résumés and feedback stay on your profile</span>
-        <span>Local-first: sessions live in memory until you finish</span>
-      </footer>
+      <aside className="home-side">
+        {!loading && !user && (
+          <section className="card side-card">
+            <h2>Sign in</h2>
+            <GoogleSignIn />
+          </section>
+        )}
+        {user && (
+          <section className="card side-card">
+            <h2>Recent</h2>
+            {recent === null ? (
+              <div className="skeleton" />
+            ) : recent.length ? (
+              <ul className="recent">
+                {recent.map((h) => {
+                  const score = average(h.feedback);
+                  return (
+                    <li key={h.id}>
+                      <a href="/profile" onClick={go("/profile")}>
+                        <span className="recent-mode">{modeNames[h.mode]}</span>
+                        <span className="recent-title">{h.title}</span>
+                        <span className="recent-when">
+                          {when(h.finishedAt)}
+                        </span>
+                        {score !== null && (
+                          <span className="score">{score.toFixed(1)}</span>
+                        )}
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="muted">No sessions yet.</p>
+            )}
+          </section>
+        )}
+        {insights?.weakestCriteria?.length > 0 && (
+          <section className="card side-card">
+            <h2>Weakest areas</h2>
+            {insights.weakestCriteria.slice(0, 4).map((c) => (
+              <div className="insight-row" key={c.mode + c.id}>
+                <span className="insight-label">
+                  {c.label}
+                  <small>{modeNames[c.mode]}</small>
+                </span>
+                <span className="score-bar" aria-hidden="true">
+                  <i style={{ width: `${(c.avg / 5) * 100}%` }} />
+                </span>
+                <b>{c.avg.toFixed(1)}</b>
+              </div>
+            ))}
+          </section>
+        )}
+      </aside>
     </main>
   );
 }
@@ -300,7 +300,7 @@ export function BehavioralSetup({ onStart, navigate }) {
       file.size > 5 * 1024 * 1024 ||
       !file.size
     ) {
-      setError("Choose a PDF, DOCX, or TXT résumé under 5 MB.");
+      setError("PDF, DOCX, or TXT under 5 MB.");
       return;
     }
     setUploading(true);
@@ -355,20 +355,13 @@ export function BehavioralSetup({ onStart, navigate }) {
     }
   }
   return (
-    <main className="mode-setup behavioral-setup">
-      <div className="page-heading">
-        <span className="eyebrow muted">BEHAVIORAL PRACTICE</span>
-        <h1>There’s a story in your experience.</h1>
-      </div>
+    <main className="setup page">
+      <header className="page-head">
+        <h1>Behavioral</h1>
+      </header>
       <div className="behavioral-grid">
-        <section className="card resume-upload-card">
-          <div className="section-title">
-            <div>
-              <span className="eyebrow muted">01 / YOUR BACKGROUND</span>
-              <h2>Start with your résumé</h2>
-            </div>
-            <FileText size={21} />
-          </div>
+        <section className="card config">
+          <h2>Résumé</h2>
           {resumes?.length > 0 && (
             <div className="resume-picker" role="radiogroup">
               {resumes.map((r) => (
@@ -390,7 +383,7 @@ export function BehavioralSetup({ onStart, navigate }) {
                   <div>
                     <strong>{r.filename}</strong>
                     <small>
-                      {r.profile.name || "Unnamed"} · saved{" "}
+                      {r.profile.name || "Unnamed"} ·{" "}
                       {new Date(r.updatedAt).toLocaleDateString()}
                     </small>
                   </div>
@@ -410,15 +403,15 @@ export function BehavioralSetup({ onStart, navigate }) {
             </div>
           )}
           <label className={"upload-zone " + (uploading ? "uploading" : "")}>
-            <Upload size={24} />
+            <Upload size={18} />
             <strong>
               {uploading
-                ? "Reading your résumé…"
+                ? "Parsing…"
                 : resumes?.length
-                  ? "Upload another résumé"
-                  : "Choose your résumé"}
+                  ? "Upload another"
+                  : "Upload résumé"}
             </strong>
-            <span>PDF, DOCX, or TXT · up to 5 MB</span>
+            <span>PDF, DOCX, TXT · 5 MB</span>
             <input
               type="file"
               aria-label="Upload résumé"
@@ -429,11 +422,7 @@ export function BehavioralSetup({ onStart, navigate }) {
           </label>
           {resume && (
             <div className="resume-review">
-              <div className="parsed-badge">
-                <Check size={14} />
-                Parsed · {resume.filename}
-              </div>
-              <h3>{resume.profile.name || "Your background"}</h3>
+              <h3>{resume.profile.name || resume.filename}</h3>
               <p>{resume.profile.summary}</p>
               <div className="chips">
                 {resume.profile.skills.slice(0, 10).map((skill, i) => (
@@ -443,7 +432,7 @@ export function BehavioralSetup({ onStart, navigate }) {
                 ))}
               </div>
               <label className="field-label" htmlFor="resume-text">
-                Review and correct your context
+                Extracted text
               </label>
               <textarea
                 id="resume-text"
@@ -455,9 +444,8 @@ export function BehavioralSetup({ onStart, navigate }) {
             </div>
           )}
         </section>
-        <section className="card behavioral-options">
-          <span className="eyebrow muted">02 / THE CONVERSATION</span>
-          <h2>Make it relevant.</h2>
+        <section className="card config behavioral-options">
+          <h2>Interview</h2>
           <label className="field-label" htmlFor="target-role">
             Target role
           </label>
@@ -468,7 +456,7 @@ export function BehavioralSetup({ onStart, navigate }) {
             onChange={(e) => setRole(e.target.value)}
           />
           <label className="field-label" htmlFor="behavioral-focus">
-            What would you like to practice?
+            Focus
           </label>
           <textarea
             id="behavioral-focus"
@@ -477,7 +465,7 @@ export function BehavioralSetup({ onStart, navigate }) {
             rows={3}
             onChange={(e) => setFocus(e.target.value)}
           />
-          <label className="field-label">Interviewer style</label>
+          <label className="field-label">Interviewer</label>
           <div className="behavioral-presets">
             {behavioralPresets.map((p) => (
               <button
@@ -495,7 +483,7 @@ export function BehavioralSetup({ onStart, navigate }) {
             ))}
           </div>
           <details className="prompt-details">
-            <summary>Customize interviewer system prompt</summary>
+            <summary>System prompt</summary>
             <label htmlFor="behavioral-prompt">
               Instructions for this interview
             </label>
@@ -520,8 +508,8 @@ export function BehavioralSetup({ onStart, navigate }) {
               }
               onClick={start}
             >
-              {starting ? "Preparing your interview…" : "Enter behavioral room"}
-              <ArrowRight size={18} />
+              {starting ? "Starting…" : "Start"}
+              <ArrowRight size={16} />
             </button>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
@@ -538,20 +526,13 @@ export function BehavioralSetup({ onStart, navigate }) {
 export function ResumePane({ resume, targetRole, focus }) {
   return (
     <section className="statement-pane resume-pane">
-      <div className="pane-tabs">
-        <span>
-          <FileText size={14} /> YOUR RÉSUMÉ
-        </span>
-      </div>
       <div className="statement-scroll">
-        <span className="eyebrow muted">BEHAVIORAL INTERVIEW</span>
-        <h1>{resume.name || "Your experience"}</h1>
-        <div className="resume-role">{targetRole}</div>
+        <div className="meta">
+          {targetRole} · {resume.filename}
+        </div>
+        <h1>{resume.name || "Résumé"}</h1>
         <p className="focus-note">{focus}</p>
         <div className="resume-context">{resume.text}</div>
-      </div>
-      <div className="problem-bottom">
-        <span>Context from {resume.filename}</span>
       </div>
     </section>
   );

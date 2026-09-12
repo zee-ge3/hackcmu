@@ -159,7 +159,7 @@ function Tree({ id, nodes, pointers, depth = 0 }) {
                 depth={depth + 1}
               />
             ) : (
-              <span className="dbg-leaf">·</span>
+              <span className="dbg-leaf">null</span>
             )}
           </div>
           <div>
@@ -171,7 +171,7 @@ function Tree({ id, nodes, pointers, depth = 0 }) {
                 depth={depth + 1}
               />
             ) : (
-              <span className="dbg-leaf">·</span>
+              <span className="dbg-leaf">null</span>
             )}
           </div>
         </div>

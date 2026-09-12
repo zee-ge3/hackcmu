@@ -33,15 +33,10 @@ export function ProbabilityPane({
   const done = solved || revealed;
   return (
     <section className="statement-pane probability-pane">
-      <div className="pane-tabs">
-        <span>
-          QUESTION {index + 1} / {total}
-        </span>
-      </div>
       <div className="statement-scroll">
-        <div className="eyebrow muted">
-          {problem.source.replace(/_/g, " ").toUpperCase()}
-          {problem.difficulty10 ? ` · LEVEL ${problem.difficulty10}` : ""}
+        <div className="meta">
+          {problem.source.replace(/_/g, " ")}
+          {problem.difficulty10 ? ` · level ${problem.difficulty10}` : ""}
         </div>
         <h1>{problem.title}</h1>
         <div className="problem-meta">
@@ -63,7 +58,7 @@ export function ProbabilityPane({
           }}
         >
           <label htmlFor="answer" className="field-label">
-            Your answer
+            Answer
           </label>
           <div className="answer-row">
             <input
@@ -71,7 +66,7 @@ export function ProbabilityPane({
               value={answer}
               maxLength={200}
               disabled={done || busy}
-              placeholder="e.g. 17/24 or 0.7083"
+              placeholder="fraction or decimal"
               onChange={(e) => setAnswer(e.target.value)}
             />
             <button
@@ -105,14 +100,12 @@ export function ProbabilityPane({
         )}
         {!done && attempts.length > 0 && (
           <button className="quiet" onClick={onReveal} disabled={busy}>
-            <Eye size={14} /> Give up and reveal the answer
+            <Eye size={14} /> Reveal answer
           </button>
         )}
         {done && solution && (
           <div className="solution">
-            <div className="eyebrow muted">
-              {solved ? "SOLVED · REFERENCE" : "REFERENCE ANSWER"}
-            </div>
+            <div className="meta">{solved ? "Solved" : "Reference"}</div>
             <MathText
               className="solution-answer"
               text={`Answer: $${solution.answer}$`}
@@ -136,7 +129,7 @@ export function ProbabilityPane({
         )}
         {index < total - 1 && (
           <button className="quiet" onClick={onNext} disabled={busy}>
-            Next question <ChevronRight size={16} />
+            Next <ChevronRight size={16} />
           </button>
         )}
       </div>
@@ -162,17 +155,17 @@ export function DesignPane({
     <section className="statement-pane design-pane">
       <div className="pane-tabs">
         <span>
-          <Clock size={13} /> {over ? "TIME'S UP" : `${mmss(remaining)} LEFT`}
+          <Clock size={13} /> {over ? "Time is up" : mmss(remaining)}
         </span>
         <span className="stage-count">
-          {stages.length} / {design.stageCount} CONSTRAINTS
+          {stages.length} / {design.stageCount} constraints
         </span>
       </div>
       <div className={"time-bar " + (over ? "over" : "")}>
         <i style={{ width: pct + "%" }} />
       </div>
       <div className="statement-scroll">
-        <div className="eyebrow muted">{problem.category.toUpperCase()}</div>
+        <div className="meta">{problem.category}</div>
         <h1>{problem.title}</h1>
         <p className="brief">{problem.brief}</p>
         <div className="stages">
@@ -201,16 +194,14 @@ export function DesignPane({
                     : "When this step is settled."}
                 </p>
                 <button className="quiet" onClick={onAdvance} disabled={busy}>
-                  I've finished this step <ChevronRight size={14} />
+                  Step done <ChevronRight size={14} />
                 </button>
               </div>
             </div>
           )}
         </div>
         {over && (
-          <div className="time-over">
-            Time is up. Summarize your design and press Finish interview.
-          </div>
+          <div className="time-over">Time is up. Summarize and finish.</div>
         )}
       </div>
     </section>

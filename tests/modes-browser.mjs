@@ -119,14 +119,14 @@ if (!real) {
   });
 try {
   await page.goto(base);
-  assert.equal(await page.locator(".room").count(), 4);
+  assert.equal(await page.locator(".mode").count(), 4);
   assert.equal(await page.locator(".config").count(), 0);
   await page.screenshot({ path: "/tmp/pairwise-home.png", fullPage: true });
-  await page.locator(".room", { hasText: "Coding" }).click();
+  await page.locator(".mode", { hasText: "Coding" }).click();
   await page.waitForSelector(".config");
   await page.goBack();
-  await page.waitForSelector(".room");
-  await page.locator(".room", { hasText: "Behavioral" }).click();
+  await page.waitForSelector(".mode");
+  await page.locator(".mode", { hasText: "Behavioral" }).click();
   await page.getByLabel("Upload résumé").setInputFiles({
     name: "synthetic-resume.txt",
     mimeType: "text/plain",
@@ -152,7 +152,7 @@ try {
     (r) =>
       r.url().endsWith("/api/interviews") && r.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Enter behavioral room" }).click();
+  await page.getByRole("button", { name: "Start", exact: true }).click();
   session = await (await creation).json();
   assert.equal(session.mode, "behavioral");
   assert.match(session.resume.text, /Reviewed correction/);
@@ -219,9 +219,7 @@ try {
       "pending",
     );
   }
-  await page
-    .getByRole("button", { name: "Finish interview", exact: false })
-    .click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.waitForSelector(".rubric-card", { timeout: 120000 });
   if (!real)
     assert.equal(

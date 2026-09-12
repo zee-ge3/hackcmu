@@ -94,12 +94,12 @@ try {
   await page.screenshot({ path: "/tmp/pairwise-setup.png", fullPage: true });
   await page.getByLabel("Search problem library").fill("1 Two Sum");
   await page.getByLabel("Fewer problems").click();
-  await page.getByText("Visual debugger", { exact: false }).click();
+  await page.getByLabel("Debugger").check();
   const creation = page.waitForResponse(
     (r) =>
       r.url().endsWith("/api/interviews") && r.request().method() === "POST",
   );
-  await page.getByRole("button", { name: "Enter interview room" }).click();
+  await page.getByRole("button", { name: "Start", exact: true }).click();
   const session = await (await creation).json();
   assert.equal(session.interviewerStyle, "realistic");
   assert.ok(session.interviewerPrompt.endsWith("Begin with a warm welcome."));
@@ -295,9 +295,7 @@ try {
     path: "/tmp/pairwise-workspace.png",
     fullPage: true,
   });
-  await page
-    .getByRole("button", { name: "Finish interview", exact: false })
-    .click();
+  await page.getByRole("button", { name: "Finish", exact: true }).click();
   await page.waitForSelector(".rubric-card", { timeout: 120000 });
   assert.equal(await page.locator(".rubric-card").count(), 5);
   assert.equal(await page.locator(".rubric-improvement").count(), 5);
