@@ -131,6 +131,45 @@ try {
       "44/44 tests passed",
     ),
   );
+  // Opt-in visual debugger: trace the first case, watch pointers and the live line.
+  await page.getByRole("button", { name: "Debugger", exact: true }).click();
+  await page.getByRole("button", { name: "Trace", exact: true }).click();
+  await page.waitForFunction(() =>
+    /Passed · \d+ steps/.test(
+      document.querySelector(".dbg-status")?.textContent || "",
+    ),
+  );
+  assert.ok(
+    (await page.locator(".dbg-cell.pointed").count()) > 0,
+    "pointer markers",
+  );
+  assert.ok(
+    (await page.locator(".monaco-editor .debug-line").count()) > 0,
+    "line highlight",
+  );
+  await page.getByRole("button", { name: "First step", exact: true }).click();
+  assert.match(await page.locator(".dbg-steps span").innerText(), /^1 \//);
+  const pythonTrace = await page.evaluate(async (suite) => {
+    const { traceCode } = await import("/src/runner.mjs");
+    const steps = [];
+    const result = await traceCode(
+      "class Solution:\n    def twoSum(self, nums, target):\n        seen = {}\n        for i, n in enumerate(nums):\n            if target - n in seen:\n                return [seen[target - n], i]\n            seen[n] = i\n        return []",
+      "python3",
+      suite,
+      0,
+      (batch) => steps.push(...batch),
+    ).done;
+    return { result, steps: steps.length, first: steps[0] };
+  }, session.problems[0].testSuite);
+  assert.equal(pythonTrace.result.ok, true, pythonTrace.result.output);
+  assert.ok(
+    pythonTrace.steps > 3 && pythonTrace.first.vars.nums.t === "arr",
+    "python trace",
+  );
+  await page
+    .getByRole("button", { name: "Debugger", exact: true })
+    .first()
+    .click();
   await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
   const box = await page.getByLabel("Shared drawing canvas").boundingBox();
   await page.mouse.move(box.x + 40, box.y + 50);

@@ -1,4 +1,4 @@
-export const pythonJudge = String.raw`
+const prelude = String.raw`
 import json as __json
 import typing as __typing
 import collections as __collections
@@ -43,6 +43,11 @@ def __encode(value, kind):
         return out
     return value
 
+`;
+// Judges every case of a suite; returns a JSON list of {actual} or {error}.
+export const pythonJudge =
+  prelude +
+  String.raw`
 __suite = __json.loads(__suite_json)
 __results = []
 for __case in __suite['cases']:
@@ -59,4 +64,96 @@ for __case in __suite['cases']:
     except Exception as __error:
         __results.append({'error':str(__error)})
 __json.dumps(__results, allow_nan=False)
+`;
+// Traces one case with sys.settrace, streaming snapshot batches through the JS
+// callback __emit, then returns JSON {actual|error, steps}.
+export const pythonTracer =
+  prelude +
+  String.raw`
+import sys as __sys
+__STEPS = []
+__COUNT = [0]
+__LIMIT = 2500
+__IDS = {}
+def __ident(o):
+    k = id(o)
+    if k not in __IDS: __IDS[k] = len(__IDS) + 1
+    return __IDS[k]
+def __is_node(o): return hasattr(o, 'val') and hasattr(o, 'next') and not hasattr(o, 'left')
+def __is_tnode(o): return hasattr(o, 'val') and hasattr(o, 'left') and hasattr(o, 'right')
+def __prim(v):
+    if v is None or isinstance(v, (bool, int, float, str)): return v
+    return '[…]' if isinstance(v, (list, tuple)) else '{…}'
+def __ser(v, snap, depth=0):
+    if v is None: return {'t': 'null'}
+    if isinstance(v, bool): return {'t': 'bool', 'v': v}
+    if isinstance(v, (int, float)): return {'t': 'num', 'v': v if v == v and v not in (float('inf'), float('-inf')) else str(v)}
+    if isinstance(v, str): return {'t': 'str', 'v': v}
+    if __is_node(v):
+        cur, n = v, 0
+        while cur is not None and __is_node(cur) and n < 300:
+            i = __ident(cur)
+            if i in snap['nodes']: break
+            snap['nodes'][i] = {'val': __prim(cur.val), 'next': __ident(cur.next) if __is_node(cur.next) else None}
+            cur = cur.next; n += 1
+        return {'t': 'node', 'id': __ident(v)}
+    if __is_tnode(v):
+        queue = [v]; i = 0
+        while i < len(queue) and i < 200:
+            node = queue[i]; i += 1
+            k = __ident(node)
+            if k in snap['tnodes']: continue
+            snap['tnodes'][k] = {'val': __prim(node.val), 'left': __ident(node.left) if __is_tnode(node.left) else None, 'right': __ident(node.right) if __is_tnode(node.right) else None}
+            if __is_tnode(node.left): queue.append(node.left)
+            if __is_tnode(node.right): queue.append(node.right)
+        return {'t': 'tnode', 'id': __ident(v)}
+    deeper = (lambda x: __ser(x, snap, depth + 1)) if depth < 2 else (lambda x: {'t': 'more'})
+    if isinstance(v, (list, tuple, __collections.deque)): return {'t': 'arr', 'v': [deeper(x) for x in list(v)[:120]], 'n': len(v)}
+    if isinstance(v, dict): return {'t': 'map', 'v': [[deeper(k), deeper(x)] for k, x in list(v.items())[:60]], 'n': len(v)}
+    if isinstance(v, (set, frozenset)): return {'t': 'set', 'v': [deeper(x) for x in list(v)[:60]], 'n': len(v)}
+    if callable(v): return {'t': 'fn', 'v': getattr(v, '__name__', 'fn')}
+    if hasattr(v, '__dict__'): return {'t': 'obj', 'v': {k: deeper(x) for k, x in list(vars(v).items())[:40]}}
+    return {'t': 'str', 'v': repr(v)[:200]}
+def __flush():
+    if __STEPS:
+        __emit(__json.dumps(__STEPS)); __STEPS.clear()
+def __trace(frame, event, arg):
+    if frame.f_code.co_filename != '<candidate>': return None
+    if event == 'call': return __trace
+    if event in ('line', 'return'):
+        if __COUNT[0] >= __LIMIT:
+            __sys.settrace(None); __flush()
+            raise RuntimeError('Debugger stopped after %d steps. Narrow the input or fix the loop.' % __LIMIT)
+        __COUNT[0] += 1
+        snap = {'line': frame.f_lineno, 'vars': {}, 'nodes': {}, 'tnodes': {}}
+        for k, val in list(frame.f_locals.items()):
+            if k.startswith('__') or k == 'self': continue
+            try: snap['vars'][k] = __ser(val, snap)
+            except Exception as e: snap['vars'][k] = {'t': 'str', 'v': '<unserializable>'}
+        if event == 'return': snap['ret'] = __ser(arg, snap)
+        __STEPS.append(snap)
+        if len(__STEPS) >= 25: __flush()
+    return __trace
+
+__suite = __json.loads(__suite_json)
+__case = __json.loads(__case_json)
+__result = {}
+try:
+    __env = {'ListNode': ListNode, 'TreeNode': TreeNode, '__name__': '__candidate__', **vars(__typing)}
+    __env.update({name: getattr(__collections, name) for name in ('deque', 'defaultdict', 'Counter')})
+    exec(compile(__candidate_code, '<candidate>', 'exec'), __env)
+    __args = [__decode(v, k) for v, k in zip(__json.loads(__json.dumps(__case['input'])), __suite['arguments'])]
+    __fn = getattr(__env['Solution'](), __suite['method']) if 'Solution' in __env else __env.get(__suite['method'])
+    if not callable(__fn): raise ValueError('Define Solution.' + __suite['method'] + ' using the supplied starter code.')
+    __sys.settrace(__trace)
+    try:
+        __value = __fn(*__args)
+    finally:
+        __sys.settrace(None)
+    __value = __args[int(__suite['output'].split(':')[1])] if __suite['output'].startswith('argument:') else __encode(__value, __suite['output'])
+    __result = {'actual': __value, 'steps': __COUNT[0]}
+except Exception as __error:
+    __result = {'error': str(__error), 'steps': __COUNT[0]}
+__flush()
+__json.dumps(__result, allow_nan=False)
 `;

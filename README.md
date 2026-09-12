@@ -30,7 +30,7 @@ Sign-in uses Google Identity Services. Create an OAuth 2.0 **Web application** c
 
 Every model call — résumé parsing, whiteboard descriptions, the voice session, the reasoning backend, and grading — runs on the signed-in user's **own OpenAI API key**. Keys are entered on `/profile`, verified against `GET /v1/models`, encrypted with AES-256-GCM, and never returned to the browser beyond a `sk-…xxxx` hint. The encryption secret comes from `PAIRWISE_SECRET` or is generated once into `data/.secret`. There is no server-wide key in production.
 
-Per-account data lives in `data/pairwise.sqlite` (ignored by Git): users, sessions, parsed résumés with their reviewed text, and the feedback from finished interviews. The profile page lists saved résumés and past feedback, and can delete either or the whole account. Live interviews (editor contents, transcripts, whiteboard images) stay in server memory and are discarded after three idle hours or on restart; export a session from the feedback screen to keep its code and conversation.
+Per-account data lives in `data/pairwise.sqlite` (ignored by Git): users, sessions, parsed résumés with their reviewed text, and the feedback from finished interviews. `node scripts/set-openai-key.mjs you@example.com sk-...` stores a validated key for an address from the shell, even before that person's first sign-in. The profile page lists saved résumés and past feedback, and can delete either or the whole account. Live interviews (editor contents, transcripts, whiteboard images) stay in server memory and are discarded after three idle hours or on restart; export a session from the feedback screen to keep its code and conversation.
 
 For development and the browser tests, set `DEV_USER_EMAIL` to sign every request in as that address without Google. That user falls back to `OPENAI_API_KEY` from `.env` when no key is saved on the profile. Both are ignored when `NODE_ENV=production`.
 
@@ -95,6 +95,14 @@ npm run test:browser              # Includes the Run tests UI flow; no paid API 
 
 To add a problem, define its inputs, independent oracle, reference implementation, and adapter metadata in `scripts/test-problems.mjs`, add its constraint checks and a Python reference fixture, then run generation and verification. Increment the suite version when intentionally changing an existing suite’s grading behavior. Browser timing is a coarse safeguard, not a calibrated complexity benchmark.
 
+## Visual debugger
+
+The editor toolbar has an opt-in **Debugger** toggle. With it on, a Console/Debugger pane appears under the editor: pick a prepared test case (the first failing case from the last run is preselected) and press **Trace**. The case runs in a disposable worker with tracing: JavaScript is instrumented with `acorn` so a snapshot of every variable in scope is taken before each statement and at each `return`; Python uses `sys.settrace` inside Pyodide. Snapshots stream to the panel in batches while the run is still going, so long traces fill in live rather than appearing at the end. Runs stop after 2,500 steps or 15 seconds.
+
+The visualizer draws arrays and strings as index cells, integer variables that fit inside them as pointer markers (two pointers, sliding windows, binary search bounds), linked lists as node chains with pointer labels and relink highlighting, binary trees as nested layouts, and maps, sets, and scalars as chips. Values that changed since the previous step are shown git-style: the old value struck through next to the new one, changed cells highlighted. The current line is highlighted in Monaco; step with the buttons, the slider, or play. A compact summary of the last trace is sent to the reasoning backend with the next spoken request, so Alex can refer to the exact step where state goes wrong.
+
+Interviewer edits are marked the same way: lines Alex added are highlighted green in the editor for a few seconds, and a pending edit can be inspected in a side-by-side diff before you load it.
+
 ## Behavioral practice and whiteboard
 
 On `/behavioral`, pick a saved résumé or upload a PDF, DOCX, or TXT file (up to 5 MB). The server uses `OPENAI_CONTEXT_MODEL` (default `gpt-5.6-luna`) to extract factual experience into a structured profile saved to your account. Review and correct the extracted text (edits are stored with the résumé when you enter the room), select a target role and focus, and choose Story coach, Hiring manager, or Leadership deep dive. The system prompt is editable. The reviewed résumé is supplied to both the voice interviewer and reasoning backend; Alex starts with a question about your background when connected.
@@ -111,3 +119,7 @@ LIVE_MODES=1 npm run test:modes   # Real parsing, voice greeting/audio, vision, 
 ```
 
 The mode tests use synthetic résumé data. The coding browser test also checks code/whiteboard switching. Unit tests cover document validation and stale vision responses. API implementation references: [document inputs](https://developers.openai.com/api/docs/guides/file-inputs) and [image inputs](https://developers.openai.com/api/docs/guides/images-vision).
+
+## Probability question bank (data only)
+
+`data/probability/probability_bank.json` holds 787 probability and counting problems (quantprof.org free tier and video transcripts, AoPS wiki, MATH, AIME, AIMO validation sets) with statements, answers where available, solutions, tags, and concept labels; `README.md` and the build scripts alongside it document the schema and sources. Nothing in the app reads it yet; it is the corpus for a planned probability interview mode.

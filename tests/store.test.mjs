@@ -76,3 +76,17 @@ test("resumes and interview history are scoped to their owner", () => {
   assert.equal(store.listResumes(a.id).length, 0);
   assert.equal(store.listInterviews(a.id).length, 0);
 });
+test("a provisioned email is adopted by the first Google sign-in", () => {
+  const store = fresh();
+  const pending = store.provisionUser("Someone@Example.com");
+  store.setOpenaiKey(pending.id, "sk-" + "k".repeat(30) + "1234");
+  const user = store.upsertUser({
+    sub: "google-1",
+    email: "someone@example.com",
+    name: "S",
+  });
+  assert.equal(user.id, pending.id);
+  assert.equal(user.google_sub, "google-1");
+  assert.equal(store.openaiKey(user.id).endsWith("1234"), true);
+  assert.equal(store.provisionUser("someone@example.com").id, user.id);
+});

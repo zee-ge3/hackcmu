@@ -39,6 +39,10 @@ import { api } from "./api.mjs";
 import { SiteHeader, Home, BehavioralSetup, ResumePane } from "./pages.jsx";
 import { behavioralRubric } from "./behavioral.mjs";
 import Whiteboard from "./Whiteboard.jsx";
+import Debugger from "./Debugger.jsx";
+import { lineDiff } from "./diff.mjs";
+import { DiffEditor } from "@monaco-editor/react";
+import { Bug, GitCompare } from "lucide-react";
 import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
 import { Profile } from "./profile.jsx";
 import { KeyNotice } from "./pages.jsx";
@@ -520,7 +524,11 @@ function Workspace({ session: initial, onExit }) {
     [feedback, setFeedback] = useState(null),
     [ending, setEnding] = useState(false),
     [saved, setSaved] = useState("Saved"),
-    [pendingEdit, setPendingEdit] = useState(null);
+    [pendingEdit, setPendingEdit] = useState(null),
+    [showDiff, setShowDiff] = useState(false),
+    [debugOn, setDebugOn] = useState(false),
+    [bottomTab, setBottomTab] = useState("console"),
+    [editorInstance, setEditorInstance] = useState(null);
   const state = useRef({
       index: 0,
       editors: initial.editors,
@@ -528,6 +536,7 @@ function Workspace({ session: initial, onExit }) {
       transcript: [],
       busy: false,
       runResult: "",
+      debugTrace: "",
       runs: {},
       segment: 0,
       seenEvents: new Set(),
@@ -537,7 +546,8 @@ function Workspace({ session: initial, onExit }) {
     saveChain = useRef(Promise.resolve()),
     captions = useRef(null),
     followCaptions = useRef(true),
-    codeRef = useRef(null);
+    codeRef = useRef(null),
+    editDecorations = useRef([]);
   const problem = initial.problems[index];
   const base = `/api/interviews/${initial.id}`;
   const captionRows = groupTranscript(transcript);
@@ -635,6 +645,7 @@ function Workspace({ session: initial, onExit }) {
         request,
         transcript: state.current.transcript,
         runResult: state.current.runResult,
+        debugTrace: state.current.debugTrace,
       });
       state.current.editors = state.current.editors.map((e, i) =>
         i === target ? result.editor : e,
@@ -647,6 +658,7 @@ function Workspace({ session: initial, onExit }) {
           setCode(result.editor.code);
           setSaved("Saved");
           setActivity(result.edits.map((e) => e.reason).join(" · "));
+          highlightEdit(snapshot, result.editor.code);
         } else {
           setPendingEdit(result.editor);
           message +=
@@ -685,6 +697,65 @@ function Workspace({ session: initial, onExit }) {
       state.current.busy = false;
       setBusy(false);
     }
+  }
+  // Git-style marking of the lines an interviewer edit added; fades after a while.
+  function highlightEdit(before, after) {
+    const editor = codeRef.current;
+    if (!editor) return;
+    const { added } = lineDiff(before, after);
+    setTimeout(() => {
+      editDecorations.current = editor.deltaDecorations(
+        editDecorations.current,
+        added.map((line) => ({
+          range: {
+            startLineNumber: line,
+            startColumn: 1,
+            endLineNumber: line,
+            endColumn: 1,
+          },
+          options: {
+            isWholeLine: true,
+            className: "agent-added",
+            linesDecorationsClassName: "agent-added-gutter",
+          },
+        })),
+      );
+      if (added.length) editor.revealLineInCenterIfOutsideViewport(added[0]);
+    }, 60);
+    setTimeout(() => {
+      editDecorations.current = editor.deltaDecorations(
+        editDecorations.current,
+        [],
+      );
+    }, 15000);
+  }
+  // Compact trace summary the reasoning backend receives with the next request.
+  function onDebugTrace({ case: testCase, steps, result }) {
+    const brief = (v) =>
+      JSON.stringify(v.v ?? (v.t === "node" ? "node#" + v.id : v.t));
+    const last = steps
+      .slice(-30)
+      .map(
+        (s) =>
+          `L${s.line}: ` +
+          Object.entries(s.vars)
+            .filter(([, v]) => v.t !== "fn")
+            .map(([k, v]) => `${k}=${brief(v)}`.slice(0, 60))
+            .join(" "),
+      )
+      .join("\n");
+    const outcome = result.error
+      ? "error: " + result.error
+      : result.ok
+        ? "passed"
+        : "failed";
+    const headline = `Visual debugger on case "${testCase?.name}": ${steps.length} steps, ${outcome}.`;
+    state.current.debugTrace =
+      `${headline}\nLast steps (line: variables):\n${last}`.slice(0, 4000);
+    live.current?.send(
+      "session.thinking.append",
+      headline + " The backend has the full trace.",
+    );
   }
   function onLiveEvent(e) {
     if (
@@ -747,6 +818,7 @@ function Workspace({ session: initial, onExit }) {
     const result = await runCode(value, initial.language, suite);
     if (state.current.index === target) {
       setOutput(result);
+      setBottomTab("console");
       state.current.runResult = result.output;
     }
     state.current.runs[target] = [
@@ -773,6 +845,7 @@ function Workspace({ session: initial, onExit }) {
       setCode(state.current.code);
       setOutput(null);
       state.current.runResult = "";
+      state.current.debugTrace = "";
       setPendingEdit(null);
       live.current?.send(
         "session.thinking.append",
@@ -988,6 +1061,18 @@ function Workspace({ session: initial, onExit }) {
                 <div>
                   <span className="save-state">{saved}</span>
                   <button
+                    className={"run debug-toggle " + (debugOn ? "active" : "")}
+                    aria-pressed={debugOn}
+                    title="Opt-in visual debugger: trace a test case step by step"
+                    onClick={() => {
+                      setDebugOn(!debugOn);
+                      setBottomTab(!debugOn ? "debugger" : "console");
+                    }}
+                  >
+                    <Bug size={13} />
+                    Debugger
+                  </button>
+                  <button
                     className="run"
                     disabled={running || !problem.testSuite}
                     title={
@@ -1023,6 +1108,7 @@ function Workspace({ session: initial, onExit }) {
                   onChange={changeCode}
                   onMount={(editor) => {
                     codeRef.current = editor;
+                    setEditorInstance(editor);
                   }}
                   options={{
                     fontSize: 14,
@@ -1041,10 +1127,17 @@ function Workspace({ session: initial, onExit }) {
                 <div className="edit-conflict">
                   Alex prepared an edit while you were typing. Your draft is
                   still here.
+                  <button onClick={() => setShowDiff(true)}>
+                    <GitCompare size={13} />
+                    Show diff
+                  </button>
                   <button
                     onClick={() => {
+                      const before = state.current.code;
                       changeCode(pendingEdit.code);
+                      highlightEdit(before, pendingEdit.code);
                       setPendingEdit(null);
+                      setShowDiff(false);
                     }}
                   >
                     Load Alex’s edit
@@ -1059,7 +1152,40 @@ function Workspace({ session: initial, onExit }) {
                   </button>
                 </div>
               )}
-              <div className="console">
+              {debugOn && (
+                <div className="bottom-tabs">
+                  <button
+                    className={bottomTab === "console" ? "active" : ""}
+                    onClick={() => setBottomTab("console")}
+                  >
+                    <Terminal size={12} /> Console
+                  </button>
+                  <button
+                    className={bottomTab === "debugger" ? "active" : ""}
+                    onClick={() => setBottomTab("debugger")}
+                  >
+                    <Bug size={12} /> Debugger
+                  </button>
+                </div>
+              )}
+              {debugOn && bottomTab === "debugger" && (
+                <Debugger
+                  key={index}
+                  suite={problem.testSuite}
+                  language={initial.language}
+                  code={code}
+                  editor={editorInstance}
+                  lastRun={output}
+                  onTrace={onDebugTrace}
+                />
+              )}
+              <div
+                className="console"
+                style={{
+                  display:
+                    debugOn && bottomTab === "debugger" ? "none" : undefined,
+                }}
+              >
                 <div className="console-heading">
                   <Terminal size={14} /> CONSOLE
                   <span>
@@ -1225,6 +1351,68 @@ function Workspace({ session: initial, onExit }) {
           <button aria-label="Dismiss error" onClick={() => setError("")}>
             <X size={16} />
           </button>
+        </div>
+      )}
+      {showDiff && pendingEdit && (
+        <div className="modal-backdrop" onClick={() => setShowDiff(false)}>
+          <section
+            className="card diff-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="section-title">
+              <div>
+                <span className="eyebrow muted">ALEX’S EDIT</span>
+                <h2>Your draft → suggested change</h2>
+              </div>
+              <button
+                aria-label="Close diff"
+                className="quiet"
+                onClick={() => setShowDiff(false)}
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <div className="diff-editor">
+              <DiffEditor
+                original={code}
+                modified={pendingEdit.code}
+                language={
+                  initial.language === "python3" ? "python" : "javascript"
+                }
+                theme="vs-dark"
+                options={{
+                  readOnly: true,
+                  renderSideBySide: true,
+                  minimap: { enabled: false },
+                  fontSize: 13,
+                }}
+              />
+            </div>
+            <div className="feedback-actions">
+              <button
+                className="quiet"
+                onClick={() => {
+                  setPendingEdit(null);
+                  setShowDiff(false);
+                  save().catch((e) => setError(e.message));
+                }}
+              >
+                Keep my draft
+              </button>
+              <button
+                className="primary"
+                onClick={() => {
+                  const before = state.current.code;
+                  changeCode(pendingEdit.code);
+                  highlightEdit(before, pendingEdit.code);
+                  setPendingEdit(null);
+                  setShowDiff(false);
+                }}
+              >
+                Apply edit
+              </button>
+            </div>
+          </section>
         </div>
       )}
       {feedback && (

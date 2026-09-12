@@ -147,11 +147,17 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
     getUser,
     upsertUser({ sub, email, name = null, picture = null }) {
       const now = Date.now();
-      const existing = q("SELECT id FROM users WHERE google_sub = ?").get(sub);
+      // A row provisioned by email (scripts/set-openai-key.mjs) is adopted by
+      // the first real Google sign-in with that address.
+      const existing =
+        q("SELECT id FROM users WHERE google_sub = ?").get(sub) ||
+        q(
+          "SELECT id FROM users WHERE google_sub LIKE 'pending:%' AND lower(email) = lower(?)",
+        ).get(email);
       if (existing)
         q(
-          "UPDATE users SET email = ?, name = ?, picture = ?, last_login = ? WHERE id = ?",
-        ).run(email, name ?? null, picture ?? null, now, existing.id);
+          "UPDATE users SET google_sub = ?, email = ?, name = ?, picture = ?, last_login = ? WHERE id = ?",
+        ).run(sub, email, name ?? null, picture ?? null, now, existing.id);
       else
         q(
           "INSERT INTO users (id, google_sub, email, name, picture, created_at, last_login) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -165,6 +171,13 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
           now,
         );
       return q("SELECT * FROM users WHERE google_sub = ?").get(sub);
+    },
+    // Creates (or finds) an account for an email that has not signed in yet.
+    provisionUser(email) {
+      return (
+        q("SELECT * FROM users WHERE lower(email) = lower(?)").get(email) ||
+        this.upsertUser({ sub: `pending:${email.toLowerCase()}`, email })
+      );
     },
     deleteUser(id) {
       q("DELETE FROM users WHERE id = ?").run(id);
