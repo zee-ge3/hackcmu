@@ -7,6 +7,8 @@ import React, {
 } from "react";
 import { api } from "./api.mjs";
 const AccountContext = createContext(null);
+// Google Identity Services keeps one global config; initialize it once per client ID.
+let initializedClientId = null;
 export function AccountProvider({ children }) {
   const [state, setState] = useState({
     loading: true,
@@ -49,12 +51,15 @@ export function GoogleSignIn({ size = "large" }) {
         setTimeout(render, 150);
         return;
       }
-      window.google.accounts.id.initialize({
-        client_id: googleClientId,
-        ux_mode: "popup",
-        callback: ({ credential }) =>
-          signIn(credential).catch((e) => setError(e.message)),
-      });
+      if (initializedClientId !== googleClientId) {
+        initializedClientId = googleClientId;
+        window.google.accounts.id.initialize({
+          client_id: googleClientId,
+          ux_mode: "popup",
+          callback: ({ credential }) =>
+            signIn(credential).catch((e) => setError(e.message)),
+        });
+      }
       slot.current.replaceChildren();
       window.google.accounts.id.renderButton(slot.current, {
         theme: "outline",
