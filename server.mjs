@@ -496,7 +496,7 @@ app.post("/api/interviews", async (req, res) => {
         ...p,
         ...q,
         testSuite: suite,
-        testSpec: testSpecFor(suite, q.metaData),
+        testSpec: testSpecFor(suite, q.metaData, q.content),
       };
     }),
   );
@@ -550,6 +550,7 @@ const publicSession = (s) => ({
   index: s.index,
   editors: s.editors,
   customTests: s.customTests,
+  finished: !!s.feedback,
   transcript: s.transcript || [],
   runs: s.runs || {},
   // Whiteboards (strokes + last description) so a refresh restores the canvas
@@ -1376,6 +1377,8 @@ app.post("/api/interviews/:id/feedback", async (req, res) => {
       .slice(0, 20)
       .map(([k, v]) => [k, Math.round(v / 60)]),
   );
+  // Grading is final: a re-opened finished session gets the stored feedback back.
+  if (s.feedback) return res.json(s.feedback);
   s.busy = true;
   try {
     const gradingRubric = rubrics[s.mode] || rubric;

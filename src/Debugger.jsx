@@ -333,6 +333,9 @@ const Debugger = forwardRef(function Debugger(
   }, [lastRun]);
   useEffect(() => () => run.current?.stop(), []);
   useEffect(() => {
+    if (caseIndex >= cases.length) setCaseIndex(0);
+  }, [cases.length]);
+  useEffect(() => {
     if (!playing) return;
     const timer = setInterval(() => {
       setCursor((c) => {
@@ -397,6 +400,7 @@ const Debugger = forwardRef(function Debugger(
     goTo: (step) => go(step - 1),
   }));
   async function start(which = caseIndex) {
+    if (which >= cases.length) which = 0;
     run.current?.stop();
     setSteps([]);
     setCursor(0);

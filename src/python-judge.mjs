@@ -1,5 +1,7 @@
 const prelude = String.raw`
 import json as __json
+import sys as __sys_rl
+__sys_rl.setrecursionlimit(10000)
 import typing as __typing
 import collections as __collections
 class ListNode:
@@ -11,10 +13,13 @@ class TreeNode:
 
 def __decode(value, kind):
     if kind == 'list':
+        if value is None: return None
+        if not isinstance(value, list): raise ValueError('A ListNode input must be a JSON array')
         head = None
         for item in reversed(value): head = ListNode(item, head)
         return head
     if kind == 'tree':
+        if value is not None and not isinstance(value, list): raise ValueError('A TreeNode input must be a JSON array')
         if not value or value[0] is None: return None
         root = TreeNode(value[0]); queue = [root]; i = 1
         for node in queue:

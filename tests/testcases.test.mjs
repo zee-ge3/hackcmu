@@ -261,3 +261,44 @@ test("adapters and comparisons survive odd values", () => {
     '"abc"',
   ]);
 });
+test("statements that allow any order derive an unordered comparison", () => {
+  const meta = JSON.stringify({
+    name: "f",
+    params: [{ name: "a", type: "integer[]" }],
+    return: { type: "integer[]" },
+  });
+  assert.equal(
+    deriveSpec(meta, "<p>Return the answer in any order.</p>").comparison,
+    "unordered",
+  );
+  const nested = JSON.stringify({
+    name: "g",
+    params: [{ name: "a", type: "integer[]" }],
+    return: { type: "integer[][]" },
+  });
+  assert.equal(deriveSpec(nested, "in any order").comparison, "triplets");
+  assert.equal(deriveSpec(meta, "").comparison, "exact");
+  assert.throws(
+    () =>
+      runJavascriptSuite("function h(){ return [1,2]; }", {
+        method: "h",
+        arguments: [],
+        output: "list",
+        comparison: "exact",
+        cases: [],
+      }) &&
+      (() => {
+        throw new Error("x");
+      })(),
+    /x/,
+  );
+  const bad = runJavascriptSuite("function h(a){ return [1,2]; }", {
+    method: "h",
+    arguments: ["json"],
+    output: "list",
+    comparison: "exact",
+    cases: [{ name: "c", input: [1], expected: [1, 2] }],
+  });
+  assert.match(bad.results[0].error, /ListNode/);
+  assert.deepEqual(safeValue([1, , 3]), [1, null, 3]);
+});

@@ -33,7 +33,7 @@ export function applyEdit(editor, { expected_revision, code }) {
 // LeetCode metaData → the signature the judge needs to call a candidate's
 // function with user-authored inputs. Null for class-design problems or
 // signatures the adapters cannot decode.
-export function deriveSpec(metaData) {
+export function deriveSpec(metaData, content = "") {
   let meta = metaData;
   if (typeof meta === "string") {
     try {
@@ -62,20 +62,26 @@ export function deriveSpec(metaData) {
     output = `argument:${index}`;
   } else if (nested(returnType)) return null;
   else output = kind(returnType);
+  // "in any order" in the statement means the grader must ignore ordering.
+  const anyOrder = /\bin any order\b/i.test(String(content));
   return {
     method: meta.name,
     params,
     arguments: params.map((p) => p.kind),
     output,
     returnType,
-    comparison: "exact",
+    comparison: anyOrder
+      ? /\[\]\[\]$/.test(returnType)
+        ? "triplets"
+        : "unordered"
+      : "exact",
     derived: true,
   };
 }
 // Prefers the prepared suite's adapters (they carry the right comparison
 // rule) and borrows parameter names from metaData when they line up.
-export function testSpecFor(suite, metaData) {
-  const derived = deriveSpec(metaData);
+export function testSpecFor(suite, metaData, content = "") {
+  const derived = deriveSpec(metaData, content);
   if (!suite) return derived;
   const params =
     derived?.params?.length === suite.arguments.length

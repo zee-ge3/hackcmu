@@ -35,6 +35,10 @@ export function decode(value, type) {
 }
 export function encode(value, type) {
   if (type === "list") {
+    if (value && typeof value !== "object")
+      throw new Error(`Return a ListNode (or null), not ${typeof value}.`);
+    if (value && !("val" in value && "next" in value))
+      throw new Error("Return a ListNode (or null), not a plain value.");
     const out = [],
       seen = new Set();
     while (value) {
@@ -50,6 +54,8 @@ export function encode(value, type) {
   }
   if (type === "tree") {
     if (!value) return [];
+    if (typeof value !== "object" || !("val" in value && "left" in value))
+      throw new Error("Return a TreeNode (or null), not a plain value.");
     const out = [],
       queue = [value],
       seen = new Set();
@@ -85,7 +91,7 @@ export function safeValue(value) {
     if (v instanceof Map) return walk([...v]);
     if (v instanceof Set) return walk([...v]);
     if (Array.isArray(v))
-      return v.map((x) => (x === undefined ? null : walk(x)));
+      return Array.from(v, (x) => (x === undefined ? null : walk(x)));
     const out = {};
     for (const [k, x] of Object.entries(v))
       if (x !== undefined) out[k] = walk(x);

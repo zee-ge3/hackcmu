@@ -20,8 +20,6 @@ import {
   Volume2,
   X,
   Search,
-  SlidersHorizontal,
-  RotateCcw,
   Download,
   Braces,
 } from "lucide-react";
@@ -434,9 +432,20 @@ function App() {
   const sessionId = path.startsWith("/session/") ? path.slice(9) : null;
   useEffect(() => {
     if (!sessionId || !user || session?.id === sessionId) return;
+    let cancelled = false;
     api(`/api/interviews/${sessionId}`, undefined, "GET")
-      .then((s) => setSession(s))
-      .catch((e) => setError(e.message));
+      .then((s) => {
+        if (cancelled) return;
+        // A graded interview is read-only: its feedback lives on the profile.
+        if (s.finished) navigate("/profile");
+        else setSession(s);
+      })
+      .catch((e) => {
+        if (!cancelled) setError(e.message);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [sessionId, user]);
   const startSession = (s) => {
     window.history.pushState({}, "", `/session/${s.id}`);
@@ -574,6 +583,10 @@ function Workspace({ session: initial, onExit }) {
       lastActivityAt: 0,
       lastCheckInAt: Date.now(),
       quietUntil: 0,
+      quietGraceUntil: 0,
+      quietTimer: null,
+      customAttempt: null,
+      timeUp: false,
       utterance: "",
       utteranceAt: 0,
       problemStartedAt: Date.now(),
@@ -1292,7 +1305,7 @@ function Workspace({ session: initial, onExit }) {
     try {
       await save();
       await flushTests();
-      await boards.current[state.current.index]?.flush?.();
+      await boards.current[state.current.index]?.flush?.().catch(() => {});
       if (!announced) await api(base + "/current", { index: nextIndex });
       const c = state.current;
       c.timeSpent[c.index] =
@@ -1323,7 +1336,7 @@ function Workspace({ session: initial, onExit }) {
     try {
       await save();
       await flushTests();
-      await boards.current[state.current.index]?.flush?.();
+      await boards.current[state.current.index]?.flush?.().catch(() => {});
       await live.current?.close();
       const c = state.current;
       c.timeSpent[c.index] =

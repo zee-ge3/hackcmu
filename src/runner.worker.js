@@ -1,4 +1,4 @@
-import { runJavascriptSuite, matches, summarize } from "./judge.mjs";
+import { runJavascriptSuite, matches, summarize, safeValue } from "./judge.mjs";
 import { pythonJudge, pythonTracer } from "./python-judge.mjs";
 import { runJavascriptTrace } from "./trace.mjs";
 const makeConsole = (log) => ({
@@ -63,13 +63,16 @@ async function trace({ code, language, suite, caseIndex }, log, lines) {
 self.onmessage = async ({ data }) => {
   const { code, language, suite, mode } = data;
   const lines = [];
+  let logged = 0;
+  // Bounded stdout without re-joining the buffer on every call; values that
+  // JSON cannot serialise (cycles, BigInt) are still printed.
   const log = (...args) => {
-    if (lines.join("\n").length < 50000)
-      lines.push(
-        args
-          .map((x) => (typeof x === "string" ? x : JSON.stringify(x)))
-          .join(" "),
-      );
+    if (logged >= 50000) return;
+    const line = args
+      .map((x) => (typeof x === "string" ? x : JSON.stringify(safeValue(x))))
+      .join(" ");
+    logged += line.length + 1;
+    lines.push(line);
   };
   try {
     if (mode === "trace") {

@@ -145,3 +145,14 @@ test("labeled loops, shadowed bindings, and brace-less bodies trace correctly", 
   assert.equal(r4.error, undefined, r4.error);
   assert.equal(r4.ok, true);
 });
+test("hoisted helpers read enclosing let/const through a guard instead of crashing", () => {
+  const code = `function f(n){ const total = helper(n); let bonus = 5; return total + bonus; function helper(k){ let acc = 0; for (let i = 0; i < k; i++) acc += i; return acc; } }`;
+  const r = runJavascriptTrace(
+    code,
+    { method: "f", arguments: ["json"], output: "json", comparison: "exact" },
+    { input: [4], expected: 11 },
+    { onSteps: () => {} },
+  );
+  assert.equal(r.error, undefined, r.error);
+  assert.equal(r.ok, true);
+});

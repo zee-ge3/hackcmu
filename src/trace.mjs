@@ -67,16 +67,28 @@ export function instrument(code, tracer = "__t") {
           decided.set(v.name, v.hoisted || v.end <= pos);
     decided.delete(tracer);
     decided.delete("arguments");
-    // Outer-to-inner order keeps snapshots stable for the visualizer.
+    // Outer-to-inner order keeps snapshots stable for the visualizer. Names
+    // from outside the current function that are not hoisted may still be in
+    // their temporal dead zone when a hoisted function runs early, so they are
+    // read through a guard.
+    const fnBoundary = scopes.map((sc) => !!sc.fn).lastIndexOf(true);
     const names = [];
-    for (const scope of scopes)
+    scopes.forEach((scope, i) => {
       for (const v of scope)
-        if (decided.get(v.name) && !names.includes(v.name)) names.push(v.name);
+        if (decided.get(v.name) && !names.some((n) => n.name === v.name))
+          names.push({ name: v.name, guarded: i < fnBoundary && !v.hoisted });
+    });
     return names;
   };
   const thunk = (scopes, pos) => {
     const names = visible(scopes, pos);
-    return `() => ({${names.join(", ")}})`;
+    return `() => ({${names
+      .map((n) =>
+        n.guarded
+          ? `${n.name}: (() => { try { return ${n.name}; } catch { return undefined; } })()`
+          : n.name,
+      )
+      .join(", ")}})`;
   };
   const call = (node, scopes) =>
     `${tracer}(${node.loc.start.line}, ${thunk(scopes, node.start)});`;
@@ -98,6 +110,7 @@ export function instrument(code, tracer = "__t") {
   }
   function visitFunction(fn, scopes) {
     const scope = [];
+    scope.fn = true;
     for (const p of fn.params)
       for (const name of patternNames(p))
         scope.push({ name, hoisted: true, end: 0 });
