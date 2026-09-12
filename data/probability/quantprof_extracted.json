@@ -1,0 +1,1194 @@
+[
+ {
+  "id": "quantprof_youtube:F45CtscDR2w:1",
+  "source": "quantprof_youtube",
+  "title": "Subsets with Sum Above 232",
+  "statement": "How many subsets of the set $\\{1, 2, 3, \\ldots, 30\\}$ have the property that the sum of the elements in the subset is greater than $232$?",
+  "answer": "2^29",
+  "solution": "The total sum of all elements of $\\{1, 2, \\ldots, 30\\}$ is $\\frac{30 \\cdot 31}{2} = 465$. For any subset $S$ with element sum greater than $232$, its complement has sum $465 - \\text{sum}(S) < 465 - 232 = 233$, i.e. at most $232$. Conversely, any subset with sum at most $232$ has a complement with sum at least $233$, which is greater than $232$. Taking complements is therefore a one-to-one correspondence between subsets with sum greater than $232$ and subsets with sum at most $232$, so these two families have the same size. Since every subset falls into exactly one of the two families, and the total number of subsets is $2^{30}$, each family has exactly $\\frac{2^{30}}{2} = 2^{29}$ members. Hence the number of subsets with sum greater than $232$ is $2^{29}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=F45CtscDR2w",
+  "extra": {
+   "hints": [],
+   "video": "F45CtscDR2w",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:8QRuklF4-dM:1",
+  "source": "quantprof_youtube",
+  "title": "Acute Triangle on a Circle",
+  "statement": "Three points are chosen independently and uniformly at random on the circumference of a circle, and they are joined to form a triangle. What is the probability that the resulting triangle is acute (all three angles strictly less than $90^\\circ$)?",
+  "answer": "1/4",
+  "solution": "By Thales' theorem, if $AB$ is a diameter and $C$ is any other point on the circle, then $\\angle ACB = 90^\\circ$; sliding the chord $AB$ toward $C$ makes $\\angle ACB$ obtuse. Hence an obtuse angle occurs exactly when some side of the triangle separates the center from the opposite vertex, so the triangle is acute if and only if the center of the circle lies strictly inside the triangle. Fix the first point without loss of generality and let $C$ denote the circumference. Let $X$ be the distance along the minor arc between the first and second points, so $0 \\le X \\le C/2$. Given $X = x$, the center lies inside the triangle exactly when the third point falls on the arc of length $x$ diametrically opposite the arc between the first two points, which has probability $\\frac{x}{C}$. The CDF of $X$ is $P(X \\le x) = \\frac{2x}{C}$ (the second point may fall within distance $x$ on either side of the first), so the density is $f(x) = \\frac{2}{C}$ on $[0, C/2]$. By the law of total probability, $P(\\text{acute}) = \\int_0^{C/2} \\frac{x}{C} \\cdot \\frac{2}{C}\\,dx = \\frac{2}{C^2} \\cdot \\frac{(C/2)^2}{2} = \\frac{1}{4}$. The final answer is $\\frac{1}{4}$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=8QRuklF4-dM",
+  "extra": {
+   "hints": [],
+   "video": "8QRuklF4-dM",
+   "confidence": "high"
+  },
+  "concepts": [
+   "geometric",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:EONem7cdmSM:1",
+  "source": "quantprof_youtube",
+  "title": "Even White Marbles in Every Row and Column",
+  "statement": "An $8 \\times 8$ grid has one marble placed in each of its $64$ cells. Each marble is independently black or white, each with probability $\\frac{1}{2}$. What is the probability that every row and every column of the grid contains an even number of white marbles?",
+  "answer": "1/32768",
+  "solution": "Each of the $64$ cells has $2$ possible colors, so there are $2^{64}$ equally likely configurations in total. To count the favorable ones, fill the top-left $7 \\times 7$ block (the \"green region\") arbitrarily; this can be done in $2^{49}$ ways. For each of the first seven rows, the color of the cell in the eighth column is then forced: place a white marble if that row currently has an odd number of white marbles and a black marble otherwise, so the row becomes even. Likewise, for each of the first seven columns the cell in the eighth row is forced to make that column even. The only remaining cell is the bottom-right corner; it can fix both the last row and the last column simultaneously only if the seven cells above it (the \"blue region\") and the seven cells to its left (the \"red region\") have the same parity of white marbles. This always holds: the green and blue regions together form seven rows that are each even, so their total is even, and the green and red regions together form seven even columns, so their total is even; subtracting, the difference between the blue and red counts is even, so they have the same parity and the corner is uniquely determined. Hence every choice of the $7 \\times 7$ block extends to exactly one valid grid, giving $2^{49}$ favorable configurations. The probability is $\\frac{2^{49}}{2^{64}} = \\frac{1}{2^{15}} = \\frac{1}{32768}$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Two Sigma"
+  ],
+  "url": "https://www.youtube.com/watch?v=EONem7cdmSM",
+  "extra": {
+   "hints": [],
+   "video": "EONem7cdmSM",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:4SjHNaKZwA4:1",
+  "source": "quantprof_youtube",
+  "title": "Bubble Sort in One Pass",
+  "statement": "Consider the following sorting algorithm on a list of distinct numbers. Compare the first two elements; if they are in increasing order leave them, otherwise swap them. Then move to the next adjacent pair (positions 2 and 3) and repeat, continuing all the way to the last two elements. This constitutes one pass. After a pass, return to the beginning and repeat passes until the list is sorted in increasing order. This algorithm is bubble sort, and the number of passes needed depends on the initial arrangement.\n\nA uniformly random permutation of the numbers $1$ through $100$ is chosen. What is the probability that bubble sort sorts the permutation in a single pass?",
+  "answer": "2^99/100!",
+  "solution": "The sample space consists of all $100!$ permutations of the $100$ distinct numbers, each equally likely. Let $f_n$ denote the number of arrangements of $n$ distinct numbers that bubble sort sorts in a single pass. If the smallest number $1$ sits in position $3$ or later, it can move at most one place forward per pass, so it cannot reach position $1$ in one pass; hence $1$ must occupy position $1$ or position $2$. If $1$ is in position $1$, the first comparison leaves it there and the remaining $n-1$ numbers must themselves be sortable in one pass, giving $f_{n-1}$ arrangements. If $1$ is in position $2$, the very first comparison swaps it to the front, and the rest of the pass is exactly a bubble-sort pass on the other $n-1$ numbers in their original relative order, again giving $f_{n-1}$ arrangements. Thus $f_n = 2 f_{n-1}$ with base case $f_1 = 1$ (a single number is trivially sorted), so $f_n = 2^{n-1}$ and $f_{100} = 2^{99}$. The required probability is therefore $\\frac{2^{99}}{100!}$ (approximately $6.8 \\times 10^{-129}$).",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=4SjHNaKZwA4",
+  "extra": {
+   "hints": [],
+   "video": "4SjHNaKZwA4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5w4AhzzVAFk:1",
+  "source": "quantprof_youtube",
+  "title": "No Adjacent Ones",
+  "statement": "A number is chosen uniformly at random from the integers $0$ to $99{,}999$ inclusive (think of it as a 5-digit string, padded with leading zeros). We say the number is valid if it contains no two adjacent digits that are both $1$; for example $12{,}345$ and $10{,}101$ are valid, while $11{,}000$ and $91{,}123$ are invalid. What is the probability that the chosen number has no two adjacent ones?",
+  "answer": "96309/100000",
+  "solution": "Let $f_n$ be the number of $n$-digit strings (leading zeros allowed) with no two adjacent ones. If the first digit is not $1$ (9 choices: $0$ or $2$ through $9$), the remaining $n-1$ digits form any valid string, contributing $9 f_{n-1}$. If the first digit is $1$, the second digit must not be $1$ (9 choices) and the remaining $n-2$ digits are free, contributing $9 f_{n-2}$. Hence $f_n = 9 f_{n-1} + 9 f_{n-2}$. The base cases are $f_1 = 10$ and $f_2 = 100 - 1 = 99$ (only the string $11$ is excluded). Iterating gives $f_3 = 981$, $f_4 = 9720$, and $f_5 = 9 \\cdot 9720 + 9 \\cdot 981 = 96{,}309$. The sample space has $10^5$ equally likely numbers, so the probability is $\\frac{96309}{100000} = 0.96309$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:IMC Trading"
+  ],
+  "url": "https://www.youtube.com/watch?v=5w4AhzzVAFk",
+  "extra": {
+   "hints": [],
+   "video": "5w4AhzzVAFk",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:8MMcl_0pU9g:1",
+  "source": "quantprof_youtube",
+  "title": "Red Socks Run Out First",
+  "statement": "A drawer contains 10 red socks, 20 blue socks, and 30 green socks. Socks are drawn one at a time uniformly at random without replacement. What is the probability that at the moment the last red sock is drawn, there is still at least one blue sock and at least one green sock left in the drawer?",
+  "answer": "7/12",
+  "solution": "The event is equivalent to red being the first colour to be completely exhausted, i.e. the last sock overall is not red and the last sock among the other two colours is also not red. Case 1: the last sock drawn is green, which happens with probability $\\frac{30}{60}$. Among the 30 red and blue socks that occupy positions in the first 59 draws, each is equally likely to be the last of those two colours, so the probability that the last red-or-blue sock is blue is $\\frac{20}{30}$. By the multiplication rule this case has probability $\\frac{30}{60}\\cdot\\frac{20}{30}=\\frac{1}{3}$. Case 2: the last sock drawn is blue, with probability $\\frac{20}{60}$; among the 40 red and green socks each is equally likely to be last of those two colours, so the probability the last red-or-green sock is green is $\\frac{30}{40}$, giving $\\frac{20}{60}\\cdot\\frac{30}{40}=\\frac{1}{4}$. The two cases are disjoint, so the required probability is $\\frac{1}{3}+\\frac{1}{4}=\\frac{7}{12}$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=8MMcl_0pU9g",
+  "extra": {
+   "hints": [],
+   "video": "8MMcl_0pU9g",
+   "confidence": "high"
+  },
+  "concepts": [
+   "conditional",
+   "order-stats",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:DoRPoSXStu0:1",
+  "source": "quantprof_youtube",
+  "title": "Expected Product of Die Face Counts",
+  "statement": "A fair six-sided die is rolled 10 times. For $i = 1, 2, \\dots, 6$, let $n_i$ denote the number of times side $i$ appears among the 10 rolls. Compute the expected value of the product $n_1 n_2 n_3 n_4 n_5 n_6$.",
+  "answer": "175/54",
+  "solution": "The counts $n_1, \\dots, n_6$ are not independent, since they always sum to 10, so the expectation of the product cannot be written as the product of expectations. Instead, write each count as a sum of indicators: for roll $j = 1, \\dots, 10$ and face $k$, let $a^{(k)}_j = 1$ if roll $j$ shows face $k$ and $0$ otherwise, so that $n_k = \\sum_{j=1}^{10} a^{(k)}_j$. Expanding $\\prod_{k=1}^{6} n_k$ gives terms of the form $a^{(1)}_{i_1} a^{(2)}_{i_2} \\cdots a^{(6)}_{i_6}$ with each subscript $i_k \\in \\{1, \\dots, 10\\}$. If any two subscripts coincide, the term is identically zero, because a single roll cannot show two different faces at once. The remaining \"good\" terms have six distinct subscripts, so they involve six different, independent rolls; the expectation of such a term is $(1/6)^6$. The number of good terms is the number of ordered selections of 6 rolls out of 10, $P(10,6) = 10 \\cdot 9 \\cdot 8 \\cdot 7 \\cdot 6 \\cdot 5 = 151200$. By linearity of expectation, $E[n_1 n_2 \\cdots n_6] = \\frac{151200}{6^6} = \\frac{151200}{46656} = \\frac{175}{54} \\approx 3.24$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability",
+   "asked_in:QRT"
+  ],
+  "url": "https://www.youtube.com/watch?v=DoRPoSXStu0",
+  "extra": {
+   "hints": [],
+   "video": "DoRPoSXStu0",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:8vzlXQJlEpo:1",
+  "source": "quantprof_youtube",
+  "title": "Random Inscribed Hexagon Area",
+  "statement": "Consider a regular hexagon with side length $1$. On each of its six sides, a point is chosen independently and uniformly at random along that side. The six points are joined in order (each to the point on the neighbouring side) to form a new hexagon inside the original one. What is the expected area of this inner hexagon?",
+  "answer": "9*sqrt(3)/8",
+  "solution": "Let the inner hexagon be the green region and the part of the outer hexagon outside it be the red region, so the green area equals the outer hexagon's area minus the red area. A regular hexagon of side $1$ has area $\\frac{3\\sqrt{3}}{2}$, and taking expectations gives $E[\\text{green}] = \\frac{3\\sqrt{3}}{2} - E[\\text{red}]$. The red region consists of six corner triangles, and by symmetry each has the same expected area, so $E[\\text{red}] = 6\\,E[\\text{one triangle}]$. Each corner triangle is cut off at a vertex of the hexagon where two sides of length $1$ meet at an interior angle of $120^\\circ$; the random points lie at distances $a$ and $b$ from that vertex along the two sides, with $a, b$ independent and uniform on $[0,1]$. The triangle's area is $\\frac{1}{2}ab\\sin 120^\\circ = \\frac{\\sqrt{3}}{4}ab$, and by independence $E[ab] = E[a]E[b] = \\frac{1}{2}\\cdot\\frac{1}{2} = \\frac{1}{4}$, so the expected area of one red triangle is $\\frac{\\sqrt{3}}{16}$. Hence $E[\\text{red}] = \\frac{6\\sqrt{3}}{16} = \\frac{3\\sqrt{3}}{8}$, and the expected area of the inner hexagon is $\\frac{3\\sqrt{3}}{2} - \\frac{3\\sqrt{3}}{8} = \\frac{9\\sqrt{3}}{8} \\approx 1.9486$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=8vzlXQJlEpo",
+  "extra": {
+   "hints": [],
+   "video": "8vzlXQJlEpo",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "geometric"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:OXhluQvaJzw:1",
+  "source": "quantprof_youtube",
+  "title": "Binary grid with 2x2 sums of two",
+  "statement": "You have an $n \\times n$ square grid. Each cell is filled with either $0$ or $1$ such that every contiguous $2 \\times 2$ sub-grid has entries summing to exactly $2$. (For example, in a $4 \\times 4$ grid, each of the nine $2 \\times 2$ sub-grids must sum to $2$.) In how many ways can the $n \\times n$ grid be filled? Give your answer as an expression in $n$.",
+  "answer": "2^(n+1)-2",
+  "solution": "Suppose the first row is already filled. If the first row is not alternating, then somewhere two adjacent cells are equal (both $0$ or both $1$); the $2 \\times 2$ sub-grid below them then forces the two cells beneath to both be the opposite value, and this propagates down those two columns. Every other $2 \\times 2$ sub-grid in the second row then has three cells fixed, so its fourth cell is determined, and the argument repeats row by row, so the entire grid is uniquely determined by the first row. If the first row is alternating, e.g. $0101\\ldots$, the next row can be either $0101\\ldots$ or $1010\\ldots$, giving $2$ choices, and the same holds for each subsequent row, so there are $2^{n-1}$ completions. There are $2$ alternating first rows ($0101\\ldots$ and $1010\\ldots$), contributing $2 \\cdot 2^{n-1} = 2^n$ grids. There are $2^n - 2$ non-alternating first rows, each with exactly $1$ completion, contributing $2^n - 2$ grids. Hence the total number of valid grids is $2^n + 2^n - 2 = 2^{n+1} - 2$. (Check: for $n = 2$ this gives $6 = \\binom{4}{2}$, as expected.)",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Akuna Capital"
+  ],
+  "url": "https://www.youtube.com/watch?v=OXhluQvaJzw",
+  "extra": {
+   "hints": [],
+   "video": "OXhluQvaJzw",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:MOreNRkFgCk:1",
+  "source": "quantprof_youtube",
+  "title": "Expected Intersections of 10 Random Chords",
+  "statement": "A chord of a circle is drawn by selecting two endpoints independently and uniformly at random on the circumference. This process is repeated independently to create a total of $10$ chords. Depending on the configuration, some pairs of chords will cross each other inside the circle. What is the expected number of intersection points between the $10$ chords?",
+  "answer": "15",
+  "solution": "Let $X$ be the total number of intersections among the chords. For each pair of chords $i<j$, define the indicator variable $X_{ij}=1$ if chords $i$ and $j$ intersect and $X_{ij}=0$ otherwise, so that $X=\\sum_{i<j} X_{ij}$. By linearity of expectation, $E[X]=\\sum_{i<j} E[X_{ij}]=\\sum_{i<j} P(\\text{chords } i \\text{ and } j \\text{ intersect})$. There are $\\binom{10}{2}=45$ pairs of chords, and by symmetry every pair has the same intersection probability $p$, so $E[X]=45p$. A pair of chords is determined by four random points $P_1,P_2,P_3,P_4$ on the circumference; labelling them in circular order, $P_1$ is paired with $P_2$, $P_3$, or $P_4$, each equally likely, and only the pairing $P_1P_3$ (with $P_2P_4$) produces crossing chords. Hence $p=\\frac{1}{3}$, and the expected number of intersections is $45\\cdot\\frac{1}{3}=15$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Jump Trading"
+  ],
+  "url": "https://www.youtube.com/watch?v=MOreNRkFgCk",
+  "extra": {
+   "hints": [],
+   "video": "MOreNRkFgCk",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "geometric",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:HjjdAzft95E:1",
+  "source": "quantprof_youtube",
+  "title": "Rolls Until Sum At Least Six",
+  "statement": "You have a fair six-sided die and you keep rolling it until the total sum of all rolls is at least $6$. The number of rolls needed varies: sometimes a single roll of $6$ suffices, sometimes it takes three or four rolls. What is the expected number of rolls needed to reach a total of at least $6$?",
+  "answer": "16807/7776",
+  "solution": "Let $E_i$ be the expected number of additional rolls needed to reach a sum of at least $6$ when the current sum is $i$. Clearly $E_6 = 0$, and $E_5 = 1$ since any roll from a sum of $5$ pushes the total to $6$ or more. From a sum of $4$, rolling a $1$ (probability $\\frac{1}{6}$) moves to sum $5$ while any other roll finishes, so by the law of total expectation $E_4 = \\frac{1}{6}(1 + E_5) + \\frac{5}{6}(1) = \\frac{7}{6}$. Similarly $E_3 = \\frac{1}{6}(1 + E_4) + \\frac{1}{6}(1 + E_5) + \\frac{4}{6}(1) = \\frac{49}{36}$. In general $E_i = 1 + \\frac{1}{6}\\sum_{k=1}^{6} E_{\\min(i+k,6)}$, which gives $E_2 = \\frac{343}{216}$, $E_1 = \\frac{2401}{1296}$, and finally $E_0 = \\frac{16807}{7776} = \\left(\\frac{7}{6}\\right)^5 \\approx 2.16$. So the expected number of rolls is $\\frac{16807}{7776} \\approx 2.16$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=HjjdAzft95E",
+  "extra": {
+   "hints": [],
+   "video": "HjjdAzft95E",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "markov",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:PbmM-k00GiM:1",
+  "source": "quantprof_youtube",
+  "title": "Odd Direction Changes on 8x8 Grid",
+  "statement": "Alice stands at the bottom-left corner of an $8 \\times 8$ grid and wants to reach the top-right corner. At each step she moves one unit either upward or to the right, so every path consists of exactly 8 rightward steps and 8 upward steps. Along a path, a direction change occurs whenever a rightward step is followed by an upward step or vice versa; the number of direction changes depends on the path. Assuming all valid paths are equally likely, what is the probability that Alice changes direction an odd number of times over her entire journey?",
+  "answer": "8/15",
+  "solution": "Write an upward step as U and a rightward step as R; every valid path is an arrangement of 8 R's and 8 U's, so the total number of paths is $\\frac{16!}{8!\\,8!} = \\binom{16}{8} = 12870$. Suppose Alice's first step is R. After one direction change she moves U, after two she moves R again, after three she moves U, and so on: after an even number of changes she is moving R and after an odd number she is moving U. Hence the number of direction changes is odd exactly when the last step differs from the first step. Paths that start with R and end with U have 7 R's and 7 U's in the middle 14 steps, giving $\\frac{14!}{7!\\,7!} = \\binom{14}{7} = 3432$ paths, and by symmetry there are another $3432$ paths that start with U and end with R. So there are $2 \\cdot 3432 = 6864$ paths with an odd number of direction changes, and the required probability is $\\frac{6864}{12870} = \\frac{8}{15}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=PbmM-k00GiM",
+  "extra": {
+   "hints": [],
+   "video": "PbmM-k00GiM",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:RdGdqNe8A8U:1",
+  "source": "quantprof_youtube",
+  "title": "Odd Flips Until Two Heads",
+  "statement": "Bob flips a fair coin repeatedly until he has obtained two heads in total (the heads need not be consecutive). What is the probability that the total number of flips is odd?",
+  "answer": "4/9",
+  "solution": "First solve the simpler version where Bob stops at the first head. The number of flips is odd exactly when the first head appears on flip 1, 3, 5, ..., i.e. the sequence is H, TTH, TTTTH, and so on, with probability $\\frac{1}{2} + \\frac{1}{8} + \\frac{1}{32} + \\cdots = \\frac{1/2}{1 - 1/4} = \\frac{2}{3}$. So the waiting time for a single head is odd with probability $\\frac{2}{3}$ and even with probability $\\frac{1}{3}$. Now split the original sequence into two independent blocks: the flips up to and including the first head, and the flips after that up to and including the second head. Each block has the same distribution as the single-head waiting time. The total number of flips is odd exactly when one block has odd length and the other has even length. By the law of total probability, the required probability is $\\frac{1}{3}\\cdot\\frac{2}{3} + \\frac{2}{3}\\cdot\\frac{1}{3} = \\frac{4}{9}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=RdGdqNe8A8U",
+  "extra": {
+   "hints": [],
+   "video": "RdGdqNe8A8U",
+   "confidence": "high"
+  },
+  "concepts": [
+   "geometric",
+   "waiting-time"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:Xm8PU9Q_I6M:1",
+  "source": "quantprof_youtube",
+  "title": "Roll Until Different Sum",
+  "statement": "A fair six-sided die is rolled. You then keep rolling until you obtain a result different from the first roll, at which point you stop. For example, if the first roll is a 4, the next roll is also a 4, and the following roll is a 2, you stop and the total of all rolls is $4 + 4 + 2 = 10$. What is the expected total sum of all the dice rolls?",
+  "answer": "7.7",
+  "solution": "Let $I$ be the outcome of the first roll and let $X$ be the sum of all rolls after the first, so the total is $I + X$. Given $I$, the final (stopping) roll is uniform over the five values other than $I$, so its expected value is $\\frac{21 - I}{5}$, since $1 + 2 + \\cdots + 6 = 21$. After the first roll, each subsequent roll either equals $I$ (probability $\\frac{1}{6}$), adding $I$ to the sum and restarting the process, or differs from $I$ (probability $\\frac{5}{6}$) and stops. This gives $E[X \\mid I] = \\frac{1}{6}\\left(I + E[X \\mid I]\\right) + \\frac{5}{6}\\cdot\\frac{21 - I}{5}$. The terms involving $I$ cancel, leaving $\\frac{5}{6}E[X \\mid I] = \\frac{21}{6}$, so $E[X \\mid I] = 4.2$ regardless of $I$. By linearity, $E[\\text{total}] = E[I] + E[X] = 3.5 + 4.2 = 7.7$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:DRW"
+  ],
+  "url": "https://www.youtube.com/watch?v=Xm8PU9Q_I6M",
+  "extra": {
+   "hints": [],
+   "video": "Xm8PU9Q_I6M",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "conditional",
+   "waiting-time"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:X9MA5utMi-U:1",
+  "source": "quantprof_youtube",
+  "title": "Maximum of Five Uniforms",
+  "statement": "Five points are chosen independently and uniformly at random from the interval $[0,5]$. What is the probability that the largest of the five points lies in the interval $[3,4]$?",
+  "answer": "781/3125",
+  "solution": "For a single uniform value on $[0,5]$, the probability that it is less than $t$ is $\\frac{t}{5}$, since the subinterval $[0,t]$ has length $t$ out of a total length of $5$. The maximum of the five values is less than $t$ exactly when all five values are less than $t$, so by independence $P(\\max < t) = \\left(\\frac{t}{5}\\right)^5$. The event that the maximum lies in $[3,4]$ is the event that the maximum is less than $4$ minus the event that it is less than $3$. Hence the required probability is $\\left(\\frac{4}{5}\\right)^5 - \\left(\\frac{3}{5}\\right)^5 = \\frac{1024 - 243}{3125} = \\frac{781}{3125} \\approx 0.24992$. The final answer is $\\frac{781}{3125} \\approx 0.249$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=X9MA5utMi-U",
+  "extra": {
+   "hints": [],
+   "video": "X9MA5utMi-U",
+   "confidence": "high"
+  },
+  "concepts": [
+   "order-stats",
+   "distributions"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:X9MA5utMi-U:2",
+  "source": "quantprof_youtube",
+  "title": "Two Random Arcs on a Circle",
+  "statement": "On a circle, a point is marked uniformly at random, then a second point is marked uniformly at random, and the arc from the first point to the second point in the counterclockwise direction is colored red. Independently, a third point and then a fourth point are marked uniformly at random, and the arc from the third point to the fourth point in the counterclockwise direction is colored green. What is the probability that the red arc and the green arc do not intersect?",
+  "answer": "1/6",
+  "solution": "Label the first and second points of the red arc $A$ and $B$, and the first and second points of the green arc $C$ and $D$, so the red arc runs counterclockwise from $A$ to $B$ and the green arc runs counterclockwise from $C$ to $D$. Starting at $A$ and reading the other three points in counterclockwise order, there are $3! = 6$ possible circular arrangements: $ABCD$, $ABDC$, $ACBD$, $ACDB$, $ADBC$, $ADCB$. By symmetry of the four independent uniform points, all six arrangements are equally likely. The red arc covers the counterclockwise stretch from $A$ to $B$ and the green arc covers the counterclockwise stretch from $C$ to $D$; these are disjoint only when the order is $ABCD$, because then $C$ and $D$ both lie after $B$ and the green arc from $C$ to $D$ does not wrap around to reach $A$ or $B$. In every other arrangement one arc contains an endpoint of the other, so they overlap. Therefore the required probability is $\\frac{1}{6}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=X9MA5utMi-U",
+  "extra": {
+   "hints": [],
+   "video": "X9MA5utMi-U",
+   "confidence": "high"
+  },
+  "concepts": [
+   "geometric",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:X1RXjT106z4:1",
+  "source": "quantprof_youtube",
+  "title": "Five Consecutive Heads",
+  "statement": "You toss a fair coin repeatedly until you get five consecutive heads. Since the outcomes are random, the number of tosses required will vary. What is the expected number of tosses needed to get five consecutive heads?",
+  "answer": "62",
+  "solution": "Let $E_n$ be the expected number of flips needed to obtain $n$ consecutive heads, with $E_0 = 0$ since no tosses are needed for zero heads. Suppose we have just reached a streak of $n-1$ consecutive heads, which took $E_{n-1}$ tosses in expectation. The next toss is heads with probability $\\frac{1}{2}$, in which case we are done after that one extra toss; it is tails with probability $\\frac{1}{2}$, in which case the streak resets to zero and we need $E_n$ further tosses on top of the one just used. By the law of total expectation, $E_n = E_{n-1} + \\frac{1}{2}(1) + \\frac{1}{2}(1 + E_n)$, which simplifies to $E_n = 2E_{n-1} + 2$. Iterating from $E_0 = 0$ gives $E_1 = 2$, $E_2 = 6$, $E_3 = 14$, $E_4 = 30$, $E_5 = 62$ (in general $E_n = 2^{n+1} - 2$). Hence the expected number of tosses to get five consecutive heads is $62$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=X1RXjT106z4",
+  "extra": {
+   "hints": [],
+   "video": "X1RXjT106z4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "waiting-time",
+   "markov"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:8A5aw54f_gY:2",
+  "source": "quantprof_youtube",
+  "title": "Nine Indistinguishable Ants on a Circle",
+  "statement": "Nine indistinguishable ants are placed at equally spaced points around a circle. Each ant independently chooses, at random, to move either clockwise or anticlockwise. All ants move at the same constant speed, completing one full circle in exactly $1$ minute. When two ants collide, they simply reverse directions and continue moving. What is the probability that after $1$ minute every ant is back at its original position? (Since the ants are indistinguishable, an ant need not return to its own starting point; we only require that the set of positions occupied after $1$ minute is the same as the initial set of positions.)",
+  "answer": "1",
+  "solution": "Because the ants are indistinguishable, a collision in which two ants reverse direction produces exactly the same configuration of positions and directions as if the two ants had simply passed through each other. So we may equivalently assume the ants never interact and each one just keeps moving in its chosen direction. Under this interpretation each ant moves continuously at constant speed and completes exactly one full circle in $1$ minute, so it returns to its starting point. Therefore, regardless of the random direction choices, the set of occupied positions after $1$ minute equals the initial set of positions. The required probability is $1$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=8A5aw54f_gY",
+  "extra": {
+   "hints": [],
+   "video": "8A5aw54f_gY",
+   "confidence": "high"
+  },
+  "concepts": [
+   "logic",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:8A5aw54f_gY:3",
+  "source": "quantprof_youtube",
+  "title": "Expected Product of Ant Coordinates",
+  "statement": "An ant starts at the origin of the plane. Each second it moves one unit to the right with probability $\\frac{1}{3}$, one unit upward with probability $\\frac{1}{9}$, one unit both right and up (diagonally) with probability $\\frac{1}{3}$, or stays at its current position with probability $\\frac{2}{9}$, independently of all previous moves. After $100$ seconds, what is the expected value of the product of its $x$ and $y$ coordinates?",
+  "answer": "8900/3",
+  "solution": "For $i = 1, \\dots, 100$ let $x_i = 1$ if the $i$-th move contributes to the right (a right or diagonal move) and $0$ otherwise, and let $y_i = 1$ if the $i$-th move contributes upward (an up or diagonal move) and $0$ otherwise. Then $X = \\sum_i x_i$ and $Y = \\sum_j y_j$, so $E[XY] = \\sum_{i,j} E[x_i y_j]$ over all $100 \\times 100 = 10{,}000$ ordered pairs $(i,j)$. If $i = j$, then $x_i y_i = 1$ only when the move is diagonal, so $E[x_i y_i] = \\frac{1}{3}$. If $i \\neq j$, the two moves are independent, so $E[x_i y_j] = P(x_i = 1)\\,P(y_j = 1) = \\left(\\frac{1}{3} + \\frac{1}{3}\\right)\\left(\\frac{1}{9} + \\frac{1}{3}\\right) = \\frac{2}{3} \\cdot \\frac{4}{9} = \\frac{8}{27}$. There are $100$ pairs with $i = j$ and $9{,}900$ pairs with $i \\neq j$. Hence $E[XY] = 100 \\cdot \\frac{1}{3} + 9900 \\cdot \\frac{8}{27} = \\frac{900}{27} + \\frac{79200}{27} = \\frac{80100}{27} = \\frac{8900}{3} \\approx 2966.67$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=8A5aw54f_gY",
+  "extra": {
+   "hints": [],
+   "video": "8A5aw54f_gY",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "random-walk"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:ODhqHlCzWaw:1",
+  "source": "quantprof_youtube",
+  "title": "Increasing Rolls Expected Sum",
+  "statement": "You have a fair 100-sided die labeled with the numbers $1$ through $100$. You roll the die once. You then continue rolling as long as each new roll is strictly greater than the previous roll; the process stops at the first roll that is not strictly greater than the one before it. What is the expected sum of all the rolls, excluding the final (stopping) roll?",
+  "answer": "100",
+  "solution": "Let $E_k$ be the expected sum of the counted rolls from the current roll onward (including the current roll) given that the current roll shows $k$. If the current roll is $100$, no later roll can be larger, so the next roll is the excluded final roll and $E_{100} = 100$. For $k < 100$ the process continues only if the next roll is strictly greater than $k$, each such value having probability $\\frac{1}{100}$, so by the law of total expectation $E_k = k + \\frac{1}{100}\\sum_{j=k+1}^{100} E_j$. Working downward, $E_{99} = 99 + \\frac{1}{100}\\cdot 100 = 100$, $E_{98} = 98 + \\frac{2}{100}\\cdot 100 = 100$, and in general if $E_j = 100$ for all $j > k$ then $E_k = k + \\frac{100-k}{100}\\cdot 100 = 100$. Hence $E_k = 100$ for every $k$ from $1$ to $100$. The first roll is uniform on $\\{1,\\dots,100\\}$, so the expected total is $\\sum_{k=1}^{100}\\frac{1}{100}E_k = 100$. The expected sum of the rolls excluding the final roll is $100$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=ODhqHlCzWaw",
+  "extra": {
+   "hints": [],
+   "video": "ODhqHlCzWaw",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "conditional",
+   "markov"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:ODhqHlCzWaw:2",
+  "source": "quantprof_youtube",
+  "title": "Uniform Sum Conditional Draws",
+  "statement": "You repeatedly draw independent numbers uniformly at random from $[0,1]$ and stop as soon as their running sum exceeds $1$. Given that the last number drawn is greater than $0.2$, what is the expected number of draws? Give your answer to three decimal places.",
+  "answer": "2.707",
+  "solution": "Let $N$ be the number of draws and $U_N$ the last draw, and write $a = 1 - 0.2 = 0.8$. The sum $S_{n-1}$ of the first $n-1$ draws has density $\\frac{s^{n-2}}{(n-2)!}$ on $[0,1]$, and given $S_{n-1} = s \\le 1$ the event $\\{N = n, U_N > 0.2\\}$ requires $U_n > \\max(1-s, 0.2)$, which has probability $\\min(s, a)$. Integrating gives $P(N = n, U_N > 0.2) = \\frac{a^n}{n\\,(n-2)!} + \\frac{a(1 - a^{n-1})}{(n-1)!}$ for $n \\ge 2$. Summing over $n$ yields $P(U_N > 0.2) = 1 + ae - e^{a}$, and summing $n$ times these probabilities yields $E[N;\\,U_N > 0.2] = 2ae - ae^{a}$. Therefore $E[N \\mid U_N > 0.2] = \\frac{2ae - ae^{a}}{1 + ae - e^{a}}$. With $a = 0.8$ this equals $\\frac{4.349 - 1.780}{1 + 2.175 - 2.226} \\approx \\frac{2.569}{0.949} \\approx 2.707$. The expected number of draws is approximately $2.707$.",
+  "difficulty": 7,
+  "difficulty10": 7,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=ODhqHlCzWaw",
+  "extra": {
+   "hints": [],
+   "video": "ODhqHlCzWaw",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "conditional",
+   "expectation",
+   "waiting-time"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:ZvUGliU1xvQ:1",
+  "source": "quantprof_youtube",
+  "title": "Expected Stock Price After 10 Days",
+  "statement": "A stock has an initial price of $\\$100$ on day 1. From the second day onward, each day the stock either goes up by $10\\%$ with probability $\\frac{3}{5}$ or goes down by $5\\%$ with probability $\\frac{2}{5}$, independently of all other days. For example, at the end of day 2 the price is $\\$110$ with probability $\\frac{3}{5}$ or $\\$95$ with probability $\\frac{2}{5}$. This process continues through day 10 (so there are 9 daily moves, on days 2 through 10). What is the expected stock price at the end of day 10?",
+  "answer": "142.33",
+  "solution": "Each day the price is multiplied by a factor $F_i$ that equals $1.1$ (a $10\\%$ rise) with probability $\\frac{3}{5}$ or $0.95$ (a $5\\%$ drop) with probability $\\frac{2}{5}$. The price at the end of day 10 is therefore $100 \\cdot F_2 F_3 \\cdots F_{10}$, a product of 9 factors. Since the daily factors are independent random variables, the expectation of their product is the product of their expectations: $E[\\text{Price}_{10}] = 100 \\prod_{i=2}^{10} E[F_i]$. Each factor has $E[F_i] = \\frac{3}{5}(1.1) + \\frac{2}{5}(0.95) = 0.66 + 0.38 = 1.04$. Hence the expected price is $100 \\cdot 1.04^{9} \\approx 142.33$. So the expected stock price at the end of day 10 is approximately $\\$142.33$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=ZvUGliU1xvQ",
+  "extra": {
+   "hints": [],
+   "video": "ZvUGliU1xvQ",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:YwaszYpmyCA:1",
+  "source": "quantprof_youtube",
+  "title": "Expected Sum Given Maximum Is 15",
+  "statement": "Six numbers are chosen independently and uniformly at random, with replacement, from the set $\\{1, 2, \\ldots, 20\\}$ (so repetitions are allowed). Given that the largest of the six selected numbers is exactly $15$, what is the expected value of their sum?",
+  "answer": "207920880/3861089",
+  "solution": "Let $S$ be the sum of the six draws and $M$ their maximum; we want $E[S \\mid M = 15]$. It is easier to condition on the maximum being at most a value: if $M \\le m$, each draw is uniform on $\\{1, \\ldots, m\\}$ with mean $\\frac{m+1}{2}$, so $E[S \\mid M \\le m] = 6 \\cdot \\frac{m+1}{2} = 3(m+1)$. By the law of total expectation, $E[S \\mid M \\le 15]\\,P(M \\le 15) = E[S \\mid M = 15]\\,P(M = 15) + E[S \\mid M \\le 14]\\,P(M \\le 14)$. Here $P(M \\le 15) = \\left(\\frac{15}{20}\\right)^6$, $P(M \\le 14) = \\left(\\frac{14}{20}\\right)^6$, and $P(M = 15) = \\left(\\frac{15}{20}\\right)^6 - \\left(\\frac{14}{20}\\right)^6$, while $E[S \\mid M \\le 15] = 3 \\cdot 16 = 48$ and $E[S \\mid M \\le 14] = 3 \\cdot 15 = 45$. Rearranging gives $E[S \\mid M = 15] = \\frac{48 \\cdot 15^6 - 45 \\cdot 14^6}{15^6 - 14^6} = \\frac{207920880}{3861089} \\approx 53.85$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=YwaszYpmyCA",
+  "extra": {
+   "hints": [],
+   "video": "YwaszYpmyCA",
+   "confidence": "high"
+  },
+  "concepts": [
+   "conditional",
+   "expectation",
+   "order-stats"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:YwaszYpmyCA:2",
+  "source": "quantprof_youtube",
+  "title": "Sum Exceeds 1 on Tenth Draw",
+  "statement": "Numbers are drawn repeatedly, independently and uniformly at random from $[0, 1]$. The process stops as soon as the running sum exceeds $1$. Given that this happens exactly on the $10$th draw, what is the expected value of the total sum at stopping?",
+  "answer": "16/11",
+  "solution": "Let $N$ be the stopping index and $S_k$ the sum of the first $k$ draws. The event $\\{N = n\\}$ is $\\{S_{n-1} \\le 1,\\ S_{n-1} + U_n > 1\\}$, and on $[0,1]$ the sum $S_{n-1}$ has density $\\frac{s^{n-2}}{(n-2)!}$. Integrating over the last draw, $P(N = n) = \\frac{1}{(n-2)!}\\int_0^1 s^{n-2}\\cdot s\\,ds = \\frac{1}{n\\,(n-2)!}$, and $E[S_N;\\,N = n] = \\frac{1}{(n-2)!}\\int_0^1 s^{n-2}\\left(\\frac{s^2}{2} + s\\right)ds = \\frac{1}{(n-2)!}\\left(\\frac{1}{2(n+1)} + \\frac{1}{n}\\right)$. Dividing, $E[S_N \\mid N = n] = 1 + \\frac{n}{2(n+1)} = \\frac{3n + 2}{2(n+1)}$. For $n = 10$ this gives $\\frac{32}{22} = \\frac{16}{11}$, matching the answer stated in the video.",
+  "difficulty": 6,
+  "difficulty10": 6,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=YwaszYpmyCA",
+  "extra": {
+   "hints": [],
+   "video": "YwaszYpmyCA",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "conditional",
+   "expectation",
+   "waiting-time"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:pqrgDtfUqbQ:1",
+  "source": "quantprof_youtube",
+  "title": "Seven Boxes Squared Score",
+  "statement": "Seven boxes are arranged in a row. In the first minute, a ball is placed in the first box. In the second minute, a ball is placed uniformly at random into one of the first two boxes. In general, in the $i$-th minute a ball is placed uniformly at random into one of the first $i$ boxes. After 7 minutes, let $b_i$ denote the number of balls in the $i$-th box, and define the score as $\\sum_{i=1}^{7} b_i^2$. What is the expected value of the score after 7 minutes?",
+  "answer": "1107/70",
+  "solution": "Let $S_i$ be the score after the $i$-th move, with $S_0 = 0$, so the final score $S_7$ is the sum of the increments $S_i - S_{i-1}$ over the 7 moves. When a ball is added to a box that currently holds $c$ balls, the score rises from $c^2$ to $(c+1)^2$, an increase of $2c+1$. So if the box chosen on move $i$ holds $x_i$ balls just before that move, the increment is $2x_i + 1$, and by linearity of expectation $E[S_7] = \\sum_{i=1}^{7} (2E[x_i] + 1)$. On move $i$ each of the first $i$ boxes is chosen with probability $\\frac{1}{i}$, so $E[x_i] = \\frac{1}{i}\\sum_{j=1}^{i} E[c_j]$ where $c_j$ is the count in box $j$ just before move $i$; since exactly $i-1$ balls have been placed so far, this sum is $i-1$ and $E[x_i] = \\frac{i-1}{i}$. Hence the expected increment on move $i$ is $2\\cdot\\frac{i-1}{i} + 1 = 3 - \\frac{2}{i}$. Summing over $i = 1,\\dots,7$ gives $E[S_7] = 21 - 2H_7 = 21 - 2\\cdot\\frac{363}{140} = 21 - \\frac{363}{70} = \\frac{1107}{70} \\approx 15.81$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=pqrgDtfUqbQ",
+  "extra": {
+   "hints": [],
+   "video": "pqrgDtfUqbQ",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:piENl0WFJfU:1",
+  "source": "quantprof_youtube",
+  "title": "Odd Dot Product of Random Binary Vectors",
+  "statement": "Let $\\mathbf{a}$ be a 10-dimensional vector whose entries are independent and each equal to $1$ with probability $\\frac{1}{2}$ and $0$ with probability $\\frac{1}{2}$. Let $\\mathbf{b}$ be another independent 10-dimensional vector whose entries are independent and each equal to $1$ with probability $\\frac{3}{4}$ and $0$ with probability $\\frac{1}{4}$. What is the probability that the dot product $\\mathbf{a} \\cdot \\mathbf{b} = \\sum_{i=1}^{10} a_i b_i$ is an odd number?",
+  "answer": "1048575/2097152",
+  "solution": "Let $P_n$ be the probability that the dot product of the first $n$ coordinates is odd, so the probability it is even is $1 - P_n$. The $(n+1)$-th coordinate contributes $1$ to the dot product only when both entries are $1$, which happens with probability $\\frac{1}{2} \\cdot \\frac{3}{4} = \\frac{3}{8}$; otherwise it contributes $0$ with probability $\\frac{5}{8}$. The partial dot product after $n+1$ coordinates is odd if it was odd after $n$ coordinates and the new term is $0$, or if it was even after $n$ coordinates and the new term is $1$, giving the recurrence $P_{n+1} = \\frac{5}{8} P_n + \\frac{3}{8}(1 - P_n) = \\frac{3}{8} + \\frac{1}{4} P_n$. The base case is $P_1 = \\frac{3}{8}$, since the first term is odd only when both first entries are $1$. The fixed point of the recurrence is $\\frac{1}{2}$, so $P_n - \\frac{1}{2} = \\left(\\frac{1}{4}\\right)^{n-1}\\left(P_1 - \\frac{1}{2}\\right) = -\\frac{1}{8} \\cdot \\frac{1}{4^{n-1}} = -\\frac{1}{2^{2n+1}}$, i.e. $P_n = \\frac{1}{2} - \\frac{1}{2^{2n+1}}$. For $n = 10$ the required probability is $\\frac{1}{2} - \\frac{1}{2^{21}} = \\frac{1048575}{2097152} \\approx 0.4999995$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=piENl0WFJfU",
+  "extra": {
+   "hints": [],
+   "video": "piENl0WFJfU",
+   "confidence": "high"
+  },
+  "concepts": [
+   "markov",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:piENl0WFJfU:2",
+  "source": "quantprof_youtube",
+  "title": "Expected Sum When Uniforms First Exceed One",
+  "statement": "You repeatedly draw independent numbers uniformly at random from $[0,1]$ and keep a running sum. The process stops as soon as the sum exceeds $1$. Given that the sum first exceeds $1$ exactly on the 10th draw, what is the expected value of the total sum at that moment?",
+  "answer": "16/11",
+  "solution": "Let $S_k$ be the sum of the first $k$ draws and let $N$ be the first index with $S_N > 1$. For $s \\le 1$, the density of $S_{n-1}$ is $\\frac{s^{n-2}}{(n-2)!}$, and $P(N = n) = P(S_{n-1} \\le 1) - P(S_n \\le 1) = \\frac{1}{(n-1)!} - \\frac{1}{n!} = \\frac{1}{n\\,(n-2)!}$. Conditioning on $S_{n-1} = s$, the event $N = n$ requires the $n$-th draw $U > 1 - s$, and $\\int_{1-s}^{1} (s + u)\\,du = s + \\frac{s^2}{2}$. Hence $E[S_n;\\, N = n] = \\frac{1}{(n-2)!} \\int_0^1 s^{n-2}\\left(s + \\frac{s^2}{2}\\right) ds = \\frac{1}{(n-2)!}\\left(\\frac{1}{n} + \\frac{1}{2(n+1)}\\right) = \\frac{3n+2}{2n(n+1)(n-2)!}$. Dividing by $P(N = n)$ gives $E[S_N \\mid N = n] = \\frac{3n+2}{2(n+1)}$. For $n = 10$ this is $\\frac{32}{22} = \\frac{16}{11}$, which matches the answer stated in the video.",
+  "difficulty": 6,
+  "difficulty10": 6,
+  "tags": [
+   "probability",
+   "asked_in:Citadel"
+  ],
+  "url": "https://www.youtube.com/watch?v=piENl0WFJfU",
+  "extra": {
+   "hints": [],
+   "video": "piENl0WFJfU",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "expectation",
+   "conditional",
+   "waiting-time"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:jE9-cRkTcv4:1",
+  "source": "quantprof_youtube",
+  "title": "Odd Row and Column Sums",
+  "statement": "The numbers $1$ through $9$ are assigned uniformly at random to the nine cells of a $3 \\times 3$ grid, each number used exactly once. What is the probability that the sum of every row and the sum of every column is odd?",
+  "answer": "1/14",
+  "solution": "Only the parity of each number matters, so reduce the entries modulo 2: the grid contains five 1's (the odd numbers $1,3,5,7,9$) and four 0's. All $9!$ assignments are equally likely, and each parity pattern corresponds to the same number of assignments, so the sample space is effectively the $\\binom{9}{5} = 126$ ways to choose which five cells hold the 1's. A row sum is odd exactly when the row contains one or three 1's. With five 1's spread over three rows, the only possibility is that one row has three 1's and the other two rows have exactly one 1 each; the same holds for the columns. Once we pick which row has three 1's and which column has three 1's, the 1's are forced onto the union of that row and that column, which is exactly $3 + 3 - 1 = 5$ cells, and every other row and column then has exactly one 1. There are $3 \\times 3 = 9$ such choices, so the required probability is $\\frac{9}{126} = \\frac{1}{14}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=jE9-cRkTcv4",
+  "extra": {
+   "hints": [],
+   "video": "jE9-cRkTcv4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:jE9-cRkTcv4:2",
+  "source": "quantprof_youtube",
+  "title": "Cards Between First King and Ace",
+  "statement": "A standard well-shuffled deck of $52$ cards is dealt one card at a time. It is given that the first king appears before the first ace. What is the expected number of cards strictly between the first king and the first ace? (As a check, if the answer is $\\frac{m}{n}$ in lowest terms, then $m + n = 424$.)",
+  "answer": "379/45",
+  "solution": "The video leaves this as an exercise and only gives the check $m + n = 424$; the following derivation reproduces it. Only the $8$ special cards (4 kings, 4 aces) and the $44$ other cards matter. Conditioning on the first special card being a king, the remaining $7$ special cards are a uniformly random ordering of $3$ kings and $4$ aces, and each of those kings precedes all $4$ aces with probability $\\frac{1}{5}$, so the expected number of kings lying between the first king and the first ace is $\\frac{3}{5}$. The first ace is therefore, on average, $1 + \\frac{3}{5} = \\frac{8}{5}$ positions after the first king in the ordering of special cards, so there are on average $\\frac{8}{5}$ gaps between them. Each of the $44$ non-special cards falls into any one of the $9$ gaps around the special cards with probability $\\frac{1}{9}$, giving an expected $44 \\cdot \\frac{8}{5} \\cdot \\frac{1}{9} = \\frac{352}{45}$ ordinary cards between them. Adding the kings in between, the expected count is $\\frac{3}{5} + \\frac{352}{45} = \\frac{379}{45} \\approx 8.42$, and indeed $379 + 45 = 424$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=jE9-cRkTcv4",
+  "extra": {
+   "hints": [],
+   "video": "jE9-cRkTcv4",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "expectation",
+   "conditional",
+   "order-stats"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:zD7H_6OfNSg:1",
+  "source": "quantprof_youtube",
+  "title": "Maximum Probability of Zero",
+  "statement": "Let $X$ be a non-negative random variable with mean $E[X] = 5$ and variance $\\operatorname{Var}(X) = 25$. What is the maximum possible value of $P(X = 0)$?",
+  "answer": "1/2",
+  "solution": "Let $p = P(X = 0)$ and let $Y$ be the conditional distribution of $X$ given $X \\neq 0$ (it may be discrete or continuous). By the law of total expectation, $E[X] = (1-p)\\,E[Y] = 5$, so $E[Y] = \\frac{5}{1-p}$. Since $E[X^2] = \\operatorname{Var}(X) + (E[X])^2 = 25 + 25 = 50$, the same argument gives $(1-p)\\,E[Y^2] = 50$, so $E[Y^2] = \\frac{50}{1-p}$. Then $\\operatorname{Var}(Y) = E[Y^2] - (E[Y])^2 = \\frac{50}{1-p} - \\frac{25}{(1-p)^2}$, which must be non-negative. This requires $50(1-p) \\geq 25$, i.e. $1 - p \\geq \\frac{1}{2}$, so $p \\leq \\frac{1}{2}$. The bound is achieved by taking $X = 0$ with probability $\\frac{1}{2}$ and $X = 10$ with probability $\\frac{1}{2}$, which has mean $5$ and $E[X^2] = 50$, hence variance $25$. The maximum possible probability is $\\frac{1}{2}$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=zD7H_6OfNSg",
+  "extra": {
+   "hints": [],
+   "video": "zD7H_6OfNSg",
+   "confidence": "high"
+  },
+  "concepts": [
+   "expectation",
+   "conditional",
+   "distributions"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5oEIzBxiquo:1",
+  "source": "quantprof_youtube",
+  "title": "Second Die Strictly Higher",
+  "statement": "Two fair six-sided dice are rolled. What is the probability that the second die shows a strictly higher number than the first die?",
+  "answer": "5/12",
+  "solution": "There are $6 \\times 6 = 36$ equally likely outcomes for the two dice. The two dice show the same number in 6 of these outcomes, and by symmetry the remaining $30$ outcomes split equally between \"second higher\" and \"first higher\". So the second die is strictly higher in $15$ of the $36$ outcomes. The required probability is $\\frac{15}{36} = \\frac{5}{12}$.",
+  "difficulty": 1,
+  "difficulty10": 1,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=5oEIzBxiquo",
+  "extra": {
+   "hints": [],
+   "video": "5oEIzBxiquo",
+   "confidence": "high"
+  },
+  "concepts": [
+   "basic",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5oEIzBxiquo:2",
+  "source": "quantprof_youtube",
+  "title": "Random Signs Summing to Zero",
+  "statement": "The numbers $1, 2, \\ldots, 10$ are written in a row on a blackboard. Each of the spaces between consecutive numbers is randomly filled with either a plus sign or a minus sign, producing an expression such as $1 + 2 - 3 - 4 + \\cdots + 10$. What is the probability that the resulting expression evaluates to zero?",
+  "answer": "0",
+  "solution": "Among $1$ through $10$ there are five even numbers and five odd numbers. Whatever signs are placed in front of the even numbers, their combined contribution is even. Whatever signs are placed in front of the five odd numbers, their combined contribution is a sum of five odd terms, which is odd. Hence the whole expression is even plus odd, i.e. odd, so it can never equal $0$. The required probability is $0$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=5oEIzBxiquo",
+  "extra": {
+   "hints": [],
+   "video": "5oEIzBxiquo",
+   "confidence": "high"
+  },
+  "concepts": [
+   "logic",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5oEIzBxiquo:3",
+  "source": "quantprof_youtube",
+  "title": "P to the P Perfect Square",
+  "statement": "An integer $P$ is selected uniformly at random from the integers $100$ to $400$ inclusive. What is the probability that $P^P$ is a perfect square?",
+  "answer": "156/301",
+  "solution": "If $P$ is even, then the exponent $P$ is even, so $P^P = (P^{P/2})^2$ is automatically a perfect square; there are $151$ even integers in $[100, 400]$. If $P$ is odd, then $P^P = P \\cdot (P^{(P-1)/2})^2$ is a perfect square if and only if $P$ itself is a perfect square; the odd perfect squares in the range are $121, 169, 225, 289, 361$, giving $5$ more values. In total $151 + 5 = 156$ values of $P$ work. The sample space has $400 - 100 + 1 = 301$ integers, so the required probability is $\\frac{156}{301}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=5oEIzBxiquo",
+  "extra": {
+   "hints": [],
+   "video": "5oEIzBxiquo",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5oEIzBxiquo:5",
+  "source": "quantprof_youtube",
+  "title": "Permutations With Neighbor to the Left",
+  "statement": "How many permutations of the numbers $1, 2, \\ldots, 9$ are there such that every number (other than the first) differs by exactly one from some number appearing somewhere to its left? For example, $5, 6, 4, 7, 3, 8, 2, 9, 1$ qualifies: $6$ has $5$ to its left, $4$ has $5$ to its left, $7$ has $6$ to its left, and so on. The number differing by one need not be immediately to the left, only somewhere earlier in the sequence.",
+  "answer": "256",
+  "solution": "First we show that the last number must be $1$ or $9$. Suppose the last number is $n$ and the first number is greater than $n$. Since $n$ is last, $n-1$ must appear to its left, but $n-1$ is not first, so $n-1$ needs $n$ or $n-2$ to its left, and since $n$ is last it must be $n-2$; repeating, $n-3$ must precede $n-2$, and so on forever, which is impossible because the smallest number is $1$. The case where the first number is less than $n$ gives the same contradiction using $n+1, n+2, \\ldots$. So the last position holds $1$ or $9$: two choices. Removing it leaves the same problem on a block of $8$ consecutive numbers, so the second-to-last position again has two choices (the smallest or largest remaining), and so on down to the first position, which has only one choice. Hence the number of such permutations is $2^8 = 256$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=5oEIzBxiquo",
+  "extra": {
+   "hints": [],
+   "video": "5oEIzBxiquo",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "logic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:5oEIzBxiquo:6",
+  "source": "quantprof_youtube",
+  "title": "Ten Drunk Passengers",
+  "statement": "Fifty passengers numbered $1$ through $50$ board a plane with $50$ seats, where passenger $i$ is assigned seat $i$. Passengers board one at a time in order from $1$ to $50$. The first $10$ passengers are drunk: each of them sits in a uniformly random unoccupied seat. Every subsequent passenger sits in their assigned seat if it is still available; otherwise they choose a uniformly random seat from the remaining unoccupied ones. What is the expected number of passengers who end up sitting in their assigned seat?",
+  "answer": "24.4976",
+  "solution": "The video states this problem as a closing exercise without solving it; the following derivation is not from the video. Each drunk passenger $j \\le 10$ sits in their own seat with probability $\\frac{1}{50}$, since the first $10$ choices form a uniformly random sequence of distinct seats, contributing $\\frac{10}{50}$ in expectation. For a sober passenger $i > 10$, think of the $10$ random choices as tokens: a token that lands on a seat in $\\{11, \\ldots, i-1\\}$ is passed to that displaced passenger, who boards before $i$, while a token that lands in $T = \\{1, \\ldots, 10\\} \\cup \\{i, \\ldots, 50\\}$ is finished from passenger $i$'s point of view. Every token eventually lands in $T$ before passenger $i$ boards, and conditional on landing in $T$ each landing is uniform over the still-free seats of $T$, so the landing spots form a uniformly random $10$-subset of $T$, which has $10 + (51 - i)$ seats. Hence passenger $i$ is displaced with probability $\\frac{10}{10 + 51 - i}$, and $E = \\frac{10}{50} + \\sum_{i=11}^{50}\\left(1 - \\frac{10}{61 - i}\\right) = 40.2 - 10\\,(H_{50} - H_{10})$, where $H_m$ is the $m$-th harmonic number. Numerically $H_{50} - H_{10} \\approx 1.57024$, giving $E \\approx 24.4976$ (confirmed by simulation). The expected number of passengers in their assigned seats is about $24.50$.",
+  "difficulty": 7,
+  "difficulty10": 7,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=5oEIzBxiquo",
+  "extra": {
+   "hints": [],
+   "video": "5oEIzBxiquo",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "expectation",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:tF8e6ObjUPA:1",
+  "source": "quantprof_youtube",
+  "title": "Six Random Intervals Intersect",
+  "statement": "On the number line between $0$ and $1$, we form an interval by choosing two points uniformly at random as its endpoints. We repeat this process five more times, creating a total of six independent random intervals. What is the probability that the intersection of all six intervals is non-empty?",
+  "answer": "16/231",
+  "solution": "Label the $i$-th interval's endpoints $x_i < y_i$, so there are $12$ endpoints in total and $12!$ equally likely orderings of them. Requiring each $x_i$ to come before its own $y_i$ cuts the orderings in half for each of the six intervals (by symmetry), so the sample space of valid endpoint orderings has size $\\frac{12!}{2^6}$. The intersection of all six intervals is non-empty exactly when every left endpoint precedes every right endpoint, i.e. $\\max_i x_i < \\min_i y_i$, which means the six $x_i$'s occupy the first six positions and the six $y_i$'s occupy the last six. The $x_i$'s can be arranged in the first six positions in $6!$ ways and the $y_i$'s in the last six positions in $6!$ ways, giving $6! \\cdot 6!$ favourable orderings. Hence the probability is $\\frac{6! \\cdot 6! \\cdot 2^6}{12!} = \\frac{2^6}{\\binom{12}{6}} = \\frac{64}{924} = \\frac{16}{231}$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=tF8e6ObjUPA",
+  "extra": {
+   "hints": [],
+   "video": "tF8e6ObjUPA",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting",
+   "order-stats",
+   "geometric"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:tF8e6ObjUPA:2",
+  "source": "quantprof_youtube",
+  "title": "Two Sixes Before 2 and 3",
+  "statement": "A fair six-sided die is rolled repeatedly until both a $2$ and a $3$ have appeared (in either order). What is the probability that exactly two sixes are rolled during this process? (Verification hint from the video: if the answer is $\\frac{m}{n}$ in lowest terms, then $m + n = 127$.)",
+  "answer": "19/108",
+  "solution": "Rolls of $1$, $4$ and $5$ neither stop the process nor add a six, so we may ignore them and consider only rolls landing in $\\{2, 3, 6\\}$, each equally likely with probability $\\frac{1}{3}$. Phase 1 lasts until the first $2$ or $3$ appears: each relevant roll is a six with probability $\\frac{1}{3}$ and a stopper with probability $\\frac{2}{3}$, so the number of sixes $K$ in this phase satisfies $P(K = k) = \\left(\\frac{1}{3}\\right)^k \\frac{2}{3}$. Phase 2 lasts until the other needed number appears; repeats of the already-seen number can now be ignored too, so each relevant roll is a six or the needed number with probability $\\frac{1}{2}$ each, giving $P(J = j) = \\left(\\frac{1}{2}\\right)^{j+1}$ sixes. The probability of exactly two sixes is $\\sum_{k=0}^{2} P(K = k)P(J = 2 - k) = \\frac{2}{3}\\cdot\\frac{1}{8} + \\frac{2}{9}\\cdot\\frac{1}{4} + \\frac{2}{27}\\cdot\\frac{1}{2} = \\frac{1}{12} + \\frac{1}{18} + \\frac{1}{27} = \\frac{19}{108}$. This matches the video's check, since $19 + 108 = 127$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=tF8e6ObjUPA",
+  "extra": {
+   "hints": [],
+   "video": "tF8e6ObjUPA",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "waiting-time",
+   "conditional",
+   "geometric"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:uwAo3PRBcRM:1",
+  "source": "quantprof_youtube",
+  "title": "Pirate's One Leftward Jump",
+  "statement": "Seven ships are lined up in a row, numbered $1$ through $7$ from left to right. A pirate begins on one of the ships chosen uniformly at random. He then jumps repeatedly to another ship, each time choosing uniformly at random among the ships he has not yet visited. As soon as he leaves a ship it sinks, so he can never return to it. He continues in this way until he has visited all seven ships. What is the probability that the pirate makes exactly one leftward jump (a jump to a lower-numbered ship) during the entire process?",
+  "answer": "1/42",
+  "solution": "Each possible jump sequence corresponds to a unique permutation of the seven ships (the order in which they are visited), and all $7!$ permutations are equally likely, so the total number of jump sequences is $7! = 5040$. A sequence with exactly one leftward jump is an increasing run followed by a second increasing run, so it is determined by a partition of $\\{1,\\dots,7\\}$ into two sets $X$ and $Y$: the pirate visits the ships in $X$ in increasing order, then jumps left and visits the ships in $Y$ in increasing order. For example, $X = \\{2,5,6\\}$ gives the sequence $2,5,6,1,3,4,7$, whose only leftward jump is $6 \\to 1$. Since each ship may belong to either $X$ or $Y$, there are $2^7 = 128$ such partitions. However, if $X$ is a prefix $\\{1,\\dots,k\\}$ of the ships (including $X = \\emptyset$ and $X$ = all ships), the visiting order is simply $1,2,\\dots,7$ with no leftward jump at all; there are $8$ such prefixes. Hence the number of sequences with exactly one leftward jump is $2^7 - 8 = 120$. The required probability is therefore $\\frac{120}{5040} = \\frac{1}{42}$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=uwAo3PRBcRM",
+  "extra": {
+   "hints": [],
+   "video": "uwAo3PRBcRM",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:vM0sEXLAdD0:1",
+  "source": "quantprof_youtube",
+  "title": "Plane Regions From 20 Lines",
+  "statement": "In a plane, straight lines are drawn so that the number of regions they create is as large as possible. For example, one line divides the plane into $2$ regions, two lines divide it into at most $4$ regions, and three lines divide it into at most $7$ regions. Determine the maximum number of regions into which the plane can be divided by $20$ straight lines.",
+  "answer": "211",
+  "solution": "The number of regions is maximized when no two lines are parallel and no three lines pass through a common point. Suppose $k$ lines have already been drawn in this general position. The $(k+1)$-th line meets each of the $k$ existing lines at a distinct point, so it contains $k$ intersection points, which split it into $k+1$ pieces. Each piece cuts one existing region into two, so adding the $(k+1)$-th line increases the number of regions by $k+1$. One line alone gives $2$ regions, so $n$ lines give $2 + 2 + 3 + \\dots + n = 1 + \\frac{n(n+1)}{2}$ regions. For $n = 20$ this is $1 + \\frac{20 \\cdot 21}{2} = 1 + 210 = 211$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability",
+   "asked_in:Jane Street"
+  ],
+  "url": "https://www.youtube.com/watch?v=vM0sEXLAdD0",
+  "extra": {
+   "hints": [],
+   "video": "vM0sEXLAdD0",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:zXpFQeMAnRs:2",
+  "source": "quantprof_youtube",
+  "title": "Letters in Nearby Envelopes",
+  "statement": "There are $10$ letters and $10$ envelopes, each numbered from $1$ to $10$. The letters are paired with the envelopes uniformly at random (a random permutation). A pairing is called valid if, for every letter, the absolute difference between the letter's number and the number of its envelope is at most $1$. For instance, pairing every letter with the envelope of the same number is valid, and so is a pairing that swaps letters $1$ and $2$ while matching the others exactly; a pairing in which some letter lands in an envelope whose number differs by $2$ or more is not valid. What is the probability that a random pairing is valid?",
+  "answer": "89/3628800",
+  "solution": "The video poses this problem as an exercise without solving it; the standard solution is as follows. We need the number of permutations $\\sigma$ of $\\{1,\\dots,10\\}$ with $|\\sigma(i) - i| \\le 1$ for all $i$. Consider letter $1$: it must go to envelope $1$ or envelope $2$. If it goes to envelope $1$, the remaining $9$ letters form a valid arrangement of size $9$. If it goes to envelope $2$, then envelope $1$ can only receive letter $2$ (letter $1$ is used and no other letter is within distance $1$), so letters $1$ and $2$ swap and the remaining $8$ letters form a valid arrangement of size $8$. Hence $a_n = a_{n-1} + a_{n-2}$ with $a_1 = 1$ and $a_2 = 2$, i.e. the Fibonacci numbers: $a_3 = 3, a_4 = 5, a_5 = 8, a_6 = 13, a_7 = 21, a_8 = 34, a_9 = 55, a_{10} = 89$. There are $10! = 3628800$ equally likely pairings, so the probability is $\\frac{89}{3628800} \\approx 2.45 \\times 10^{-5}$.",
+  "difficulty": 4,
+  "difficulty10": 4,
+  "tags": [
+   "probability",
+   "asked_in:Millennium"
+  ],
+  "url": "https://www.youtube.com/watch?v=zXpFQeMAnRs",
+  "extra": {
+   "hints": [],
+   "video": "zXpFQeMAnRs",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "counting",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:fTCz5GFoPfM:1",
+  "source": "quantprof_youtube",
+  "title": "Filling an 8x8 Grid",
+  "statement": "You have an $8 \\times 8$ grid. You fill some of its cells with distinct integers so that every filled cell is greater than at most one of its filled neighboring cells. Two cells are neighbors if they touch along an edge or at a corner (so an interior cell has up to 8 neighbors). What is the maximum number of cells you can fill while every filled cell satisfies this condition?",
+  "answer": "32",
+  "solution": "Consider any $2 \\times 2$ subgrid of the board. All four of its cells are mutually adjacent (the diagonal pair touch at a corner). If three or more of these cells were filled, the largest of those values would be adjacent to, and greater than, at least two other filled cells, violating the condition. Hence every $2 \\times 2$ subgrid contains at most two filled cells. The $8 \\times 8$ grid can be partitioned into $16$ disjoint $2 \\times 2$ subgrids, so the number of filled cells is at most $16 \\times 2 = 32$. This bound is achievable: fill every other row (rows 1, 3, 5, 7) completely with increasing numbers, e.g. row 1 with $1, \\dots, 8$, row 3 with $9, \\dots, 16$, and so on, leaving rows 2, 4, 6, 8 empty. Each filled cell then has only its left and right neighbors filled and is greater than only the one on its left. Therefore the maximum number of filled cells is $32$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability",
+   "asked_in:Jump Trading"
+  ],
+  "url": "https://www.youtube.com/watch?v=fTCz5GFoPfM",
+  "extra": {
+   "hints": [],
+   "video": "fTCz5GFoPfM",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "logic",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:g0SkKaCh17A:1",
+  "source": "quantprof_youtube",
+  "title": "Alternating Permutation of 1 to 8",
+  "statement": "The numbers $1$ through $8$ are arranged uniformly at random into a permutation $(a_1, a_2, \\dots, a_8)$, where $a_i$ denotes the element in the $i$-th position. What is the probability that the permutation satisfies the alternating pattern of inequalities $a_1 < a_2 > a_3 < a_4 > a_5 < a_6 > a_7 < a_8$ (that is, a peak occurs at every even position)?",
+  "answer": "1385/40320",
+  "solution": "The sample space consists of $8!$ equally likely permutations, so we need to count the permutations satisfying the alternating pattern. Since the peaks occur at even positions, the largest element $8$ must sit at some even position $2k$; placing it there splits the arrangement into a left segment of length $2k-1$ and a right segment of length $8-2k$, and each segment must independently satisfy the same alternating pattern. Let $f(n)$ be the number of permutations of $1,\\dots,n$ satisfying the pattern; choosing which $2k-1$ of the remaining $n-1$ numbers go to the left gives the recursion $f(n)=\\sum_{k\\ge 1}\\binom{n-1}{2k-1} f(2k-1)\\, f(n-2k)$ with base cases $f(0)=f(1)=1$. Computing successively: $f(2)=1$, $f(3)=2$, $f(4)=5$, $f(5)=16$, $f(6)=61$, $f(7)=272$, and $f(8)=7\\cdot 61+35\\cdot 2\\cdot 5+21\\cdot 16+272=1385$. Hence the required probability is $\\frac{1385}{8!}=\\frac{1385}{40320}=\\frac{277}{8064}\\approx 0.0344$.",
+  "difficulty": 6,
+  "difficulty10": 6,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=g0SkKaCh17A",
+  "extra": {
+   "hints": [],
+   "video": "g0SkKaCh17A",
+   "confidence": "high"
+  },
+  "concepts": [
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:g0SkKaCh17A:2",
+  "source": "quantprof_youtube",
+  "title": "Sequential Rank Guessing Game",
+  "statement": "$n$ points are selected independently and uniformly at random from the interval $[0,1]$. Initially the points are hidden from you, and they are revealed one at a time. Immediately after each point is revealed, you must guess its final rank (its position when all $n$ points are sorted) among the $n$ points. You win only if you correctly guess the ranks of all $n$ points. Find a strategy that maximizes the probability of winning, and compute this maximal winning probability for $n = 4$.",
+  "answer": "0.3436",
+  "solution": "Suppose a point with value $x$ (relative to the sub-interval it lands in, rescaled to $[0,1]$) is revealed while $m$ points in that sub-interval remain hidden. Guessing that it has rank $g$ within the sub-interval commits you to exactly $g-1$ of the $m$ hidden points falling below $x$, which happens with probability $\\binom{m}{g-1}x^{g-1}(1-x)^{m-g+1}$; conditionally on that, the points below and above $x$ form two independent copies of the same game with $g-1$ and $m-g+1$ points on rescaled intervals. Writing $W(k)$ for the optimal winning probability with $k$ points, we get $W(0)=W(1)=1$ and $W(n)=\\int_0^1 \\max_{1\\le g\\le n}\\binom{n-1}{g-1}x^{g-1}(1-x)^{n-g}\\,W(g-1)\\,W(n-g)\\,dx$, and the optimal strategy is to choose, at each reveal, the rank $g$ that maximizes this integrand, which is a threshold rule on $x$. For $n=2$ this means guessing 'smaller' iff $x<\\frac12$, giving $W(2)=\\frac34$. For $n=3$ the candidates are $\\frac34(1-x)^2$, $2x(1-x)$ and $\\frac34x^2$, with thresholds at $x=\\frac{3}{11}$ and $\\frac{8}{11}$, giving $W(3)=\\frac{4147}{7986}\\approx 0.5193$. For $n=4$ the integrand is $\\max\\{W(3)(1-x)^3,\\ \\tfrac94 x(1-x)^2,\\ \\tfrac94 x^2(1-x),\\ W(3)x^3\\}$, and integrating over $[0,1]$ gives $W(4)\\approx 0.3436$, i.e. the maximal winning probability is approximately $0.344$.",
+  "difficulty": 7,
+  "difficulty10": 7,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=g0SkKaCh17A",
+  "extra": {
+   "hints": [],
+   "video": "g0SkKaCh17A",
+   "confidence": "medium"
+  },
+  "concepts": [
+   "strategy",
+   "order-stats",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:u0dCRInI-U4:1",
+  "source": "quantprof_youtube",
+  "title": "Three Ants on a Triangle",
+  "statement": "Three ants sit on the three vertices of an equilateral triangle. Simultaneously, each ant independently moves to one of the two adjacent vertices, choosing each with probability $\\frac{1}{2}$. What is the probability that at least two ants end up at the same vertex?",
+  "answer": "3/4",
+  "solution": "Work with the complement: no two ants share a vertex only if all three ants move in the same rotational direction, either all clockwise or all anticlockwise. Each ant moves clockwise with probability $\\frac{1}{2}$ independently, so the probability that all three move clockwise is $\\left(\\frac{1}{2}\\right)^3 = \\frac{1}{8}$, and likewise $\\frac{1}{8}$ for all anticlockwise. Hence the probability that no two ants meet is $\\frac{1}{8} + \\frac{1}{8} = \\frac{1}{4}$. Therefore the probability that at least two ants end up at the same vertex is $1 - \\frac{1}{4} = \\frac{3}{4}$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=u0dCRInI-U4",
+  "extra": {
+   "hints": [],
+   "video": "u0dCRInI-U4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "basic",
+   "counting"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:u0dCRInI-U4:2",
+  "source": "quantprof_youtube",
+  "title": "Coin-Controlled Die Rerolls",
+  "statement": "A fair six-sided die is placed on a table showing $1$. Every minute a fair coin is flipped: if it lands heads, the die is left as it is; if it lands tails, the die is rolled (so its face becomes uniformly random from $1$ to $6$). After five coin tosses, what is the probability that the die is showing $1$?",
+  "answer": "37/192",
+  "solution": "Condition on whether any tails occur. With probability $\\left(\\frac{1}{2}\\right)^5 = \\frac{1}{32}$ all five tosses are heads, the die is never rolled, and it certainly still shows $1$. With probability $1 - \\frac{1}{32} = \\frac{31}{32}$ there is at least one tail, so the die is rolled at least once and its final face is equally likely to be any of $1$ to $6$; the probability it shows $1$ is then $\\frac{1}{6}$. By the law of total probability, the required probability is $\\frac{1}{32}\\cdot 1 + \\frac{31}{32}\\cdot\\frac{1}{6} = \\frac{6}{192} + \\frac{31}{192} = \\frac{37}{192}$.",
+  "difficulty": 2,
+  "difficulty10": 2,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=u0dCRInI-U4",
+  "extra": {
+   "hints": [],
+   "video": "u0dCRInI-U4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "conditional",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:u0dCRInI-U4:3",
+  "source": "quantprof_youtube",
+  "title": "Marble Swaps After 2025 Moves",
+  "statement": "Three marbles, coloured green, red and green, are placed in a row in that order (the two green marbles are identical). In each move, two of the three marbles are chosen uniformly at random and their positions are swapped. What is the probability that after $2025$ moves the marbles are again in the original order green, red, green?",
+  "answer": "1/3",
+  "solution": "Let $P$ be the probability that the marbles are in the original order after $2024$ moves, so with probability $1-P$ they are not. If they are in the original order, only one of the three equally likely swaps, exchanging the two green marbles, keeps the order, so they remain in the original order with probability $\\frac{1}{3}$. If they are not in the original order, the red marble is at an end, and exactly one of the three swaps (red with the middle marble) restores the original order, again probability $\\frac{1}{3}$. By the law of total probability, the probability of being in the original order after $2025$ moves is $P\\cdot\\frac{1}{3} + (1-P)\\cdot\\frac{1}{3} = \\frac{1}{3}$, and $P$ cancels. The answer is $\\frac{1}{3}$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=u0dCRInI-U4",
+  "extra": {
+   "hints": [],
+   "video": "u0dCRInI-U4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "markov",
+   "conditional"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:u0dCRInI-U4:6",
+  "source": "quantprof_youtube",
+  "title": "Digital Root of 19^100",
+  "statement": "Start with the number $19^{100}$. Add up all of its digits to obtain a new number $X_1$. Then add up the digits of $X_1$ to get $X_2$, and continue this process until a single digit remains. What is that final digit?",
+  "answer": "1",
+  "solution": "The digit sum of a number is congruent to the number itself modulo $9$: writing a number in expanded form, e.g. $100a + 10b + c = (a + b + c) + 99a + 9b$, the part other than the digit sum is divisible by $9$, and the same argument works for any number of digits. So every $X_i$, and the final single digit, is congruent to $19^{100} \\pmod 9$. Write $19^{100} = (1 + 18)^{100}$ and expand with the binomial theorem: every term except the leading $1$ contains a factor of $18$ and is divisible by $9$. Hence $19^{100} \\equiv 1 \\pmod 9$, and the final single digit is $1$.",
+  "difficulty": 3,
+  "difficulty10": 3,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=u0dCRInI-U4",
+  "extra": {
+   "hints": [],
+   "video": "u0dCRInI-U4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "logic",
+   "basic"
+  ],
+  "classified_by": "agent"
+ },
+ {
+  "id": "quantprof_youtube:u0dCRInI-U4:8",
+  "source": "quantprof_youtube",
+  "title": "Symmetric Matrix Main Diagonal",
+  "statement": "A $7 \\times 7$ matrix has every entry equal to a number from $1$ to $7$, subject to two constraints: each column contains each of the numbers $1$ through $7$ exactly once, and the matrix is symmetric, i.e. $a_{ij} = a_{ji}$ for all $1 \\le i, j \\le 7$. For a matrix satisfying these constraints, what is the probability that each number from $1$ to $7$ appears exactly once on the main diagonal?",
+  "answer": "1",
+  "solution": "Fix any number $k$ between $1$ and $7$. Since each of the $7$ columns contains $k$ exactly once, $k$ appears exactly $7$ times in the matrix. By symmetry, every off-diagonal occurrence $a_{ij} = k$ with $i \\ne j$ is matched by $a_{ji} = k$, so off-diagonal occurrences of $k$ come in pairs and their number is even. Therefore $k$ appears an odd number of times, hence at least once, on the main diagonal. This holds for every $k$ from $1$ to $7$, and the diagonal has only $7$ cells, so each number appears exactly once on the main diagonal. The required probability is $1$.",
+  "difficulty": 5,
+  "difficulty10": 5,
+  "tags": [
+   "probability"
+  ],
+  "url": "https://www.youtube.com/watch?v=u0dCRInI-U4",
+  "extra": {
+   "hints": [],
+   "video": "u0dCRInI-U4",
+   "confidence": "high"
+  },
+  "concepts": [
+   "logic",
+   "counting"
+  ],
+  "classified_by": "agent"
+ }
+]
