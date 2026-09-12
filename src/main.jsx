@@ -49,7 +49,7 @@ import { Profile } from "./profile.jsx";
 import { KeyNotice } from "./pages.jsx";
 import { ProbabilitySetup, DesignSetup } from "./setups.jsx";
 import { PresetPicker } from "./PresetPicker.jsx";
-import { Loader2, PenTool } from "lucide-react";
+import { Loader2, PenTool, RotateCcw } from "lucide-react";
 import { ProbabilityPane, DesignPane, NotesEditor } from "./rooms.jsx";
 import { probabilityRubric, designRubric } from "./modes.mjs";
 import { NotebookPen } from "lucide-react";
@@ -567,7 +567,9 @@ function Workspace({ session: initial, onExit }) {
     [design, setDesign] = useState(initial.design || null),
     [stages, setStages] = useState(initial.problems[0]?.stages || []),
     [quiet, setQuiet] = useState(false),
-    [stageBusy, setStageBusy] = useState(false);
+    [stageBusy, setStageBusy] = useState(false),
+    [hints, setHints] = useState({}),
+    [resetArmed, setResetArmed] = useState(false);
   const state = useRef({
       index: initial.index || 0,
       editors: initial.editors,
@@ -1351,6 +1353,7 @@ function Workspace({ session: initial, onExit }) {
             Math.round(ms / 1000),
           ]),
         ),
+        hints,
       });
       setFeedback(result);
     } catch (e) {
@@ -1425,6 +1428,13 @@ function Workspace({ session: initial, onExit }) {
     a.click();
     URL.revokeObjectURL(url);
   }
+  const starterCode = hasCode
+    ? problem.codeSnippets?.find((c) => c.langSlug === initial.language)
+        ?.code ||
+      (initial.language === "javascript"
+        ? "// Write your solution here\n"
+        : "# Write your solution here\n")
+    : "";
   const budget = hasCode || isProbability ? budgetSeconds(problem) : 0;
   const clockSeconds =
     isDesign && design
@@ -1519,6 +1529,14 @@ function Workspace({ session: initial, onExit }) {
             busy={answering || busy}
             onSubmit={submitAnswer}
             onReveal={revealAnswer}
+            hints={hints[index] || 0}
+            onHint={() => {
+              setHints((h) => ({ ...h, [index]: (h[index] || 0) + 1 }));
+              state.current.lastCheckInAt = Date.now();
+              void ask(
+                "The candidate pressed Hint. Give the next smallest hint for this question in one or two sentences, building on any hint already given; do not reveal the answer.",
+              );
+            }}
             onNext={next}
           />
         ) : isDesign ? (
@@ -1607,6 +1625,36 @@ function Workspace({ session: initial, onExit }) {
                   <span className="file-name">
                     {initial.language === "python3" ? "Python 3" : "JavaScript"}
                   </span>
+                  {resetArmed ? (
+                    <span className="reset-confirm">
+                      Reset code?
+                      <button
+                        className="quiet"
+                        onClick={() => {
+                          changeCode(starterCode);
+                          setResetArmed(false);
+                        }}
+                      >
+                        Reset
+                      </button>
+                      <button
+                        className="quiet"
+                        onClick={() => setResetArmed(false)}
+                      >
+                        Cancel
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      className="quiet reset"
+                      title="Reset to the starter code"
+                      aria-label="Reset to the starter code"
+                      disabled={code === starterCode}
+                      onClick={() => setResetArmed(true)}
+                    >
+                      <RotateCcw size={13} />
+                    </button>
+                  )}
                   <button
                     className="run"
                     disabled={!!running}

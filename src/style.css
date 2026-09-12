@@ -4048,3 +4048,24 @@ button.problem-row.pinned .problem-id {
   margin-left: auto;
   font-size: 11px;
 }
+.answer-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.reset-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #a6b596;
+}
+.reset-confirm .quiet,
+.surface-actions .reset {
+  padding: 5px 8px;
+  border-color: #3a4233;
+  color: #b9c8a8;
+}
+.surface-actions .reset:disabled {
+  opacity: 0.35;
+}

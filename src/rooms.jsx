@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Clock,
   Eye,
+  Lightbulb,
   Lock,
   Send,
   X,
@@ -25,6 +26,8 @@ export function ProbabilityPane({
   busy,
   onSubmit,
   onReveal,
+  onHint,
+  hints = 0,
   onNext,
 }) {
   const [answer, setAnswer] = useState("");
@@ -99,10 +102,17 @@ export function ProbabilityPane({
             ))}
           </ul>
         )}
-        {!done && attempts.length > 0 && (
-          <button className="quiet" onClick={onReveal} disabled={busy}>
-            <Eye size={14} /> Reveal answer
-          </button>
+        {!done && (
+          <div className="answer-actions">
+            <button className="quiet" onClick={onHint} disabled={busy}>
+              <Lightbulb size={14} /> Hint{hints ? ` · ${hints}` : ""}
+            </button>
+            {attempts.length > 0 && (
+              <button className="quiet" onClick={onReveal} disabled={busy}>
+                <Eye size={14} /> Reveal answer
+              </button>
+            )}
+          </div>
         )}
         {done && solution && (
           <div className="solution">
