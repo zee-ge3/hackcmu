@@ -205,11 +205,23 @@ export function TestResult({ spec, cases, result, running }) {
     );
     setActive(firstBad >= 0 ? firstBad : 0);
   }, [result]);
-  if (running) return <p className="tc-empty">Running…</p>;
+  if (running)
+    return (
+      <div className="tc-panel">
+        <div className="tc-status neutral" aria-live="polite">
+          Pending…
+        </div>
+        <div className="skeleton dark" />
+      </div>
+    );
   if (!result) return <p className="tc-empty">Run or submit to see results.</p>;
   const v = verdict(result);
   const status = (extra) => (
-    <div className={"tc-status " + v.tone}>
+    <div
+      key={result.runId}
+      className={"tc-status " + v.tone}
+      aria-live="polite"
+    >
       {v.label}
       {extra}
     </div>
@@ -251,8 +263,8 @@ export function TestResult({ spec, cases, result, running }) {
             {result.passed}/{result.total} testcases passed
           </small>,
         )}
+        {failing && <div className="tc-case-name">Failed · {failing.name}</div>}
         {failing && <CaseDetail spec={spec} row={failing} />}
-        {failing && <div className="tc-case-name">{failing.name}</div>}
       </div>
     );
   }

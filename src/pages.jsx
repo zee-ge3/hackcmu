@@ -15,6 +15,7 @@ import {
 import { behavioralPresets } from "./behavioral.mjs";
 import { api } from "./api.mjs";
 import { useAccount, GoogleSignIn } from "./account.jsx";
+import { PresetPicker } from "./PresetPicker.jsx";
 const modeNames = {
   coding: "Coding",
   behavioral: "Behavioral",
@@ -125,21 +126,21 @@ const modes = [
     title: "Coding",
     icon: Code2,
     line: "LeetCode problems in a shared editor with your own testcases.",
-    facts: ["4,042 problems", "Blind 75 · NeetCode 150", "JavaScript · Python"],
+    facts: ["15 with hidden tests", "4,042 statements", "JavaScript · Python"],
   },
   {
     url: "/probability",
     title: "Probability",
     icon: Dices,
     line: "Quant interview questions checked against hidden answers.",
-    facts: ["679 questions", "Levels 1–10", "Citadel, Jane Street, SIG…"],
+    facts: ["679 questions", "AMC · AIME · AoPS · QuantProf", "Levels 1–10"],
   },
   {
     url: "/design",
     title: "System design",
     icon: Network,
     line: "A brief, a clock, and constraints that arrive as you design.",
-    facts: ["12 systems or your own", "20–45 minutes"],
+    facts: ["12 systems or your own", "20–45 minutes", "3 constraints"],
   },
   {
     url: "/behavioral",
@@ -161,64 +162,62 @@ export function Home({ navigate }) {
   const { user, loading } = useAccount();
   const [recent, setRecent] = useState(null);
   const [insights, setInsights] = useState(null);
-  useEffect(() => {
-    if (!user) return;
+  const load = () => {
+    setRecent(null);
     Promise.all([
       api("/api/history", undefined, "GET"),
       api("/api/insights", undefined, "GET"),
     ])
       .then(([h, i]) => {
-        setRecent(h.interviews.slice(0, 6));
+        setRecent(h.interviews.slice(0, 8));
         setInsights(i);
       })
-      .catch(() => setRecent([]));
+      .catch((e) => setRecent({ error: e.message }));
+  };
+  useEffect(() => {
+    if (user) load();
   }, [user]);
   const go = (url) => (e) => {
     e.preventDefault();
     navigate(url);
   };
+  const history = Array.isArray(recent) ? recent : null;
   return (
     <main className="home page">
       <section className="modes">
-        {modes.map((m, i) => (
-          <a
-            key={m.url}
-            className="mode"
-            href={m.url}
-            onClick={go(m.url)}
-            style={{ "--i": i }}
-          >
+        {modes.map((m) => (
+          <a key={m.url} className="mode" href={m.url} onClick={go(m.url)}>
             <div className="mode-head">
               <m.icon size={18} />
               <h2>{m.title}</h2>
             </div>
             <p>{m.line}</p>
-            <ul>
-              {m.facts.map((f) => (
-                <li key={f}>{f}</li>
-              ))}
-            </ul>
-            <span className="mode-go">
-              Start <ArrowRight size={14} />
-            </span>
+            <small>{m.facts.join(" · ")}</small>
           </a>
         ))}
       </section>
-      <aside className="home-side">
-        {!loading && !user && (
+      {!loading && !user && (
+        <section className="card side-card">
+          <h2>Sign in</h2>
+          <GoogleSignIn />
+        </section>
+      )}
+      {user && (
+        <div className="home-lower">
           <section className="card side-card">
-            <h2>Sign in</h2>
-            <GoogleSignIn />
-          </section>
-        )}
-        {user && (
-          <section className="card side-card">
-            <h2>Recent</h2>
+            <h2>History</h2>
             {recent === null ? (
               <div className="skeleton" />
-            ) : recent.length ? (
+            ) : recent.error ? (
+              <p className="muted">
+                Couldn't load history.{" "}
+                <button className="quiet" onClick={load}>
+                  Retry
+                </button>
+              </p>
+            ) : history.length ? (
               <ul className="recent">
-                {recent.map((h) => {
+                {history.map((h) => {
                   const score = average(h.feedback);
                   return (
                     <li key={h.id}>
@@ -240,25 +239,25 @@ export function Home({ navigate }) {
               <p className="muted">No sessions yet.</p>
             )}
           </section>
-        )}
-        {insights?.weakestCriteria?.length > 0 && (
-          <section className="card side-card">
-            <h2>Weakest areas</h2>
-            {insights.weakestCriteria.slice(0, 4).map((c) => (
-              <div className="insight-row" key={c.mode + c.id}>
-                <span className="insight-label">
-                  {c.label}
-                  <small>{modeNames[c.mode]}</small>
-                </span>
-                <span className="score-bar" aria-hidden="true">
-                  <i style={{ width: `${(c.avg / 5) * 100}%` }} />
-                </span>
-                <b>{c.avg.toFixed(1)}</b>
-              </div>
-            ))}
-          </section>
-        )}
-      </aside>
+          {insights?.weakestCriteria?.length > 0 && (
+            <section className="card side-card">
+              <h2>Weakest areas</h2>
+              {insights.weakestCriteria.slice(0, 5).map((c) => (
+                <div className="insight-row" key={c.mode + c.id}>
+                  <span className="insight-label">
+                    {c.label}
+                    <small>{modeNames[c.mode]}</small>
+                  </span>
+                  <span className="score-bar" aria-hidden="true">
+                    <i style={{ width: `${(c.avg / 5) * 100}%` }} />
+                  </span>
+                  <b>{c.avg.toFixed(1)}</b>
+                </div>
+              ))}
+            </section>
+          )}
+        </div>
+      )}
     </main>
   );
 }
@@ -445,7 +444,7 @@ export function BehavioralSetup({ onStart, navigate }) {
           )}
         </section>
         <section className="card config behavioral-options">
-          <h2>Interview</h2>
+          <h2>Session</h2>
           <label className="field-label" htmlFor="target-role">
             Target role
           </label>
@@ -465,36 +464,14 @@ export function BehavioralSetup({ onStart, navigate }) {
             rows={3}
             onChange={(e) => setFocus(e.target.value)}
           />
-          <label className="field-label">Interviewer</label>
-          <div className="behavioral-presets">
-            {behavioralPresets.map((p) => (
-              <button
-                type="button"
-                key={p.id}
-                className={"preset " + (preset === p.id ? "selected" : "")}
-                onClick={() => {
-                  setPreset(p.id);
-                  setPrompt(p.prompt);
-                }}
-              >
-                <strong>{p.name}</strong>
-                <span>{p.description}</span>
-              </button>
-            ))}
-          </div>
-          <details className="prompt-details">
-            <summary>System prompt</summary>
-            <label htmlFor="behavioral-prompt">
-              Instructions for this interview
-            </label>
-            <textarea
-              id="behavioral-prompt"
-              rows={7}
-              maxLength={6000}
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-            />
-          </details>
+          <PresetPicker
+            presets={behavioralPresets}
+            style={preset}
+            setStyle={setPreset}
+            prompt={prompt}
+            setPrompt={setPrompt}
+            id="behavioral-prompt"
+          />
           <div className="start-area">
             <button
               className="primary start"
@@ -511,7 +488,13 @@ export function BehavioralSetup({ onStart, navigate }) {
               {starting ? "Starting…" : "Start"}
               <ArrowRight size={16} />
             </button>
-            {!hasKey && <KeyNotice navigate={navigate} />}
+            {!hasKey ? (
+              <KeyNotice navigate={navigate} />
+            ) : (
+              !resume && (
+                <span className="match-count">Upload a résumé to start.</span>
+              )
+            )}
           </div>
           {error && (
             <div className="error" role="alert">

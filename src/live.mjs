@@ -35,9 +35,19 @@ export class LiveConnection {
             this.onError("Audio playback was blocked. Use Play audio."),
           );
       };
-      this.mic = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      });
+      try {
+        this.mic = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: true, noiseSuppression: true },
+        });
+      } catch (e) {
+        throw new Error(
+          e.name === "NotAllowedError"
+            ? "Microphone access was blocked. Allow it in the browser, then reconnect."
+            : e.name === "NotFoundError"
+              ? "No microphone found. Plug one in, then reconnect."
+              : "Voice could not start: " + e.message,
+        );
+      }
       if (this.closed) {
         this.cleanup();
         return;

@@ -3,53 +3,14 @@ import { ArrowRight, Check } from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 import { KeyNotice } from "./pages.jsx";
+import { PresetPicker } from "./PresetPicker.jsx";
+import { sourceLabels } from "./modes.mjs";
 import {
   probabilityPresets,
   probabilityLevels,
   designPresets,
   designDurations,
 } from "./modes.mjs";
-export function PresetPicker({
-  presets,
-  style,
-  setStyle,
-  prompt,
-  setPrompt,
-  id,
-}) {
-  return (
-    <div className="interviewer-config">
-      <label className="field-label">Interviewer</label>
-      <div className="preset-grid">
-        {presets.map((p) => (
-          <button
-            type="button"
-            key={p.id}
-            className={style === p.id ? "preset selected" : "preset"}
-            onClick={() => {
-              setStyle(p.id);
-              setPrompt(p.prompt);
-            }}
-          >
-            <strong>{p.name}</strong>
-            <span>{p.description}</span>
-          </button>
-        ))}
-      </div>
-      <details className="prompt-details">
-        <summary>System prompt</summary>
-        <label htmlFor={id}>Instructions for this interview</label>
-        <textarea
-          id={id}
-          maxLength={6000}
-          rows={6}
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-        />
-      </details>
-    </div>
-  );
-}
 const conceptLabels = {
   basic: "Basics",
   logic: "Logic & brainteasers",
@@ -65,15 +26,6 @@ const conceptLabels = {
   markov: "Markov chains",
   distributions: "Distributions",
   strategy: "Strategy",
-};
-const sourceLabels = {
-  quantprof: "QuantProf",
-  quantprof_youtube: "QuantProf video",
-  aops_wiki: "AoPS",
-  MATH: "MATH",
-  AIME: "AIME",
-  AIMO_AMC: "AMC",
-  AIMO_AIME: "AIME (validation)",
 };
 export const conceptLabel = (c) => conceptLabels[c] || c;
 export function ProbabilitySetup({ onStart, navigate }) {
@@ -176,21 +128,27 @@ export function ProbabilitySetup({ onStart, navigate }) {
                 </button>
               ))}
           </div>
-          <label className="field-label">Asked at</label>
-          <div className="chips">
-            {Object.entries(firmCounts)
-              .sort((a, b) => b[1] - a[1])
-              .slice(0, 10)
-              .map(([f, n]) => (
-                <button
-                  key={f}
-                  className={"chip " + (firms.includes(f) ? "selected" : "")}
-                  onClick={() => toggle(firms, setFirms, f)}
-                >
-                  {f} <small>{n}</small>
-                </button>
-              ))}
-          </div>
+          {Object.keys(firmCounts).length > 0 && (
+            <>
+              <label className="field-label">Asked at</label>
+              <div className="chips">
+                {Object.entries(firmCounts)
+                  .sort((a, b) => b[1] - a[1])
+                  .slice(0, 10)
+                  .map(([f, n]) => (
+                    <button
+                      key={f}
+                      className={
+                        "chip " + (firms.includes(f) ? "selected" : "")
+                      }
+                      onClick={() => toggle(firms, setFirms, f)}
+                    >
+                      {f} <small>{n}</small>
+                    </button>
+                  ))}
+              </div>
+            </>
+          )}
           <label className="field-label">Sources</label>
           <div className="chips">
             {Object.entries(sourceCounts).map(([src, n]) => (
@@ -258,11 +216,9 @@ export function ProbabilitySetup({ onStart, navigate }) {
               {loading ? "Starting…" : "Start"}
               <ArrowRight size={16} />
             </button>
-            <span className="match-count">
-              {catalog
-                ? `${matching.length.toLocaleString()} match`
-                : "Loading…"}
-            </span>
+            {catalog && matching.length < count && (
+              <span className="match-count">Only {matching.length} match</span>
+            )}
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
@@ -277,7 +233,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
               Matches <small>{matching.length.toLocaleString()}</small>
             </h2>
             <div className="problem-list">
-              {matching.slice(0, 8).map((q) => (
+              {matching.slice(0, 30).map((q) => (
                 <div className="problem-row" key={q.id}>
                   <span className="problem-id">
                     {q.difficulty10 ? `L${q.difficulty10}` : "—"}
@@ -290,6 +246,11 @@ export function ProbabilitySetup({ onStart, navigate }) {
               ))}
               {catalog && !matching.length && (
                 <p className="muted">No matches.</p>
+              )}
+              {matching.length > 30 && (
+                <p className="muted">
+                  +{(matching.length - 30).toLocaleString()} more
+                </p>
               )}
             </div>
           </section>
@@ -346,7 +307,7 @@ export function DesignSetup({ onStart, navigate }) {
       <header className="page-head">
         <h1>System design</h1>
       </header>
-      <div className="setup-grid single">
+      <div className="setup-grid">
         <section className="config card">
           <h2>System</h2>
           <div className="design-grid">
@@ -361,9 +322,7 @@ export function DesignSetup({ onStart, navigate }) {
               >
                 <strong>{p.title}</strong>
                 <span>{p.summary}</span>
-                <small>
-                  {p.category} · {p.stageCount} constraints
-                </small>
+                <small>{p.category}</small>
               </button>
             ))}
             <button
@@ -375,7 +334,7 @@ export function DesignSetup({ onStart, navigate }) {
             >
               <strong>Custom</strong>
               <span>Write your own brief.</span>
-              <small>Constraints are improvised</small>
+              <small>Your constraints</small>
             </button>
           </div>
           {useCustom && (
@@ -407,44 +366,51 @@ export function DesignSetup({ onStart, navigate }) {
               />
             </div>
           )}
-          <h2>Session</h2>
-          <label className="field-label">Duration</label>
-          <div className="segmented">
-            {designDurations.map((m) => (
-              <button
-                key={m}
-                className={duration === m ? "active" : ""}
-                onClick={() => setDuration(m)}
-              >
-                {m} min
-              </button>
-            ))}
-          </div>
-          <PresetPicker
-            presets={designPresets}
-            style={style}
-            setStyle={setStyle}
-            prompt={prompt}
-            setPrompt={setPrompt}
-            id="design-prompt"
-          />
-          <div className="start-area">
-            <button
-              className="primary start"
-              onClick={start}
-              disabled={loading || !ready || !prompt.trim() || !hasKey}
-            >
-              {loading ? "Starting…" : "Start"}
-              <ArrowRight size={16} />
-            </button>
-            {!hasKey && <KeyNotice navigate={navigate} />}
-          </div>
-          {error && (
-            <div role="alert" className="error">
-              {error}
-            </div>
-          )}
         </section>
+        <aside>
+          <section className="config card">
+            <h2>Session</h2>
+            <label className="field-label">Duration</label>
+            <div className="segmented">
+              {designDurations.map((m) => (
+                <button
+                  key={m}
+                  className={duration === m ? "active" : ""}
+                  onClick={() => setDuration(m)}
+                >
+                  {m} min
+                </button>
+              ))}
+            </div>
+            <p className="field-hint">
+              3 constraints, revealed on a timer or when a step is done.
+            </p>
+            <PresetPicker
+              presets={designPresets}
+              style={style}
+              setStyle={setStyle}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              id="design-prompt"
+            />
+            <div className="start-area">
+              <button
+                className="primary start"
+                onClick={start}
+                disabled={loading || !ready || !prompt.trim() || !hasKey}
+              >
+                {loading ? "Starting…" : "Start"}
+                <ArrowRight size={16} />
+              </button>
+              {!hasKey && <KeyNotice navigate={navigate} />}
+            </div>
+            {error && (
+              <div role="alert" className="error">
+                {error}
+              </div>
+            )}
+          </section>
+        </aside>
       </div>
     </main>
   );

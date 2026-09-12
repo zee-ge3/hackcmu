@@ -26,7 +26,7 @@ The server binds to loopback. To serve it under another hostname (for example th
 
 ## Accounts, keys, and storage
 
-Sign-in uses Google Identity Services. Create an OAuth 2.0 **Web application** client in the Google Cloud Console (APIs & Services → Credentials), add every origin the app is served from to *Authorized JavaScript origins* (for example `http://localhost:3000` and your public hostname), and put the client ID in `GOOGLE_CLIENT_ID`. The browser sends Google's ID token to `/api/auth/google`, the server verifies it with `google-auth-library`, and a 30-day HTTP-only session cookie is issued. Set `ALLOWED_EMAILS` to a comma-separated list to restrict who can sign in; leave it empty to allow any Google account.
+Sign-in uses Google Identity Services. Create an OAuth 2.0 **Web application** client in the Google Cloud Console (APIs & Services → Credentials), add every origin the app is served from to _Authorized JavaScript origins_ (for example `http://localhost:3000` and your public hostname), and put the client ID in `GOOGLE_CLIENT_ID`. The browser sends Google's ID token to `/api/auth/google`, the server verifies it with `google-auth-library`, and a 30-day HTTP-only session cookie is issued. Set `ALLOWED_EMAILS` to a comma-separated list to restrict who can sign in; leave it empty to allow any Google account.
 
 Every model call — résumé parsing, whiteboard descriptions, the voice session, the reasoning backend, and grading — runs on the signed-in user's **own OpenAI API key**. Keys are entered on `/profile`, verified against `GET /v1/models`, encrypted with AES-256-GCM, and never returned to the browser beyond a `sk-…xxxx` hint. The encryption secret comes from `PAIRWISE_SECRET` or is generated once into `data/.secret`. There is no server-wide key in production.
 
@@ -79,6 +79,14 @@ The browser tests require a running development server (`BASE_URL` overrides `ht
 - [GPT-Live WebRTC](https://developers.openai.com/api/docs/guides/voice-webrtc?api=live)
 - [Client delegation](https://developers.openai.com/api/docs/guides/live-delegation)
 - [Session lifecycle and transcripts](https://developers.openai.com/api/docs/guides/live-conversations)
+
+## Room
+
+Sessions live at `/session/<id>`: a refresh or back/forward rejoins the room with the current problem, editor, testcases, and whiteboard (the server keeps a session for three idle hours). Multi-problem sessions have a problem picker in the topbar. In the coding room, `Ctrl/Cmd+'` runs the Testcase panel and `Ctrl/Cmd+Enter` submits; the bar above the Testcase/Test Result/Debugger tabs drags to resize the panel (double-click resets). History rows on the profile page expand to the full rubric.
+
+## Interviewer behaviour
+
+The voice interviewer reacts without being asked: a one-sentence spoken reaction after every Run or Submit (verdict, failing case, or a follow-up question), after each probability answer check, and when a design constraint is revealed. If the candidate works silently for more than 75 seconds, the reasoning backend is asked for a short check-in grounded in the editor, notes, or whiteboard, at most every 90 seconds. Saying "give me a minute", "let me think", or "stop talking" puts the interviewer on hold: the live agent is told to stay silent, spoken reactions and check-ins are suppressed, and the status pill reads _quiet_ until the candidate addresses it again (or ten minutes pass). The backend can also advance the interview with `next_problem` / `next_question` when the candidate asks to move on; the client switches problems and Alex introduces the next one.
 
 ## Feedback rubric
 

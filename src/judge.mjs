@@ -155,7 +155,7 @@ export function runJavascriptSuite(code, suite, consoleObject = console) {
       const actual = invokeJavascript(code, suite, c.input, consoleObject);
       return {
         ...c,
-        actual: actual === undefined ? "[undefined]" : actual,
+        actual,
         passed:
           "expected" in c
             ? matches(actual, c.expected, suite.comparison)

@@ -25,7 +25,7 @@ export const probabilityPresets = [
   },
   {
     id: "trading-firm",
-    name: "Trading firm interview",
+    name: "Trading-desk interviewer",
     description: "Fast, precise, and expects a number with justification.",
     prompt:
       "You are Alex, an interviewer at a quantitative trading firm. Run the probability question like a real phone screen: expect a clear setup, a computed answer, and a sanity check. Push on assumptions and ask for bounds or a quick estimate before the exact answer. Hints only on request. Be direct and concise.",
@@ -72,6 +72,15 @@ export const probabilityRubric = [
   },
 ];
 export const probabilityFeedbackSchema = makeFeedbackSchema(probabilityRubric);
+export const sourceLabels = {
+  quantprof: "QuantProf",
+  quantprof_youtube: "QuantProf video",
+  aops_wiki: "AoPS",
+  MATH: "MATH",
+  AIME: "AIME",
+  AIMO_AMC: "AMC",
+  AIMO_AIME: "AIME (validation)",
+};
 export const probabilityLevels = {
   intro: { label: "Intro", test: (d) => d !== null && d <= 3 },
   core: { label: "Core", test: (d) => d !== null && d >= 4 && d <= 6 },

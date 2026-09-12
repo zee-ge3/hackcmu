@@ -84,10 +84,10 @@ try {
   await page.goto(base + "/coding");
   await page.waitForSelector(".problem-row");
   await page
-    .getByRole("button", { name: "Realistic interview", exact: false })
+    .getByRole("button", { name: "Standard interviewer", exact: false })
     .click();
   await page.locator(".prompt-details summary").click();
-  const prompt = page.getByLabel("Instructions for this interview");
+  const prompt = page.getByLabel("System prompt");
   await prompt.fill(
     (await prompt.inputValue()) + " Begin with a warm welcome.",
   );
@@ -150,7 +150,7 @@ try {
   );
   assert.ok((await page.locator(".tc-stdout").innerText()).includes("[0,1]"));
   // Invalid JSON is refused before anything runs, LeetCode-style.
-  await page.getByRole("tab", { name: "Testcase" }).click();
+  await page.getByRole("tab", { name: "Testcase", exact: true }).click();
   await page.getByRole("tab", { name: "Case 5" }).click();
   await page.getByLabel("Case 5 nums").fill("[0,4");
   assert.equal(await page.locator(".tc-problems li").count(), 1);
@@ -160,7 +160,7 @@ try {
       document.querySelector(".tc-status")?.textContent || "",
     ),
   );
-  await page.getByRole("tab", { name: "Testcase" }).click();
+  await page.getByRole("tab", { name: "Testcase", exact: true }).click();
   await page.getByRole("button", { name: "Remove case 5" }).click();
   assert.equal(await page.getByRole("tab", { name: /^Case \d/ }).count(), 4);
   await page.getByRole("button", { name: "Submit", exact: true }).click();
@@ -203,7 +203,7 @@ try {
     pythonTrace.steps > 3 && pythonTrace.first.vars.nums.t === "arr",
     "python trace",
   );
-  await page.getByRole("tab", { name: "Testcase" }).click();
+  await page.getByRole("tab", { name: "Testcase", exact: true }).click();
   await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
   const box = await page.getByLabel("Shared drawing canvas").boundingBox();
   await page.mouse.move(box.x + 40, box.y + 50);

@@ -49,6 +49,8 @@ import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
 import { Profile } from "./profile.jsx";
 import { KeyNotice } from "./pages.jsx";
 import { ProbabilitySetup, DesignSetup } from "./setups.jsx";
+import { PresetPicker } from "./PresetPicker.jsx";
+import { Loader2, PenTool } from "lucide-react";
 import { ProbabilityPane, DesignPane, NotesEditor } from "./rooms.jsx";
 import { probabilityRubric, designRubric } from "./modes.mjs";
 import { NotebookPen } from "lucide-react";
@@ -185,7 +187,7 @@ function CodingSetup({ onStart, navigate }) {
             ["Google", "Amazon", "Meta", "Microsoft", "Apple", "Bloomberg"],
             companies,
             "Companies",
-            `All ${companies.length} companies…`,
+            "Add company…",
           )}
           <label className="field-label">Difficulty</label>
           <div className="segmented">
@@ -211,7 +213,7 @@ function CodingSetup({ onStart, navigate }) {
             ],
             topics,
             "Topics",
-            "All topics…",
+            "Add topic…",
           )}
           <label className="field-label">Lists</label>
           <div className="chips">
@@ -295,59 +297,25 @@ function CodingSetup({ onStart, navigate }) {
               </select>
             </div>
           </div>
-          <div className="interviewer-config">
-            <label className="field-label">Interviewer</label>
-            <div className="preset-grid">
-              {interviewerPresets.map((p) => (
-                <button
-                  type="button"
-                  key={p.id}
-                  className={style === p.id ? "preset selected" : "preset"}
-                  onClick={() => {
-                    setStyle(p.id);
-                    setPrompt(p.prompt);
-                  }}
-                >
-                  <strong>{p.name}</strong>
-                  <span>{p.description}</span>
-                </button>
-              ))}
-            </div>
-            <details className="prompt-details">
-              <summary>System prompt</summary>
-              <label htmlFor="interviewer-prompt">
-                Instructions for this interview
-              </label>
-              <textarea
-                id="interviewer-prompt"
-                maxLength={6000}
-                rows={7}
-                value={prompt}
-                onChange={(e) => setPrompt(e.target.value)}
-              />
-              <div>
-                <span>{prompt.length.toLocaleString()} / 6,000</span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setPrompt(
-                      interviewerPresets.find((p) => p.id === style).prompt,
-                    )
-                  }
-                >
-                  Reset
-                </button>
-              </div>
-            </details>
-          </div>
+          <label className="field-label">Tools</label>
           <label className="test-filter">
             <input
               type="checkbox"
               checked={debuggerEnabled}
               onChange={(e) => setDebuggerEnabled(e.target.checked)}
             />
-            <span>Debugger</span>
+            <span>
+              Debugger <small>step through a testcase</small>
+            </span>
           </label>
+          <PresetPicker
+            presets={interviewerPresets}
+            style={style}
+            setStyle={setStyle}
+            prompt={prompt}
+            setPrompt={setPrompt}
+            id="interviewer-prompt"
+          />
           <div className="start-area">
             <button
               className="primary start"
@@ -359,9 +327,9 @@ function CodingSetup({ onStart, navigate }) {
               {loading ? "Starting…" : "Start"}
               <ArrowRight size={16} />
             </button>
-            <span className="match-count">
-              {ready ? `${matching.length.toLocaleString()} match` : "Loading…"}
-            </span>
+            {ready && matching.length < count && (
+              <span className="match-count">Only {matching.length} match</span>
+            )}
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
@@ -376,7 +344,7 @@ function CodingSetup({ onStart, navigate }) {
               Matches <small>{matching.length.toLocaleString()}</small>
             </h2>
             <div className="problem-list">
-              {matching.slice(0, 8).map((p) => (
+              {matching.slice(0, 30).map((p) => (
                 <div className="problem-row" key={p.id}>
                   <span className="problem-id">{p.id}</span>
                   <span>{p.title}</span>
@@ -387,6 +355,11 @@ function CodingSetup({ onStart, navigate }) {
               ))}
               {ready && !matching.length && (
                 <p className="muted">No matches.</p>
+              )}
+              {matching.length > 30 && (
+                <p className="muted">
+                  +{(matching.length - 30).toLocaleString()} more
+                </p>
               )}
             </div>
           </section>
@@ -399,7 +372,8 @@ function CodingSetup({ onStart, navigate }) {
 function App() {
   const { user, loading } = useAccount();
   const [path, setPath] = useState(window.location.pathname),
-    [session, setSession] = useState(null);
+    [session, setSession] = useState(null),
+    [error, setError] = useState("");
   function navigate(url) {
     window.history.pushState({}, "", url);
     setPath(url);
@@ -414,15 +388,29 @@ function App() {
     window.addEventListener("popstate", back);
     return () => window.removeEventListener("popstate", back);
   }, []);
+  // Sessions live at /session/<id>, so a refresh (or back/forward) rejoins the
+  // room instead of losing it; the server keeps the interview for hours.
+  const sessionId = path.startsWith("/session/") ? path.slice(9) : null;
+  useEffect(() => {
+    if (!sessionId || !user || session?.id === sessionId) return;
+    api(`/api/interviews/${sessionId}`, undefined, "GET")
+      .then((s) => setSession(s))
+      .catch((e) => {
+        setError(e.message);
+        navigate("/");
+      });
+  }, [sessionId, user]);
+  const startSession = (s) => {
+    window.history.pushState({}, "", `/session/${s.id}`);
+    setPath(`/session/${s.id}`);
+    setSession(s);
+  };
   if (session)
-    return <Workspace session={session} onExit={() => setSession(null)} />;
-  const gated = [
-    "/coding",
-    "/behavioral",
-    "/probability",
-    "/design",
-    "/profile",
-  ].includes(path);
+    return <Workspace session={session} onExit={() => navigate("/")} />;
+  const gated =
+    ["/coding", "/behavioral", "/probability", "/design", "/profile"].includes(
+      path,
+    ) || !!sessionId;
   return (
     <div className="app-shell">
       <SiteHeader path={path} navigate={navigate} />
@@ -432,14 +420,18 @@ function App() {
         </main>
       ) : gated && !user ? (
         <SignInGate />
+      ) : sessionId ? (
+        <main className="setup page">
+          <p className="muted">{error || "Rejoining…"}</p>
+        </main>
       ) : path === "/coding" ? (
-        <CodingSetup onStart={setSession} navigate={navigate} />
+        <CodingSetup onStart={startSession} navigate={navigate} />
       ) : path === "/behavioral" ? (
-        <BehavioralSetup onStart={setSession} navigate={navigate} />
+        <BehavioralSetup onStart={startSession} navigate={navigate} />
       ) : path === "/probability" ? (
-        <ProbabilitySetup onStart={setSession} navigate={navigate} />
+        <ProbabilitySetup onStart={startSession} navigate={navigate} />
       ) : path === "/design" ? (
-        <DesignSetup onStart={setSession} navigate={navigate} />
+        <DesignSetup onStart={startSession} navigate={navigate} />
       ) : path === "/profile" ? (
         <Profile navigate={navigate} />
       ) : (
@@ -466,15 +458,16 @@ function Workspace({ session: initial, onExit }) {
     hasCode ? "code" : usesNotes ? "notes" : "canvas",
   );
   const boards = useRef({});
-  const [index, setIndex] = useState(0),
+  const [index, setIndex] = useState(initial.index || 0),
     [editors, setEditors] = useState(initial.editors),
-    [code, setCode] = useState(initial.editors[0]?.code || ""),
+    [code, setCode] = useState(initial.editors[initial.index || 0]?.code || ""),
     [voice, setVoice] = useState("offline"),
     [muted, setMuted] = useState(false),
     [transcript, setTranscript] = useState([]),
     [activity, setActivity] = useState(""),
     [busy, setBusy] = useState(false),
-    [running, setRunning] = useState(false),
+    [running, setRunning] = useState(null),
+    [panelHeight, setPanelHeight] = useState(300),
     [output, setOutput] = useState(null),
     [error, setError] = useState(""),
     [elapsed, setElapsed] = useState(0),
@@ -496,9 +489,9 @@ function Workspace({ session: initial, onExit }) {
     [quiet, setQuiet] = useState(false),
     [stageBusy, setStageBusy] = useState(false);
   const state = useRef({
-      index: 0,
+      index: initial.index || 0,
       editors: initial.editors,
-      code: initial.editors[0]?.code || "",
+      code: initial.editors[initial.index || 0]?.code || "",
       transcript: [],
       busy: false,
       runResult: "",
@@ -620,7 +613,7 @@ function Workspace({ session: initial, onExit }) {
     state.current.code = value;
     state.current.lastActivityAt = Date.now();
     setCode(value);
-    setSaved("Unsaved");
+    setSaved("");
   }
   // The Testcase panel syncs to the server as it is edited (debounced) so the
   // interviewer always sees the candidate's current cases.
@@ -680,12 +673,12 @@ function Workspace({ session: initial, onExit }) {
         setEditors(state.current.editors);
         if (state.current.code === value) setSaved("Saved");
       } catch (e) {
-        setSaved("Not saved");
+        setSaved("Save failed");
         if (e.status === 409) {
           state.current.editors[target] = e.data.editor;
           setPendingEdit(e.data.editor);
           throw new Error(
-            "The interviewer edited this file. Keep your draft or load their edit below.",
+            "Alex edited this file. Apply the edit or keep yours.",
           );
         }
         throw e;
@@ -756,7 +749,7 @@ function Workspace({ session: initial, onExit }) {
         } else {
           setPendingEdit(result.editor);
           message +=
-            " Your newer draft has been preserved; an interviewer edit is available to review.";
+            " Your draft was kept; Alex's edit is available in the editor.";
         }
       }
 
@@ -1042,13 +1035,14 @@ function Workspace({ session: initial, onExit }) {
       }
       suite = built.suite;
     }
-    setRunning(true);
+    setRunning(mode);
     setBottomTab("result");
     const raw = await runCode(value, initial.language, suite);
     const result = {
       ...raw,
       kind: mode,
       fallback,
+      runId: Date.now(),
       casesSnapshot: JSON.stringify(state.current.customTests[target]),
     };
     const label =
@@ -1065,7 +1059,7 @@ function Workspace({ session: initial, onExit }) {
       ...(state.current.runs[target] || []),
       { code: value, mode, ...raw },
     ];
-    setRunning(false);
+    setRunning(null);
     live.current?.send(
       "session.thinking.append",
       `The browser ran problem ${target + 1} (${problemAt.title}), ${label}. Result: ${result.output.slice(0, 650)}`,
@@ -1083,7 +1077,8 @@ function Workspace({ session: initial, onExit }) {
   }
   // Switches problems; used by the Next button and by the backend's next_problem tool.
   async function goTo(nextIndex, { announced = false } = {}) {
-    if (!initial.problems[nextIndex]) return;
+    if (!initial.problems[nextIndex] || nextIndex === state.current.index)
+      return;
     try {
       await save();
       await flushTests();
@@ -1100,7 +1095,7 @@ function Workspace({ session: initial, onExit }) {
       state.current.lastCheckInAt = Date.now();
       live.current?.send(
         isQuiet() ? "session.thinking.append" : "session.commentary.append",
-        `${isProbability ? "Next question" : "Next problem"}: ${initial.problems[nextIndex].title}. Take a moment to read it, then tell me your first thoughts.`,
+        `${isProbability ? "Question" : "Problem"} ${nextIndex + 1}: ${initial.problems[nextIndex].title}. Take a moment to read it, then tell me your first thoughts.`,
       );
     } catch (e) {
       setError(e.message);
@@ -1144,6 +1139,24 @@ function Workspace({ session: initial, onExit }) {
       cases: [...(prepared?.cases || []), ...own],
     };
   }, [problem, customTests, index, hasCode, initial.debuggerEnabled]);
+  // Drag the bar above the bottom tabs to resize the panel; double-click resets.
+  function startResize(e) {
+    const startY = e.clientY;
+    const startH = panelHeight;
+    const move = (ev) =>
+      setPanelHeight(
+        Math.max(
+          120,
+          Math.min(window.innerHeight * 0.7, startH - (ev.clientY - startY)),
+        ),
+      );
+    const up = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  }
   function download() {
     const blob = new Blob(
       [
@@ -1174,6 +1187,19 @@ function Workspace({ session: initial, onExit }) {
     a.click();
     URL.revokeObjectURL(url);
   }
+  const clockSeconds =
+    isDesign && design
+      ? Math.max(0, Math.round(design.durationMs / 1000) - elapsed)
+      : elapsed;
+  const voiceLabel =
+    {
+      offline: "Voice off",
+      connecting: "Connecting…",
+      live: quiet ? "On hold" : "Listening",
+      closing: "Stopping…",
+      ended: "Voice ended",
+      disconnected: "Disconnected",
+    }[voice] || voice;
   return (
     <div className="workspace">
       <header className="topbar">
@@ -1184,17 +1210,37 @@ function Workspace({ session: initial, onExit }) {
           pairwise
         </span>
         <div className="room-label">
-          {isBehavioral
-            ? "Behavioral"
-            : isDesign
-              ? "System design"
-              : `${isProbability ? "Question" : "Problem"} ${index + 1} of ${initial.problems.length}`}
+          {isBehavioral ? (
+            "Behavioral"
+          ) : isDesign ? (
+            "System design"
+          ) : initial.problems.length > 1 ? (
+            <select
+              className="problem-jump"
+              aria-label="Jump to problem"
+              value={index}
+              disabled={busy || ending}
+              onChange={(e) => void goTo(Number(e.target.value))}
+            >
+              {initial.problems.map((p, i) => (
+                <option key={i} value={i}>
+                  {isProbability ? "Question" : "Problem"} {i + 1} of{" "}
+                  {initial.problems.length} · {p.title}
+                </option>
+              ))}
+            </select>
+          ) : (
+            `${isProbability ? "Question" : "Problem"} 1 of 1`
+          )}
         </div>
         <div className="room-actions">
-          <span className="clock">
+          <span
+            className="clock"
+            title={isDesign ? "Time remaining" : "Elapsed"}
+          >
             <Timer size={15} />
-            {String(Math.floor(elapsed / 60)).padStart(2, "0")}:
-            {String(elapsed % 60).padStart(2, "0")}
+            {String(Math.floor(clockSeconds / 60)).padStart(2, "0")}:
+            {String(clockSeconds % 60).padStart(2, "0")}
           </span>
           <button
             className="quiet"
@@ -1202,7 +1248,6 @@ function Workspace({ session: initial, onExit }) {
             onClick={finish}
           >
             {ending ? "Grading…" : "Finish"}
-            <ArrowUpRight size={15} />
           </button>
         </div>
       </header>
@@ -1257,7 +1302,7 @@ function Workspace({ session: initial, onExit }) {
                 rel="noreferrer"
                 href={`https://leetcode.com/problems/${problem.slug}/`}
               >
-                View on LeetCode
+                Source
                 <ArrowUpRight size={14} />
               </a>
               {index < initial.problems.length - 1 && (
@@ -1293,8 +1338,57 @@ function Workspace({ session: initial, onExit }) {
               className={workspaceTab === "canvas" ? "active" : ""}
               onClick={() => setWorkspaceTab("canvas")}
             >
+              <PenTool size={14} />
               Whiteboard
             </button>
+            <div className="surface-actions">
+              {(hasCode || usesNotes) && workspaceTab !== "canvas" && (
+                <span
+                  className={
+                    "save-state " + (saved === "Save failed" ? "bad" : "")
+                  }
+                >
+                  {saved}
+                </span>
+              )}
+              {hasCode && (
+                <>
+                  <span className="file-name">
+                    {initial.language === "python3" ? "Python 3" : "JavaScript"}
+                  </span>
+                  <button
+                    className="run"
+                    disabled={!!running}
+                    title="Run (Ctrl+')"
+                    onClick={() => execute(state.current.code, "run")}
+                  >
+                    {running === "run" ? (
+                      <Loader2 className="spin" size={13} />
+                    ) : (
+                      <Play size={13} />
+                    )}
+                    Run
+                  </button>
+                  <button
+                    className="run submit"
+                    disabled={!!running}
+                    title={
+                      problem.testSuite
+                        ? `Submit (Ctrl+Enter) · ${problem.testCount} hidden tests`
+                        : "Submit (Ctrl+Enter) · no hidden tests, runs your testcases"
+                    }
+                    onClick={() => execute(state.current.code, "submit")}
+                  >
+                    {running === "submit" ? (
+                      <Loader2 className="spin" size={13} />
+                    ) : (
+                      <Check size={13} />
+                    )}
+                    Submit
+                  </button>
+                </>
+              )}
+            </div>
           </div>
           {usesNotes && (
             <div
@@ -1305,13 +1399,8 @@ function Workspace({ session: initial, onExit }) {
                 value={code}
                 onChange={changeCode}
                 label={isDesign ? "design-notes.md" : "scratch-work.md"}
-                placeholder={
-                  isDesign
-                    ? "Requirements, estimates, APIs, data model…"
-                    : "Set up the sample space, define events, work the algebra…"
-                }
+                placeholder="Notes"
               />
-              <span className="save-state notes-save">{saved}</span>
             </div>
           )}
           {hasCode && (
@@ -1319,38 +1408,6 @@ function Workspace({ session: initial, onExit }) {
               className="editor-pane"
               style={{ display: workspaceTab === "code" ? "flex" : "none" }}
             >
-              <div className="editor-toolbar">
-                <span>
-                  <Code2 size={16} />
-                  {initial.language === "python3"
-                    ? "solution.py"
-                    : "solution.js"}
-                </span>
-                <div>
-                  <span className="save-state">{saved}</span>
-                  <button
-                    className="run"
-                    disabled={running}
-                    onClick={() => execute(state.current.code, "run")}
-                  >
-                    <Play size={13} />
-                    Run
-                  </button>
-                  <button
-                    className="run submit"
-                    disabled={running}
-                    title={
-                      problem.testSuite
-                        ? `${problem.testCount} hidden tests`
-                        : "No hidden tests for this problem: runs your testcases"
-                    }
-                    onClick={() => execute(state.current.code, "submit")}
-                  >
-                    <Check size={13} />
-                    Submit
-                  </button>
-                </div>
-              </div>
               <div className="monaco">
                 <Editor
                   language={
@@ -1362,6 +1419,14 @@ function Workspace({ session: initial, onExit }) {
                   onMount={(editor) => {
                     codeRef.current = editor;
                     setEditorInstance(editor);
+                    editor.addCommand(
+                      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Quote,
+                      () => execute(state.current.code, "run"),
+                    );
+                    editor.addCommand(
+                      monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter,
+                      () => execute(state.current.code, "submit"),
+                    );
                   }}
                   options={{
                     fontSize: 14,
@@ -1404,6 +1469,14 @@ function Workspace({ session: initial, onExit }) {
                   </button>
                 </div>
               )}
+              <div
+                className="panel-handle"
+                role="separator"
+                aria-orientation="horizontal"
+                aria-label="Resize panel"
+                onPointerDown={startResize}
+                onDoubleClick={() => setPanelHeight(300)}
+              />
               <div className="bottom-tabs" role="tablist">
                 <button
                   role="tab"
@@ -1421,7 +1494,11 @@ function Workspace({ session: initial, onExit }) {
                 >
                   <Terminal size={12} /> Test Result
                   {output && !running && (
-                    <i className={"tab-dot " + (verdict(output)?.tone || "")} />
+                    <i
+                      className={"tab-dot " + (verdict(output)?.tone || "")}
+                      role="img"
+                      aria-label={verdict(output)?.label}
+                    />
                   )}
                 </button>
                 {initial.debuggerEnabled && (
@@ -1435,23 +1512,23 @@ function Workspace({ session: initial, onExit }) {
                   </button>
                 )}
               </div>
-              <div className="bottom-panel">
-                {bottomTab === "testcase" && (
+              <div className="bottom-panel" style={{ height: panelHeight }}>
+                <div className="bottom-slot" hidden={bottomTab !== "testcase"}>
                   <Testcases
                     key={index}
                     spec={problem.testSpec}
                     cases={customTests[index] || []}
                     onChange={(list) => changeTests(list)}
                   />
-                )}
-                {bottomTab === "result" && (
+                </div>
+                <div className="bottom-slot" hidden={bottomTab !== "result"}>
                   <TestResult
                     spec={problem.testSpec}
                     cases={customTests[index] || []}
                     result={output}
-                    running={running}
+                    running={!!running}
                   />
-                )}
+                </div>
                 {bottomTab === "debugger" && initial.debuggerEnabled && (
                   <Debugger
                     key={index}
@@ -1487,59 +1564,48 @@ function Workspace({ session: initial, onExit }) {
           </div>
         </div>
         <aside className="interviewer-pane">
-          <div className="interviewer-title">
-            <span
-              className={"connection " + (voice === "live" ? "connected" : "")}
-            >
-              <span className="live-dot" />
-              {voice === "live" && quiet ? "quiet" : voice}
-            </span>
-          </div>
-          <div className={"small-orb " + (voice === "live" ? "pulsing" : "")}>
-            <div className="wave">
-              {[12, 22, 35, 18, 30].map((h, i) => (
-                <i key={i} style={{ height: h }} />
-              ))}
+          <div className="agent-row">
+            <span className={"live-dot " + (voice === "live" ? "on" : "")} />
+            <strong>Alex</strong>
+            <span className="agent-state">{voiceLabel}</span>
+            <div className="voice-controls">
+              {["offline", "ended", "disconnected"].includes(voice) ? (
+                <button className="primary" onClick={connect}>
+                  <Headphones size={14} />
+                  {voice === "offline" ? "Connect voice" : "Reconnect voice"}
+                </button>
+              ) : (
+                <>
+                  <button
+                    className={muted ? "muted-button" : ""}
+                    disabled={voice !== "live"}
+                    aria-label={muted ? "Unmute microphone" : "Mute microphone"}
+                    onClick={() => {
+                      live.current?.mute(!muted);
+                      setMuted(!muted);
+                    }}
+                  >
+                    {muted ? <MicOff size={15} /> : <Mic size={15} />}
+                  </button>
+                  <button
+                    aria-label="Play audio"
+                    onClick={() =>
+                      live.current?.audio
+                        ?.play()
+                        .catch((e) => setError(e.message))
+                    }
+                  >
+                    <Volume2 size={15} />
+                  </button>
+                  <button
+                    aria-label="Stop voice"
+                    onClick={() => live.current?.close()}
+                  >
+                    <Square size={13} />
+                  </button>
+                </>
+              )}
             </div>
-          </div>
-          <h2>Alex</h2>
-          <div className="voice-controls">
-            {["offline", "ended", "disconnected"].includes(voice) ? (
-              <button className="primary" onClick={connect}>
-                <Headphones size={16} />
-                Reconnect voice
-              </button>
-            ) : (
-              <>
-                <button
-                  className={muted ? "muted-button" : ""}
-                  disabled={voice !== "live"}
-                  aria-label={muted ? "Unmute microphone" : "Mute microphone"}
-                  onClick={() => {
-                    live.current?.mute(!muted);
-                    setMuted(!muted);
-                  }}
-                >
-                  {muted ? <MicOff size={17} /> : <Mic size={17} />}
-                </button>
-                <button
-                  aria-label="Play audio"
-                  onClick={() =>
-                    live.current?.audio
-                      ?.play()
-                      .catch((e) => setError(e.message))
-                  }
-                >
-                  <Volume2 size={17} />
-                </button>
-                <button
-                  aria-label="Stop voice"
-                  onClick={() => live.current?.close()}
-                >
-                  <Square size={14} />
-                </button>
-              </>
-            )}
           </div>
           <div className="transcript-label">
             <span>Transcript</span>
@@ -1557,11 +1623,11 @@ function Workspace({ session: initial, onExit }) {
             {!transcript.length && (
               <div className="conversation-empty">
                 <p>
-                  {voice === "connecting"
-                    ? "Connecting…"
-                    : voice === "live"
-                      ? "Listening…"
-                      : "Voice off"}
+                  {voice === "live"
+                    ? "Listening…"
+                    : voice === "connecting"
+                      ? "Connecting…"
+                      : ""}
                 </p>
               </div>
             )}
@@ -1605,7 +1671,7 @@ function Workspace({ session: initial, onExit }) {
           >
             <div className="section-title">
               <div>
-                <h2>Suggested edit</h2>
+                <h2>Alex's edit</h2>
               </div>
               <button
                 aria-label="Close diff"

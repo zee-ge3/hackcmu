@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { Check, LogOut, Trash2 } from "lucide-react";
+import { Check, ChevronDown, LogOut, Trash2 } from "lucide-react";
+import { rubric, scoreLabels } from "./interviewer.mjs";
+import { behavioralRubric } from "./behavioral.mjs";
+import { probabilityRubric, designRubric } from "./modes.mjs";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 const when = (ms) =>
@@ -16,6 +19,66 @@ const average = (feedback) => {
     ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
     : null;
 };
+const rubrics = {
+  coding: rubric,
+  behavioral: behavioralRubric,
+  probability: probabilityRubric,
+  design: designRubric,
+};
+// Full rubric for one past session, expanded in place under its history row.
+function FeedbackDetail({ interview }) {
+  const f = interview.feedback;
+  const items = rubrics[interview.mode] || rubric;
+  return (
+    <div className="history-detail">
+      <p>{f.summary}</p>
+      <div className="history-criteria">
+        {items.map((item) => {
+          const g = f.criteria?.[item.id];
+          if (!g) return null;
+          return (
+            <div className="history-criterion" key={item.id}>
+              <div>
+                <strong>{item.label}</strong>
+                <span className="score">
+                  {g.score === null
+                    ? "—"
+                    : `${g.score} · ${scoreLabels[g.score]}`}
+                </span>
+              </div>
+              <p>{g.evidence}</p>
+              <p className="muted">{g.improvement}</p>
+            </div>
+          );
+        })}
+      </div>
+      {(f.strengths?.length > 0 || f.next_steps?.length > 0) && (
+        <div className="history-lists">
+          {f.strengths?.length > 0 && (
+            <div>
+              <h4>Strengths</h4>
+              <ul>
+                {f.strengths.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          {f.next_steps?.length > 0 && (
+            <div>
+              <h4>Next steps</h4>
+              <ol>
+                {f.next_steps.map((t, i) => (
+                  <li key={i}>{t}</li>
+                ))}
+              </ol>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 const modeNames = {
   coding: "Coding",
   behavioral: "Behavioral",
@@ -112,6 +175,7 @@ export function Profile({ navigate }) {
     [key, setKey] = useState(""),
     [keyBusy, setKeyBusy] = useState(false),
     [confirmDelete, setConfirmDelete] = useState(false),
+    [open, setOpen] = useState(null),
     [notice, setNotice] = useState(""),
     [error, setError] = useState("");
   useEffect(() => {
@@ -240,7 +304,11 @@ export function Profile({ navigate }) {
               onChange={(e) => setKey(e.target.value)}
             />
             <button className="primary" disabled={keyBusy || !key.trim()}>
-              {keyBusy ? "Checking…" : user.openaiKeyHint ? "Replace" : "Save"}
+              {keyBusy
+                ? "Checking…"
+                : user.openaiKeyHint
+                  ? "Replace key"
+                  : "Save key"}
             </button>
           </form>
           {user.openaiKeyHint && (
@@ -290,16 +358,35 @@ export function Profile({ navigate }) {
                 </button>
               </div>
             ))}
-            {resumes && !resumes.length && <p className="muted">None.</p>}
+            {resumes && !resumes.length && (
+              <p className="muted">
+                No résumés yet. Upload one from Behavioral.
+              </p>
+            )}
           </div>
         </section>
-        <section className="card profile-card">
+        <section className="card profile-card history-card">
           <h2>History</h2>
           <div className="list-rows">
             {history?.map((h) => {
               const score = average(h.feedback);
               return (
-                <div className="list-row" key={h.id}>
+                <div
+                  className={
+                    "list-row expandable " + (open === h.id ? "open" : "")
+                  }
+                  key={h.id}
+                >
+                  <button
+                    className="expand"
+                    aria-expanded={open === h.id}
+                    aria-label={
+                      open === h.id ? "Collapse feedback" : "Expand feedback"
+                    }
+                    onClick={() => setOpen(open === h.id ? null : h.id)}
+                  >
+                    <ChevronDown size={14} />
+                  </button>
                   <div>
                     <span className="mode-tag">
                       {modeNames[h.mode]}
@@ -307,9 +394,12 @@ export function Profile({ navigate }) {
                     </span>
                     <strong>{h.title}</strong>
                     <small>{when(h.finishedAt)}</small>
-                    <p className="feedback-summary-line">
-                      {h.feedback.summary}
-                    </p>
+                    {open !== h.id && (
+                      <p className="feedback-summary-line">
+                        {h.feedback.summary}
+                      </p>
+                    )}
+                    {open === h.id && <FeedbackDetail interview={h} />}
                   </div>
                   {score && (
                     <span className="score" title="Average rubric score">
@@ -330,7 +420,9 @@ export function Profile({ navigate }) {
                 </div>
               );
             })}
-            {history && !history.length && <p className="muted">None.</p>}
+            {history && !history.length && (
+              <p className="muted">No sessions yet.</p>
+            )}
           </div>
         </section>
       </div>

@@ -16,7 +16,7 @@ export const behavioralPresets = [
   },
   {
     id: "behavioral-leadership",
-    name: "Leadership deep dive",
+    name: "Leadership panel",
     description: "Decisions, influence, and difficult tradeoffs.",
     prompt:
       "You are Alex, a behavioral interviewer focused on leadership. Ground questions in the candidate’s actual resume. Explore influencing others, handling disagreement, making tradeoffs, and learning from failure. Ask one specific follow-up at a time, distinguishing team outcomes from the candidate’s own contribution. Do not invent experience.",

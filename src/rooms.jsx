@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { MathText } from "./math.jsx";
 import { conceptLabel } from "./setups.jsx";
+import { sourceLabels } from "./modes.mjs";
 const mmss = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
@@ -35,10 +36,10 @@ export function ProbabilityPane({
     <section className="statement-pane probability-pane">
       <div className="statement-scroll">
         <div className="meta">
-          {problem.source.replace(/_/g, " ")}
+          {sourceLabels[problem.source] || problem.source}
           {problem.difficulty10 ? ` · level ${problem.difficulty10}` : ""}
         </div>
-        <h1>{problem.title}</h1>
+        <h1>{problem.title.replace(/ Problems\/Problem /, " · Problem ")}</h1>
         <div className="problem-meta">
           {problem.concepts.map((c) => (
             <span key={c}>{conceptLabel(c)}</span>
@@ -154,9 +155,6 @@ export function DesignPane({
   return (
     <section className="statement-pane design-pane">
       <div className="pane-tabs">
-        <span>
-          <Clock size={13} /> {over ? "Time is up" : mmss(remaining)}
-        </span>
         <span className="stage-count">
           {stages.length} / {design.stageCount} constraints
         </span>
@@ -188,13 +186,9 @@ export function DesignPane({
               </span>
               <div>
                 <strong>Next constraint</strong>
-                <p>
-                  {nextIn !== null && nextIn > 0
-                    ? `In ${mmss(nextIn)}, or when this step is settled.`
-                    : "When this step is settled."}
-                </p>
+                <p>{nextIn !== null && nextIn > 0 ? mmss(nextIn) : "Now"}</p>
                 <button className="quiet" onClick={onAdvance} disabled={busy}>
-                  Step done <ChevronRight size={14} />
+                  Reveal now <ChevronRight size={14} />
                 </button>
               </div>
             </div>
