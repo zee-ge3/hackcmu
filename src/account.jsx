@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { api } from "./api.mjs";
+import { ErrorBanner } from "./ui.jsx";
 const AccountContext = createContext(null);
 // Google Identity Services keeps one global config; initialize it once per client ID.
 let initializedClientId = null;
@@ -74,15 +75,15 @@ export function GoogleSignIn({ size = "large" }) {
     };
   }, [googleClientId]);
   if (!googleClientId)
-    return <p className="muted">GOOGLE_CLIENT_ID is not set.</p>;
+    return (
+      <ErrorBanner
+        error={`Sign-in isn't configured. Set GOOGLE_CLIENT_ID in your .env — see the README's "Accounts, keys, and storage" section.`}
+      />
+    );
   return (
     <div className="google-signin">
       <div ref={slot} />
-      {error && (
-        <div className="error" role="alert">
-          {error}
-        </div>
-      )}
+      <ErrorBanner error={error} />
     </div>
   );
 }

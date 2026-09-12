@@ -19,17 +19,10 @@ import {
   Timer,
   Volume2,
   X,
-  Search,
   Download,
   Braces,
 } from "lucide-react";
-import {
-  interviewerPresets,
-  rubric,
-  scoreLabels,
-  groupTranscript,
-} from "./interviewer.mjs";
-import { filterProblems } from "./domain.mjs";
+import { rubric, scoreLabels, groupTranscript } from "./interviewer.mjs";
 import { LiveConnection } from "./live.mjs";
 import { runCode } from "./runner.mjs";
 import "./style.css";
@@ -52,9 +45,7 @@ import { DiffEditor } from "@monaco-editor/react";
 import { Bug, GitCompare } from "lucide-react";
 import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
 import { Profile } from "./profile.jsx";
-import { KeyNotice } from "./pages.jsx";
-import { ProbabilitySetup, DesignSetup } from "./setups.jsx";
-import { PresetPicker } from "./PresetPicker.jsx";
+import { CodingSetup, ProbabilitySetup, DesignSetup } from "./setups.jsx";
 import { Loader2, PenTool, RotateCcw } from "lucide-react";
 import { ProbabilityPane, DesignPane, NotesEditor } from "./rooms.jsx";
 import { probabilityRubric, designRubric } from "./modes.mjs";
@@ -66,354 +57,9 @@ self.MonacoEnvironment = {
       : new EditorWorker(),
 };
 loader.config({ monaco });
-const defaultFilters = {
-  testedOnly: true,
-  companies: [],
-  topics: [],
-  lists: [],
-  pinned: [],
-  difficulty: "all",
-  search: "",
-};
-function CodingSetup({ onStart, navigate }) {
-  const { user } = useAccount();
-  const hasKey = !!user?.openaiKeyHint;
-  const [catalog, setCatalog] = useState([]),
-    [filters, setFilters] = useState(defaultFilters),
-    [count, setCount] = useState(2),
-    [language, setLanguage] = useState("javascript"),
-    [debuggerEnabled, setDebuggerEnabled] = useState(false),
-    [style, setStyle] = useState(interviewerPresets[0].id),
-    [prompt, setPrompt] = useState(interviewerPresets[0].prompt),
-    [loading, setLoading] = useState(false),
-    [error, setError] = useState(""),
-    [ready, setReady] = useState(false);
-  useEffect(() => {
-    api("/api/catalog", undefined, "GET")
-      .then((d) => {
-        setCatalog(d.problems);
-        setReady(true);
-      })
-      .catch((e) => setError(e.message));
-  }, []);
-  const matching = filterProblems(catalog, filters).filter((p) => !p.paid_only);
-  const pinned = filters.pinned
-    .map((slug) => catalog.find((p) => p.slug === slug))
-    .filter(Boolean);
-  const total = Math.max(count, pinned.length);
-  async function start() {
-    setLoading(true);
-    setError("");
-    try {
-      onStart(
-        await api("/api/interviews", {
-          ...filters,
-          count: total,
-          language,
-          debuggerEnabled,
-          interviewerStyle: style,
-          interviewerPrompt: prompt,
-        }),
-      );
-    } catch (e) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-  const companies = [
-    ...new Set(catalog.flatMap((p) => Object.keys(p.companies))),
-  ].sort();
-  const topics = [...new Set(catalog.flatMap((p) => p.tags))].sort();
-  const toggle = (key, value) =>
-    setFilters((f) => ({
-      ...f,
-      [key]: f[key].includes(value)
-        ? f[key].filter((x) => x !== value)
-        : [...f[key], value],
-    }));
-  // Featured chips plus a picker for the long tail; picked extras show as chips.
-  const chipFilter = (key, featured, all, label, prompt) => (
-    <>
-      <label className="field-label">{label}</label>
-      <div className="chips">
-        {featured.map((v) => (
-          <button
-            key={v}
-            className={"chip " + (filters[key].includes(v) ? "selected" : "")}
-            onClick={() => toggle(key, v)}
-          >
-            {filters[key].includes(v) && <Check size={13} />} {v}
-          </button>
-        ))}
-        {filters[key]
-          .filter((v) => !featured.includes(v))
-          .map((v) => (
-            <button
-              className="chip selected"
-              key={v}
-              onClick={() => toggle(key, v)}
-            >
-              {v}
-              <X size={12} />
-            </button>
-          ))}
-      </div>
-      <select
-        aria-label={`Add ${label.toLowerCase().replace(/s$/, "")}`}
-        value=""
-        onChange={(e) => {
-          if (e.target.value) toggle(key, e.target.value);
-        }}
-      >
-        <option value="">{prompt}</option>
-        {all.map((v) => (
-          <option key={v}>{v}</option>
-        ))}
-      </select>
-    </>
-  );
-  return (
-    <main className="setup page">
-      <header className="page-head">
-        <h1>Coding</h1>
-      </header>
-      <div className="setup-grid">
-        <section className="config card">
-          <h2>Problems</h2>
-          <div className="search">
-            <Search size={16} />
-            <input
-              aria-label="Search problem library"
-              placeholder="Search by name or number"
-              value={filters.search}
-              onChange={(e) =>
-                setFilters({ ...filters, search: e.target.value })
-              }
-            />
-          </div>
-          {chipFilter(
-            "companies",
-            ["Google", "Amazon", "Meta", "Microsoft", "Apple", "Bloomberg"],
-            companies,
-            "Companies",
-            "Add company…",
-          )}
-          <label className="field-label">Difficulty</label>
-          <div className="segmented">
-            {["all", "easy", "medium", "hard"].map((d) => (
-              <button
-                key={d}
-                onClick={() => setFilters({ ...filters, difficulty: d })}
-                className={filters.difficulty === d ? "active" : ""}
-              >
-                {d === "all" ? "Mixed" : d[0].toUpperCase() + d.slice(1)}
-              </button>
-            ))}
-          </div>
-          {chipFilter(
-            "topics",
-            [
-              "Array",
-              "String",
-              "Hash Table",
-              "Dynamic Programming",
-              "Tree",
-              "Graph",
-            ],
-            topics,
-            "Topics",
-            "Add topic…",
-          )}
-          <label className="field-label">Lists</label>
-          <div className="chips">
-            {[
-              ["blind75", "Blind 75"],
-              ["neetcode150", "NeetCode 150"],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                className={
-                  "chip " + (filters.lists.includes(id) ? "selected" : "")
-                }
-                onClick={() => toggle("lists", id)}
-              >
-                {filters.lists.includes(id) && <Check size={13} />} {label}{" "}
-                <small>
-                  {catalog.filter((p) => p.lists?.includes(id)).length}
-                </small>
-              </button>
-            ))}
-          </div>
-          <label className="test-filter">
-            <input
-              type="checkbox"
-              checked={filters.testedOnly}
-              onChange={(e) =>
-                setFilters({ ...filters, testedOnly: e.target.checked })
-              }
-            />
-            <span>
-              Prepared tests only{" "}
-              <small>{catalog.filter((p) => p.testCount > 0).length}</small>
-            </span>
-          </label>
-          <h2>Session</h2>
-          <div className="two-fields">
-            <div>
-              <label className="field-label" htmlFor="count">
-                Problems
-              </label>
-              <div className="stepper">
-                <button
-                  aria-label="Fewer problems"
-                  disabled={count <= 1}
-                  onClick={() => setCount(count - 1)}
-                >
-                  −
-                </button>
-                <input
-                  id="count"
-                  type="number"
-                  min="1"
-                  max="10"
-                  value={count}
-                  onChange={(e) =>
-                    setCount(
-                      Math.max(1, Math.min(10, Number(e.target.value) || 1)),
-                    )
-                  }
-                />
-                <button
-                  aria-label="More problems"
-                  disabled={count >= 10}
-                  onClick={() => setCount(count + 1)}
-                >
-                  +
-                </button>
-              </div>
-            </div>
-            <div>
-              <label className="field-label" htmlFor="language">
-                Language
-              </label>
-              <select
-                id="language"
-                value={language}
-                onChange={(e) => setLanguage(e.target.value)}
-              >
-                <option value="javascript">JavaScript</option>
-                <option value="python3">Python 3</option>
-              </select>
-            </div>
-          </div>
-          <label className="field-label">Tools</label>
-          <label className="test-filter">
-            <input
-              type="checkbox"
-              checked={debuggerEnabled}
-              onChange={(e) => setDebuggerEnabled(e.target.checked)}
-            />
-            <span>
-              Debugger <small>step through a testcase</small>
-            </span>
-          </label>
-          <PresetPicker
-            presets={interviewerPresets}
-            style={style}
-            setStyle={setStyle}
-            prompt={prompt}
-            setPrompt={setPrompt}
-            id="interviewer-prompt"
-          />
-          <div className="start-area">
-            <button
-              className="primary start"
-              onClick={start}
-              disabled={
-                loading ||
-                matching.filter((p) => !filters.pinned.includes(p.slug))
-                  .length +
-                  pinned.length <
-                  total ||
-                !prompt.trim() ||
-                !hasKey
-              }
-            >
-              {loading
-                ? "Starting…"
-                : pinned.length
-                  ? `Start · ${pinned.length} pinned`
-                  : "Start"}
-              <ArrowRight size={16} />
-            </button>
-            {ready && matching.length < count && (
-              <span className="match-count">Only {matching.length} match</span>
-            )}
-            {pinned.length > 0 && (
-              <button
-                className="quiet"
-                onClick={() => setFilters({ ...filters, pinned: [] })}
-              >
-                Clear pins
-              </button>
-            )}
-            {!hasKey && <KeyNotice navigate={navigate} />}
-          </div>
-          {error && (
-            <div role="alert" className="error">
-              {error}
-            </div>
-          )}
-        </section>
-        <aside>
-          <section className="library card">
-            <h2>
-              Matches <small>{matching.length.toLocaleString()}</small>
-              <small className="hint">click to pin</small>
-            </h2>
-            <div className="problem-list">
-              {[
-                ...pinned,
-                ...matching.filter((p) => !filters.pinned.includes(p.slug)),
-              ]
-                .slice(0, 30)
-                .map((p) => {
-                  const on = filters.pinned.includes(p.slug);
-                  return (
-                    <button
-                      type="button"
-                      className={"problem-row " + (on ? "pinned" : "")}
-                      key={p.id}
-                      aria-pressed={on}
-                      onClick={() => toggle("pinned", p.slug)}
-                    >
-                      <span className="problem-id">
-                        {on ? <Check size={12} /> : p.id}
-                      </span>
-                      <span>{p.title}</span>
-                      <span className={"difficulty " + p.difficulty}>
-                        {p.difficulty}
-                      </span>
-                    </button>
-                  );
-                })}
-              {ready && !matching.length && (
-                <p className="muted">No matches.</p>
-              )}
-              {matching.length > 30 && (
-                <p className="muted">
-                  +{(matching.length - 30).toLocaleString()} more
-                </p>
-              )}
-            </div>
-          </section>
-        </aside>
-      </div>
-    </main>
-  );
-}
-
+const DEFAULT_PANEL_HEIGHT = 300;
+const MIN_PANEL_HEIGHT = 120;
+const MAX_PANEL_HEIGHT_RATIO = 0.7;
 function App() {
   const { user, loading } = useAccount();
   const [path, setPath] = useState(window.location.pathname),
@@ -549,7 +195,7 @@ function Workspace({ session: initial, onExit }) {
     [activity, setActivity] = useState(""),
     [busy, setBusy] = useState(false),
     [running, setRunning] = useState(null),
-    [panelHeight, setPanelHeight] = useState(300),
+    [panelHeight, setPanelHeight] = useState(DEFAULT_PANEL_HEIGHT),
     [output, setOutput] = useState(null),
     [error, setError] = useState(""),
     [elapsed, setElapsed] = useState(0),
@@ -1569,16 +1215,22 @@ function Workspace({ session: initial, onExit }) {
   debugSuiteRef.current = debugSuite;
   // Drag the bar above the bottom tabs to resize the panel; double-click resets.
   function startResize(e) {
+    const handle = e.currentTarget;
+    handle.setPointerCapture(e.pointerId);
     const startY = e.clientY;
     const startH = panelHeight;
     const move = (ev) =>
       setPanelHeight(
         Math.max(
-          120,
-          Math.min(window.innerHeight * 0.7, startH - (ev.clientY - startY)),
+          MIN_PANEL_HEIGHT,
+          Math.min(
+            window.innerHeight * MAX_PANEL_HEIGHT_RATIO,
+            startH - (ev.clientY - startY),
+          ),
         ),
       );
     const up = () => {
+      handle.releasePointerCapture(e.pointerId);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
     };
@@ -1964,7 +1616,7 @@ function Workspace({ session: initial, onExit }) {
                 aria-orientation="horizontal"
                 aria-label="Resize panel"
                 onPointerDown={startResize}
-                onDoubleClick={() => setPanelHeight(300)}
+                onDoubleClick={() => setPanelHeight(DEFAULT_PANEL_HEIGHT)}
               />
               <div className="bottom-tabs" role="tablist">
                 <button

@@ -16,6 +16,7 @@ import { behavioralPresets } from "./behavioral.mjs";
 import { api } from "./api.mjs";
 import { useAccount, GoogleSignIn } from "./account.jsx";
 import { PresetPicker } from "./PresetPicker.jsx";
+import { ErrorBanner } from "./ui.jsx";
 const modeNames = {
   coding: "Coding",
   behavioral: "Behavioral",
@@ -297,7 +298,8 @@ export function BehavioralSetup({ onStart, navigate }) {
     [prompt, setPrompt] = useState(behavioralPresets[0].prompt),
     [uploading, setUploading] = useState(false),
     [starting, setStarting] = useState(false),
-    [error, setError] = useState("");
+    [resumeError, setResumeError] = useState(""),
+    [startError, setStartError] = useState("");
   const uploadVersion = useRef(0);
   const resume = resumes?.find((r) => r.id === selected) || null;
   function choose(record) {
@@ -310,18 +312,18 @@ export function BehavioralSetup({ onStart, navigate }) {
         setResumes(d.resumes);
         choose(d.resumes[0]);
       })
-      .catch((e) => setError(e.message));
+      .catch((e) => setResumeError(e.message));
   }, []);
   async function upload(file) {
     if (!file) return;
     const version = ++uploadVersion.current;
-    setError("");
+    setResumeError("");
     if (
       !/\.(pdf|docx|txt)$/i.test(file.name) ||
       file.size > 5 * 1024 * 1024 ||
       !file.size
     ) {
-      setError("PDF, DOCX, or TXT under 5 MB.");
+      setResumeError("PDF, DOCX, or TXT under 5 MB.");
       return;
     }
     setUploading(true);
@@ -338,25 +340,25 @@ export function BehavioralSetup({ onStart, navigate }) {
         choose(result);
       }
     } catch (e) {
-      if (version === uploadVersion.current) setError(e.message);
+      if (version === uploadVersion.current) setResumeError(e.message);
     } finally {
       if (version === uploadVersion.current) setUploading(false);
     }
   }
   async function remove(record) {
-    setError("");
+    setResumeError("");
     try {
       await api(`/api/resumes/${record.id}`, undefined, "DELETE");
       const rest = resumes.filter((r) => r.id !== record.id);
       setResumes(rest);
       if (selected === record.id) choose(rest[0]);
     } catch (e) {
-      setError(e.message);
+      setResumeError(e.message);
     }
   }
   async function start() {
     setStarting(true);
-    setError("");
+    setStartError("");
     try {
       onStart(
         await api("/api/interviews", {
@@ -370,7 +372,7 @@ export function BehavioralSetup({ onStart, navigate }) {
         }),
       );
     } catch (e) {
-      setError(e.message);
+      setStartError(e.message);
     } finally {
       setStarting(false);
     }
@@ -386,15 +388,21 @@ export function BehavioralSetup({ onStart, navigate }) {
           {resumes?.length > 0 && (
             <div className="resume-picker" role="radiogroup">
               {resumes.map((r) => (
-                <button
-                  type="button"
+                <div
                   role="radio"
+                  tabIndex={0}
                   aria-checked={r.id === selected}
                   key={r.id}
                   className={
                     "resume-option " + (r.id === selected ? "selected" : "")
                   }
                   onClick={() => choose(r)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      choose(r);
+                    }
+                  }}
                 >
                   {r.id === selected ? (
                     <Check size={14} />
@@ -408,8 +416,8 @@ export function BehavioralSetup({ onStart, navigate }) {
                       {new Date(r.updatedAt).toLocaleDateString()}
                     </small>
                   </div>
-                  <span
-                    role="button"
+                  <button
+                    type="button"
                     aria-label={`Delete ${r.filename}`}
                     className="resume-delete"
                     onClick={(e) => {
@@ -418,8 +426,8 @@ export function BehavioralSetup({ onStart, navigate }) {
                     }}
                   >
                     <Trash2 size={13} />
-                  </span>
-                </button>
+                  </button>
+                </div>
               ))}
             </div>
           )}
@@ -441,6 +449,7 @@ export function BehavioralSetup({ onStart, navigate }) {
               onChange={(e) => upload(e.target.files?.[0])}
             />
           </label>
+          <ErrorBanner error={resumeError} />
           {resume && (
             <div className="resume-review">
               <h3>{resume.profile.name || resume.filename}</h3>
@@ -465,65 +474,63 @@ export function BehavioralSetup({ onStart, navigate }) {
             </div>
           )}
         </section>
-        <section className="card config behavioral-options">
-          <h2>Session</h2>
-          <label className="field-label" htmlFor="target-role">
-            Target role
-          </label>
-          <input
-            id="target-role"
-            value={role}
-            maxLength={200}
-            onChange={(e) => setRole(e.target.value)}
-          />
-          <label className="field-label" htmlFor="behavioral-focus">
-            Focus
-          </label>
-          <textarea
-            id="behavioral-focus"
-            value={focus}
-            maxLength={500}
-            rows={3}
-            onChange={(e) => setFocus(e.target.value)}
-          />
-          <PresetPicker
-            presets={behavioralPresets}
-            style={preset}
-            setStyle={setPreset}
-            prompt={prompt}
-            setPrompt={setPrompt}
-            id="behavioral-prompt"
-          />
-          <div className="start-area">
-            <button
-              className="primary start"
-              disabled={
-                !resume ||
-                !resumeText.trim() ||
-                !prompt.trim() ||
-                uploading ||
-                starting ||
-                !hasKey
-              }
-              onClick={start}
-            >
-              {starting ? "Starting…" : "Start"}
-              <ArrowRight size={16} />
-            </button>
-            {!hasKey ? (
-              <KeyNotice navigate={navigate} />
-            ) : (
-              !resume && (
-                <span className="match-count">Upload a résumé to start.</span>
-              )
-            )}
-          </div>
-          {error && (
-            <div className="error" role="alert">
-              {error}
+        <aside>
+          <section className="card config behavioral-options">
+            <h2>Session</h2>
+            <label className="field-label" htmlFor="target-role">
+              Target role
+            </label>
+            <input
+              id="target-role"
+              value={role}
+              maxLength={200}
+              onChange={(e) => setRole(e.target.value)}
+            />
+            <label className="field-label" htmlFor="behavioral-focus">
+              Focus
+            </label>
+            <textarea
+              id="behavioral-focus"
+              value={focus}
+              maxLength={500}
+              rows={3}
+              onChange={(e) => setFocus(e.target.value)}
+            />
+            <PresetPicker
+              presets={behavioralPresets}
+              style={preset}
+              setStyle={setPreset}
+              prompt={prompt}
+              setPrompt={setPrompt}
+              id="behavioral-prompt"
+            />
+            <div className="start-area">
+              <button
+                className="primary start"
+                disabled={
+                  !resume ||
+                  !resumeText.trim() ||
+                  !prompt.trim() ||
+                  uploading ||
+                  starting ||
+                  !hasKey
+                }
+                onClick={start}
+              >
+                {starting ? "Starting…" : "Start"}
+                <ArrowRight size={16} />
+              </button>
+              {!hasKey ? (
+                <KeyNotice navigate={navigate} />
+              ) : (
+                !resume && (
+                  <span className="match-count">Upload a résumé to start.</span>
+                )
+              )}
             </div>
-          )}
-        </section>
+            <ErrorBanner error={startError} />
+          </section>
+        </aside>
       </div>
     </main>
   );

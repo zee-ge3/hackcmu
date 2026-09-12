@@ -5,6 +5,7 @@ import { behavioralRubric } from "./behavioral.mjs";
 import { probabilityRubric, designRubric } from "./modes.mjs";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
+import { useAsync, ErrorBanner, ListSkeleton } from "./ui.jsx";
 const when = (ms) =>
   new Date(ms).toLocaleDateString(undefined, {
     year: "numeric",
@@ -173,11 +174,20 @@ export function Profile({ navigate }) {
     [history, setHistory] = useState(null),
     [insights, setInsights] = useState(null),
     [key, setKey] = useState(""),
-    [keyBusy, setKeyBusy] = useState(false),
     [confirmDelete, setConfirmDelete] = useState(false),
     [open, setOpen] = useState(null),
-    [notice, setNotice] = useState(""),
-    [error, setError] = useState("");
+    [notice, setNotice] = useState("");
+  const { error, setError, run: runBase } = useAsync();
+  const run = (task) => {
+    setNotice("");
+    return runBase(task);
+  };
+  const {
+    loading: keyBusy,
+    error: keyError,
+    setError: setKeyError,
+    run: runKey,
+  } = useAsync();
   useEffect(() => {
     Promise.all([
       api("/api/resumes", undefined, "GET"),
@@ -191,25 +201,19 @@ export function Profile({ navigate }) {
       })
       .catch((e) => setError(e.message));
   }, []);
-  const run = async (task) => {
-    setError("");
-    setNotice("");
-    try {
-      await task();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
   async function saveKey(e) {
     e.preventDefault();
-    setKeyBusy(true);
-    await run(async () => {
+    if (!key.trim().startsWith("sk-")) {
+      setKeyError("Keys start with sk-.");
+      return;
+    }
+    setNotice("");
+    await runKey(async () => {
       const d = await api("/api/me/openai-key", { key }, "PUT");
       setUser(d.user);
       setKey("");
       setNotice("Key verified and saved.");
     });
-    setKeyBusy(false);
   }
   const initials = (user.name || user.email)
     .split(/\s+/)
@@ -315,7 +319,7 @@ export function Profile({ navigate }) {
             <button
               className="quiet"
               onClick={() =>
-                run(async () => {
+                runKey(async () => {
                   const d = await api(
                     "/api/me/openai-key",
                     undefined,
@@ -328,6 +332,7 @@ export function Profile({ navigate }) {
               Remove key
             </button>
           )}
+          <ErrorBanner error={keyError} />
           {notice && (
             <div className="notice" role="status">
               {notice}
@@ -337,6 +342,7 @@ export function Profile({ navigate }) {
         <section className="card profile-card">
           <h2>Résumés</h2>
           <div className="list-rows">
+            {resumes === null && <ListSkeleton count={3} />}
             {resumes?.map((r) => (
               <div className="list-row" key={r.id}>
                 <div>
@@ -368,6 +374,7 @@ export function Profile({ navigate }) {
         <section className="card profile-card history-card">
           <h2>History</h2>
           <div className="list-rows">
+            {history === null && <ListSkeleton count={3} />}
             {history?.map((h) => {
               const score = average(h.feedback);
               return (
@@ -426,11 +433,7 @@ export function Profile({ navigate }) {
           </div>
         </section>
       </div>
-      {error && (
-        <div className="error" role="alert">
-          {error}
-        </div>
-      )}
+      <ErrorBanner error={error} />
     </main>
   );
 }
