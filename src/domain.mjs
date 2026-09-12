@@ -6,11 +6,13 @@ export function filterProblems(
     difficulty = "all",
     search = "",
     testedOnly = false,
+    lists = [],
   } = {},
 ) {
   return problems.filter(
     (p) =>
       (!testedOnly || p.testCount > 0) &&
+      (!lists.length || lists.some((l) => p.lists?.includes(l))) &&
       (difficulty === "all" || p.difficulty === difficulty) &&
       (!companies.length ||
         companies.some((c) => Object.hasOwn(p.companies, c))) &&

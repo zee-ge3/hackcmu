@@ -1,6 +1,6 @@
 # Pairwise
 
-A local web application for speech-to-speech coding and behavioral interview practice. GPT-Live-1 conducts the conversation, with a shared Monaco editor, résumé context, drawable whiteboard, and structured feedback.
+A local web application for speech-to-speech interview practice in four formats: coding, probability, system design, and behavioral. GPT-Live-1 conducts the conversation, with a shared Monaco editor, a step-through debugger, a notes pad, résumé context, a drawable whiteboard, and structured feedback with cross-session insights.
 
 ## Run
 
@@ -33,6 +33,15 @@ Every model call — résumé parsing, whiteboard descriptions, the voice sessio
 Per-account data lives in `data/pairwise.sqlite` (ignored by Git): users, sessions, parsed résumés with their reviewed text, and the feedback from finished interviews. `node scripts/set-openai-key.mjs you@example.com sk-...` stores a validated key for an address from the shell, even before that person's first sign-in. The profile page lists saved résumés and past feedback, and can delete either or the whole account. Live interviews (editor contents, transcripts, whiteboard images) stay in server memory and are discarded after three idle hours or on restart; export a session from the feedback screen to keep its code and conversation.
 
 For development and the browser tests, set `DEV_USER_EMAIL` to sign every request in as that address without Google. That user falls back to `OPENAI_API_KEY` from `.env` when no key is saved on the profile. Both are ignored when `NODE_ENV=production`.
+
+## Modes
+
+- **Coding** (`/coding`): LeetCode catalog with company, topic, difficulty, and curated-list filters (Blind 75, NeetCode 150, plus the NeetCode pattern per problem in `data/lists.json`, built by `node scripts/scrape-lists.mjs`), shared editor, prepared tests, and the visual debugger.
+- **Probability** (`/probability`): 679 questions with reference answers from `data/probability/probability_bank.json` (QuantProf free tier and videos, AoPS, MATH, AIME), filtered by level (1–3 intro, 4–6 core, 7+ hard), concept, trading firm, and source. The room shows the statement (KaTeX), a notes pad, the whiteboard, and an answer box. Answers are checked locally (fractions, decimals, LaTeX, percentages) or, when ambiguous, by the context model against the hidden reference. Alex and the backend know the answer and solution but only hint until you solve or reveal. Grading covers framing, reasoning, computation, sanity checks, and clarity; topics are the question's concept tags.
+- **System design** (`/design`): twelve systems (or a custom brief) with a 20/30/45-minute clock. Each problem starts from a brief and has three staged constraints. A constraint is revealed when its share of the time elapses, when you press "I've finished this step", or when the backend decides the current step is settled (`reveal_next_constraint` tool). Each reveal is announced to the voice interviewer. Notes hold the design document (a template with requirements, estimates, design, data model, tradeoffs); the whiteboard holds the architecture. Grading covers requirements, high-level design, data model and APIs, scaling and tradeoffs, and clarity.
+- **Behavioral** (`/behavioral`): see below.
+
+The profile page adds **cross-session insights** (`/api/insights`): average score per rubric criterion and per subject area (coding tags and NeetCode patterns, probability concepts, design categories, behavioral focus), the weakest areas first, plus a recent-score trend and per-mode averages.
 
 ## Problem library
 

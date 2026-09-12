@@ -11,6 +11,8 @@ import {
   PenTool,
   Trash2,
   KeyRound,
+  Dices,
+  Network,
 } from "lucide-react";
 import { useAccount, GoogleSignIn } from "./account.jsx";
 import { behavioralPresets } from "./behavioral.mjs";
@@ -62,6 +64,8 @@ export function SiteHeader({ path, navigate }) {
         {[
           ["/", "Overview"],
           ["/coding", "Coding"],
+          ["/probability", "Probability"],
+          ["/design", "System design"],
           ["/behavioral", "Behavioral"],
           ...(user ? [["/profile", "Profile"]] : []),
         ].map(([url, label]) => (
@@ -108,90 +112,153 @@ export function SiteHeader({ path, navigate }) {
   );
 }
 export function Home({ navigate }) {
+  const go = (url) => (e) => {
+    e.preventDefault();
+    navigate(url);
+  };
+  const rooms = [
+    {
+      url: "/coding",
+      n: "01",
+      title: "Coding",
+      icon: Code2,
+      lead: "LeetCode problems in a shared editor with prepared tests and a step-through debugger.",
+      detail:
+        "JavaScript or Python · Blind 75 and NeetCode 150 filters · 677 prepared test cases",
+    },
+    {
+      url: "/probability",
+      n: "02",
+      title: "Probability",
+      icon: Dices,
+      lead: "Quant-style questions from trading-firm screens and competition math, checked against reference answers.",
+      detail:
+        "679 questions · hints only until you solve · notes pad and whiteboard",
+    },
+    {
+      url: "/design",
+      n: "03",
+      title: "System design",
+      icon: Network,
+      lead: "A brief, a clock, and constraints that keep arriving while you draw the architecture.",
+      detail:
+        "12 systems or your own brief · 20–45 minutes · timed constraint reveals",
+    },
+    {
+      url: "/behavioral",
+      n: "04",
+      title: "Behavioral",
+      icon: Mic,
+      lead: "Questions grounded in your own résumé, with follow-ups on ownership, impact, and judgment.",
+      detail:
+        "PDF, DOCX, or TXT résumé · saved to your profile · story-structure rubric",
+    },
+  ];
   return (
     <main className="home-page">
-      <div className="home-intro">
-        <div className="eyebrow">
-          <span className="live-dot" /> YOUR NEXT ROLE STARTS HERE
+      <section className="hero">
+        <div className="hero-copy">
+          <span className="eyebrow">
+            <span className="live-dot" /> VOICE INTERVIEW PRACTICE
+          </span>
+          <h1>An interviewer that listens, pushes back, and grades you.</h1>
+          <p>
+            Pairwise runs a real-time spoken interview in four formats. You
+            talk, code, and draw; Alex asks follow-ups, edits alongside you, and
+            scores the session on a fixed rubric so you know what to fix next.
+          </p>
+          <div className="hero-actions">
+            <a
+              className="primary hero-cta"
+              href="/coding"
+              onClick={go("/coding")}
+            >
+              Start a coding session <ArrowRight size={17} />
+            </a>
+            <a className="hero-link" href="/profile" onClick={go("/profile")}>
+              See your progress <ArrowUpRight size={14} />
+            </a>
+          </div>
         </div>
-        <h1>
-          A little practice.
-          <br />
-          <span>A lot more confidence.</span>
-        </h1>
-        <p>
-          Pick your interview. Think out loud.
-          <br />
-          Leave knowing what to work on next.
-        </p>
-      </div>
-      <div className="mode-grid">
-        <a
-          className="mode-card coding-mode"
-          href="/coding"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/coding");
-          }}
-        >
-          <span className="mode-icon">
-            <Code2 size={26} />
-          </span>
-          <span className="eyebrow">01 / TECHNICAL</span>
-          <h2>Work through the problem.</h2>
-          <p>
-            A shared coding editor, real test cases, and an interviewer who
-            follows your thinking.
-          </p>
-          <div className="mode-tags">
-            <span>LeetCode library</span>
-            <span>JavaScript & Python</span>
-            <span>Whiteboard</span>
+        <div className="hero-panel" aria-hidden="true">
+          <div className="hero-row">
+            <span className="hero-speaker">Alex</span>
+            <p>
+              Walk me through what happens when two intervals overlap only at an
+              endpoint.
+            </p>
           </div>
-          <div className="mode-cta">
-            Practice coding
-            <ArrowRight size={19} />
+          <div className="hero-row you">
+            <span className="hero-speaker">You</span>
+            <p>
+              Then the intersection is a single point — measure zero, so it
+              doesn't change the probability.
+            </p>
           </div>
-        </a>
-        <a
-          className="mode-card behavioral-mode"
-          href="/behavioral"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/behavioral");
-          }}
-        >
-          <span className="mode-icon">
-            <Mic size={26} />
-          </span>
-          <span className="eyebrow">02 / BEHAVIORAL</span>
-          <h2>Tell your story.</h2>
-          <p>
-            Turn your experience into clear, specific answers with a
-            conversation grounded in your résumé.
-          </p>
-          <div className="mode-tags">
-            <span>Résumé context</span>
-            <span>Personal follow-ups</span>
-            <span>Rubric feedback</span>
+          <div className="hero-row">
+            <span className="hero-speaker">Alex</span>
+            <p>Good. So what's the sample space you're counting over?</p>
           </div>
-          <div className="mode-cta">
-            Practice behavioral
-            <ArrowRight size={19} />
+          <div className="hero-meter">
+            <span>Problem framing</span>
+            <i style={{ width: "72%" }} />
+            <span>Reasoning</span>
+            <i style={{ width: "58%" }} />
+            <span>Verification</span>
+            <i style={{ width: "40%" }} />
           </div>
-        </a>
-      </div>
-      <div className="home-foot">
-        <span>
-          <Mic size={15} /> Natural voice, interruptions welcome.
-        </span>
-        <span>
-          <PenTool size={15} /> Draw when words aren’t enough.
-        </span>
-        <span>
-          <Check size={15} /> Feedback you can act on.
-        </span>
-      </div>
+        </div>
+      </section>
+      <section className="rooms">
+        {rooms.map((r) => (
+          <a key={r.url} className="room" href={r.url} onClick={go(r.url)}>
+            <div className="room-head">
+              <span className="room-n">{r.n}</span>
+              <r.icon size={18} />
+            </div>
+            <h2>{r.title}</h2>
+            <p>{r.lead}</p>
+            <small>{r.detail}</small>
+            <span className="room-cta">
+              Enter <ArrowRight size={14} />
+            </span>
+          </a>
+        ))}
+      </section>
+      <section className="how">
+        <div>
+          <span className="eyebrow muted">HOW A SESSION RUNS</span>
+          <h3>Three steps, then a report you can act on.</h3>
+        </div>
+        <ol>
+          <li>
+            <strong>Set up</strong>
+            <span>
+              Pick the format, filters, and interviewer style. Your microphone
+              connects on entry.
+            </span>
+          </li>
+          <li>
+            <strong>Work it through</strong>
+            <span>
+              Speak, code, draw. Alex sees the editor and the whiteboard and
+              delegates hard reasoning to a backend model.
+            </span>
+          </li>
+          <li>
+            <strong>Get graded</strong>
+            <span>
+              Five fixed criteria per format, evidence for each score, and
+              history that shows where you keep slipping.
+            </span>
+          </li>
+        </ol>
+      </section>
+      <footer className="home-foot">
+        <span>Runs on your own OpenAI key</span>
+        <span>Google sign-in · résumés and feedback stay on your profile</span>
+        <span>Local-first: sessions live in memory until you finish</span>
+      </footer>
     </main>
   );
 }

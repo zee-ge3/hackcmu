@@ -46,6 +46,10 @@ import { Bug, GitCompare } from "lucide-react";
 import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
 import { Profile } from "./profile.jsx";
 import { KeyNotice } from "./pages.jsx";
+import { ProbabilitySetup, DesignSetup } from "./setups.jsx";
+import { ProbabilityPane, DesignPane, NotesEditor } from "./rooms.jsx";
+import { probabilityRubric, designRubric } from "./modes.mjs";
+import { NotebookPen } from "lucide-react";
 self.MonacoEnvironment = {
   getWorker: (_moduleId, label) =>
     ["javascript", "typescript"].includes(label)
@@ -57,6 +61,7 @@ const defaultFilters = {
   testedOnly: true,
   companies: [],
   topics: [],
+  lists: [],
   difficulty: "all",
   search: "",
 };
@@ -257,6 +262,28 @@ function CodingSetup({ onStart, navigate }) {
                     <X size={12} />
                   </button>
                 ))}
+            </div>
+            <label className="field-label">
+              Curated lists <span>Optional</span>
+            </label>
+            <div className="chips">
+              {[
+                ["blind75", "Blind 75"],
+                ["neetcode150", "NeetCode 150"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  className={
+                    "chip " + (filters.lists.includes(id) ? "selected" : "")
+                  }
+                  onClick={() => toggle("lists", id)}
+                >
+                  {filters.lists.includes(id) && <Check size={13} />} {label}{" "}
+                  <small>
+                    {catalog.filter((p) => p.lists?.includes(id)).length}
+                  </small>
+                </button>
+              ))}
             </div>
             <label className="test-filter">
               <input
@@ -479,7 +506,13 @@ function App() {
   }, []);
   if (session)
     return <Workspace session={session} onExit={() => setSession(null)} />;
-  const gated = ["/coding", "/behavioral", "/profile"].includes(path);
+  const gated = [
+    "/coding",
+    "/behavioral",
+    "/probability",
+    "/design",
+    "/profile",
+  ].includes(path);
   return (
     <div className="app-shell">
       <SiteHeader path={path} navigate={navigate} />
@@ -493,6 +526,10 @@ function App() {
         <CodingSetup onStart={setSession} navigate={navigate} />
       ) : path === "/behavioral" ? (
         <BehavioralSetup onStart={setSession} navigate={navigate} />
+      ) : path === "/probability" ? (
+        <ProbabilitySetup onStart={setSession} navigate={navigate} />
+      ) : path === "/design" ? (
+        <DesignSetup onStart={setSession} navigate={navigate} />
       ) : path === "/profile" ? (
         <Profile navigate={navigate} />
       ) : (
@@ -502,10 +539,21 @@ function App() {
   );
 }
 function Workspace({ session: initial, onExit }) {
-  const isBehavioral = initial.mode === "behavioral";
-  const gradingRubric = isBehavioral ? behavioralRubric : rubric;
+  const mode = initial.mode;
+  const isBehavioral = mode === "behavioral",
+    isProbability = mode === "probability",
+    isDesign = mode === "design",
+    hasCode = mode === "coding",
+    usesNotes = isProbability || isDesign;
+  const gradingRubric =
+    {
+      coding: rubric,
+      behavioral: behavioralRubric,
+      probability: probabilityRubric,
+      design: designRubric,
+    }[mode] || rubric;
   const [workspaceTab, setWorkspaceTab] = useState(
-    isBehavioral ? "canvas" : "code",
+    hasCode ? "code" : usesNotes ? "notes" : "canvas",
   );
   const boards = useRef({});
   const [index, setIndex] = useState(0),
@@ -528,7 +576,13 @@ function Workspace({ session: initial, onExit }) {
     [showDiff, setShowDiff] = useState(false),
     [debugOn, setDebugOn] = useState(false),
     [bottomTab, setBottomTab] = useState("console"),
-    [editorInstance, setEditorInstance] = useState(null);
+    [editorInstance, setEditorInstance] = useState(null),
+    [attempts, setAttempts] = useState(initial.attempts || []),
+    [solutions, setSolutions] = useState({}),
+    [answering, setAnswering] = useState(false),
+    [design, setDesign] = useState(initial.design || null),
+    [stages, setStages] = useState(initial.problems[0]?.stages || []),
+    [stageBusy, setStageBusy] = useState(false);
   const state = useRef({
       index: 0,
       editors: initial.editors,
@@ -554,6 +608,24 @@ function Workspace({ session: initial, onExit }) {
   useEffect(() => {
     connect();
   }, []);
+  // Design rooms: reveal the next constraint on its timer and flag the time limit.
+  useEffect(() => {
+    if (!isDesign || !design || feedback) return;
+    const elapsedMs = elapsed * 1000;
+    if (
+      design.nextAt !== null &&
+      elapsedMs >= design.nextAt * design.durationMs &&
+      !stageBusy
+    )
+      void advanceStage("timer");
+    if (elapsedMs >= design.durationMs && !state.current.timeUp) {
+      state.current.timeUp = true;
+      live.current?.send(
+        "session.thinking.append",
+        "The time limit is reached. Ask the candidate to summarize the final design briefly, then suggest they finish the interview.",
+      );
+    }
+  }, [elapsed]);
   useEffect(() => {
     const timer = setInterval(
       () => setElapsed(Math.floor((Date.now() - initial.createdAt) / 1000)),
@@ -571,7 +643,7 @@ function Workspace({ session: initial, onExit }) {
     setSaved("Unsaved");
   }
   function save() {
-    if (isBehavioral) return Promise.resolve();
+    if (!initial.editors.length) return Promise.resolve();
     const target = state.current.index,
       value = state.current.code;
     const task = async () => {
@@ -652,6 +724,7 @@ function Workspace({ session: initial, onExit }) {
       );
       setEditors(state.current.editors);
       let message = result.message;
+      if (result.stage) applyStage(result.stage, result.design);
       if (result.edits.length) {
         if (state.current.index === target && state.current.code === snapshot) {
           state.current.code = result.editor.code;
@@ -729,6 +802,84 @@ function Workspace({ session: initial, onExit }) {
       );
     }, 15000);
   }
+  function applyStage(stage, nextDesign) {
+    if (!stage) return;
+    setStages((list) => [...list, stage]);
+    if (nextDesign) setDesign(nextDesign);
+    live.current?.send(
+      "session.thinking.append",
+      `New constraint revealed to the candidate: ${stage.title} — ${stage.constraint} Introduce it now and ask how the design changes.`,
+    );
+  }
+  async function advanceStage(reason = "candidate") {
+    if (stageBusy || !design || design.nextAt === null) return;
+    setStageBusy(true);
+    try {
+      const result = await api(base + "/stage", {});
+      if (result.stage) applyStage(result.stage, result.design);
+      else setDesign(result.design);
+      if (reason === "candidate" && result.stage)
+        live.current?.send(
+          "session.commentary.append",
+          "The candidate says this step is finished.",
+        );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setStageBusy(false);
+    }
+  }
+  async function submitAnswer(answer) {
+    const target = state.current.index;
+    setAnswering(true);
+    setError("");
+    try {
+      await save();
+      const result = await api(base + "/answer", { index: target, answer });
+      setAttempts((list) =>
+        list.map((a, i) => (i === target ? result.attempts : a)),
+      );
+      if (result.answer !== undefined)
+        setSolutions((all) => ({
+          ...all,
+          [target]: { answer: result.answer, solution: result.solution },
+        }));
+      live.current?.send(
+        "session.thinking.append",
+        `The candidate submitted "${answer}" for question ${target + 1}: ${
+          result.correct
+            ? "correct. Congratulate briefly and ask them to justify the key step."
+            : `incorrect (attempt ${result.attempts.length}). Do not reveal the answer; ask which assumption might be off.`
+        }`,
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAnswering(false);
+    }
+  }
+  async function revealAnswer() {
+    const target = state.current.index;
+    setAnswering(true);
+    try {
+      const result = await api(base + "/reveal", { index: target });
+      setAttempts((list) =>
+        list.map((a, i) => (i === target ? result.attempts : a)),
+      );
+      setSolutions((all) => ({
+        ...all,
+        [target]: { answer: result.answer, solution: result.solution },
+      }));
+      live.current?.send(
+        "session.thinking.append",
+        `The candidate revealed the reference answer for question ${target + 1}: ${result.answer}. Walk through the key idea with them briefly.`,
+      );
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setAnswering(false);
+    }
+  }
   // Compact trace summary the reasoning backend receives with the next request.
   function onDebugTrace({ case: testCase, steps, result }) {
     const brief = (v) =>
@@ -801,9 +952,14 @@ function Workspace({ session: initial, onExit }) {
     setMuted(false);
     state.current.segment++;
     const connection = new LiveConnection({
-      greeting: isBehavioral
-        ? "Greet the candidate immediately, introduce yourself as their AI behavioral interviewer, and ask one introductory question grounded in their resume. Follow the configured style. Do not ask them to code. Then listen."
-        : undefined,
+      greeting: {
+        behavioral:
+          "Greet the candidate immediately, introduce yourself as their AI behavioral interviewer, and ask one introductory question grounded in their resume. Follow the configured style. Do not ask them to code. Then listen.",
+        probability:
+          "Greet the candidate immediately, introduce yourself as their AI probability interviewer, and ask them to read the question on screen and describe how they would set it up. Do not state the answer. Then listen.",
+        design:
+          "Greet the candidate immediately, introduce yourself as their AI system design interviewer, present the brief in one or two sentences, and ask them to start by clarifying requirements and estimating scale. Then listen.",
+      }[mode],
       onStatus: setVoice,
       onEvent: onLiveEvent,
       onError: setError,
@@ -887,6 +1043,8 @@ function Workspace({ session: initial, onExit }) {
             problems: initial.problems.map((p) => p.title),
             language: initial.language,
             editors: state.current.editors,
+            attempts,
+            stages,
             transcript: state.current.transcript,
             feedback,
           },
@@ -915,9 +1073,12 @@ function Workspace({ session: initial, onExit }) {
         <div className="room-label">
           {isBehavioral ? (
             "BEHAVIORAL INTERVIEW"
+          ) : isDesign ? (
+            "SYSTEM DESIGN"
           ) : (
             <>
-              PRACTICE ROOM <span>/</span>
+              {isProbability ? "PROBABILITY ROOM" : "PRACTICE ROOM"}{" "}
+              <span>/</span>
               {String(index + 1).padStart(2, "0")} OF{" "}
               {String(initial.problems.length).padStart(2, "0")}
             </>
@@ -945,6 +1106,27 @@ function Workspace({ session: initial, onExit }) {
             resume={initial.resume}
             targetRole={initial.targetRole}
             focus={initial.focus}
+          />
+        ) : isProbability ? (
+          <ProbabilityPane
+            problem={problem}
+            index={index}
+            total={initial.problems.length}
+            attempts={attempts[index] || []}
+            solution={solutions[index]}
+            busy={answering || busy}
+            onSubmit={submitAnswer}
+            onReveal={revealAnswer}
+            onNext={next}
+          />
+        ) : isDesign ? (
+          <DesignPane
+            problem={problem}
+            design={design}
+            stages={stages}
+            elapsedMs={elapsed * 1000}
+            busy={stageBusy}
+            onAdvance={() => advanceStage("candidate")}
           />
         ) : (
           <section className="statement-pane">
@@ -1025,13 +1207,22 @@ function Workspace({ session: initial, onExit }) {
         )}
         <div className="work-surface">
           <div className="surface-tabs">
-            {!isBehavioral && (
+            {hasCode && (
               <button
                 className={workspaceTab === "code" ? "active" : ""}
                 onClick={() => setWorkspaceTab("code")}
               >
                 <Code2 size={14} />
                 Code
+              </button>
+            )}
+            {usesNotes && (
+              <button
+                className={workspaceTab === "notes" ? "active" : ""}
+                onClick={() => setWorkspaceTab("notes")}
+              >
+                <NotebookPen size={14} />
+                Notes
               </button>
             )}
             <button
@@ -1041,12 +1232,32 @@ function Workspace({ session: initial, onExit }) {
               Whiteboard
             </button>
             <span>
-              {isBehavioral
-                ? "Map a project, decision, or story."
-                : "Sketch an approach alongside your code."}
+              {{
+                behavioral: "Map a project, decision, or story.",
+                probability: "Work the algebra in Notes; draw the setup.",
+                design: "Architecture on the board; APIs and data in Notes.",
+              }[mode] || "Sketch an approach alongside your code."}
             </span>
           </div>
-          {!isBehavioral && (
+          {usesNotes && (
+            <div
+              className="notes-surface"
+              style={{ display: workspaceTab === "notes" ? "flex" : "none" }}
+            >
+              <NotesEditor
+                value={code}
+                onChange={changeCode}
+                label={isDesign ? "design-notes.md" : "scratch-work.md"}
+                placeholder={
+                  isDesign
+                    ? "Requirements, estimates, APIs, data model…"
+                    : "Set up the sample space, define events, work the algebra…"
+                }
+              />
+              <span className="save-state notes-save">{saved}</span>
+            </div>
+          )}
+          {hasCode && (
             <section
               className="editor-pane"
               style={{ display: workspaceTab === "code" ? "flex" : "none" }}
@@ -1339,9 +1550,11 @@ function Workspace({ session: initial, onExit }) {
           )}
           <p className="speech-hint">
             <Mic size={13} />
-            {isBehavioral
-              ? "Talk through an experience. Alex will follow up."
-              : "Ask for a hint or code review out loud."}
+            {{
+              behavioral: "Talk through an experience. Alex will follow up.",
+              probability: "Think aloud. Ask for a hint when you're stuck.",
+              design: "Narrate your design. Ask Alex what worries them.",
+            }[mode] || "Ask for a hint or code review out loud."}
           </p>
         </aside>
       </div>

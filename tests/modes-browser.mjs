@@ -119,14 +119,14 @@ if (!real) {
   });
 try {
   await page.goto(base);
-  assert.equal(await page.locator(".mode-card").count(), 2);
+  assert.equal(await page.locator(".room").count(), 4);
   assert.equal(await page.locator(".config").count(), 0);
   await page.screenshot({ path: "/tmp/pairwise-home.png", fullPage: true });
-  await page.locator(".coding-mode").click();
+  await page.locator(".room", { hasText: "Coding" }).click();
   await page.waitForSelector(".config");
   await page.goBack();
-  await page.waitForSelector(".mode-card");
-  await page.locator(".behavioral-mode").click();
+  await page.waitForSelector(".room");
+  await page.locator(".room", { hasText: "Behavioral" }).click();
   await page.getByLabel("Upload résumé").setInputFiles({
     name: "synthetic-resume.txt",
     mimeType: "text/plain",

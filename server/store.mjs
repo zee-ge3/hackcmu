@@ -74,6 +74,15 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
     CREATE INDEX IF NOT EXISTS interviews_user ON interviews(user_id, finished_at);
   `);
   const q = (sql) => db.prepare(sql);
+  // Added after the first release: subject tags used for cross-session insights.
+  if (
+    !q("PRAGMA table_info(interviews)")
+      .all()
+      .some((c) => c.name === "topics")
+  )
+    db.exec(
+      "ALTER TABLE interviews ADD COLUMN topics TEXT NOT NULL DEFAULT '[]'",
+    );
   const hash = (token) => createHash("sha256").update(token).digest("hex");
   const hint = (apiKey) => `${apiKey.slice(0, 3)}…${apiKey.slice(-4)}`;
   const encrypt = (text) => {
@@ -127,6 +136,7 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
           language: row.language,
           createdAt: row.created_at,
           finishedAt: row.finished_at,
+          topics: JSON.parse(row.topics || "[]"),
           feedback: JSON.parse(row.feedback),
         }
       : null;
@@ -257,10 +267,10 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
     },
     recordInterview(
       userId,
-      { id, mode, title, language = null, createdAt, feedback },
+      { id, mode, title, language = null, createdAt, feedback, topics = [] },
     ) {
       q(
-        "INSERT OR REPLACE INTO interviews (id, user_id, mode, title, language, created_at, finished_at, feedback) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        "INSERT OR REPLACE INTO interviews (id, user_id, mode, title, language, created_at, finished_at, feedback, topics) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       ).run(
         id,
         userId,
@@ -270,6 +280,7 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
         createdAt,
         Date.now(),
         JSON.stringify(feedback),
+        JSON.stringify(topics),
       );
       return getInterview(userId, id);
     },

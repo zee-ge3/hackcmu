@@ -6,6 +6,7 @@ import {
   KeyRound,
   LogOut,
   Trash2,
+  TrendingUp,
 } from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
@@ -23,10 +24,103 @@ const average = (feedback) => {
     ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
     : null;
 };
+const modeNames = {
+  coding: "Coding",
+  behavioral: "Behavioral",
+  probability: "Probability",
+  design: "System design",
+};
+const Bar = ({ value }) => (
+  <span className="score-bar" aria-hidden="true">
+    <i style={{ width: `${((value || 0) / 5) * 100}%` }} />
+  </span>
+);
+// Cross-session view: weakest criteria and topics, plus a recent-score trend.
+function Insights({ insights }) {
+  return (
+    <section className="card profile-card insights-card">
+      <div className="section-title">
+        <div>
+          <span className="eyebrow muted">
+            ACROSS {insights.sessions} SESSION
+            {insights.sessions === 1 ? "" : "S"}
+          </span>
+          <h2>Where you struggle most</h2>
+        </div>
+        <TrendingUp size={20} />
+      </div>
+      <div className="insight-columns">
+        <div>
+          <h4>Criteria to work on</h4>
+          {insights.weakestCriteria.map((c) => (
+            <div className="insight-row" key={c.mode + c.id}>
+              <span className="insight-label">
+                {c.label}
+                <small>
+                  {modeNames[c.mode]} · {c.n} session{c.n === 1 ? "" : "s"}
+                </small>
+              </span>
+              <Bar value={c.avg} />
+              <b>{c.avg.toFixed(1)}</b>
+            </div>
+          ))}
+          {!insights.weakestCriteria.length && (
+            <p className="muted">Finish a graded session to see criteria.</p>
+          )}
+        </div>
+        <div>
+          <h4>Subject areas</h4>
+          {insights.weakest.map((t) => (
+            <div className="insight-row" key={t.topic}>
+              <span className="insight-label">
+                {t.topic}
+                <small>
+                  {t.modes.map((m) => modeNames[m]).join(", ")} · {t.n}
+                </small>
+              </span>
+              <Bar value={t.avg} />
+              <b>{t.avg.toFixed(1)}</b>
+            </div>
+          ))}
+          {!insights.weakest.length && (
+            <p className="muted">Topics appear once sessions are graded.</p>
+          )}
+        </div>
+      </div>
+      {insights.trend.length > 1 && (
+        <div className="trend">
+          <h4>Recent sessions</h4>
+          <div className="trend-bars">
+            {insights.trend.map((t) => (
+              <span
+                key={t.id}
+                title={`${modeNames[t.mode]} · ${t.title} · ${t.score.toFixed(1)}`}
+              >
+                <i
+                  style={{ height: `${(t.score / 5) * 100}%` }}
+                  className={t.mode}
+                />
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="mode-averages">
+        {Object.entries(insights.modes).map(([mode, m]) => (
+          <span key={mode}>
+            {modeNames[mode]} <b>{m.avg === null ? "—" : m.avg.toFixed(1)}</b>{" "}
+            <small>/ 5 · {m.count}</small>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
 export function Profile({ navigate }) {
   const { user, signOut, setUser } = useAccount();
   const [resumes, setResumes] = useState(null),
     [history, setHistory] = useState(null),
+    [insights, setInsights] = useState(null),
     [key, setKey] = useState(""),
     [keyBusy, setKeyBusy] = useState(false),
     [confirmDelete, setConfirmDelete] = useState(false),
@@ -36,10 +130,12 @@ export function Profile({ navigate }) {
     Promise.all([
       api("/api/resumes", undefined, "GET"),
       api("/api/history", undefined, "GET"),
+      api("/api/insights", undefined, "GET"),
     ])
-      .then(([r, h]) => {
+      .then(([r, h, i]) => {
         setResumes(r.resumes);
         setHistory(h.interviews);
+        setInsights(i);
       })
       .catch((e) => setError(e.message));
   }, []);
@@ -135,6 +231,7 @@ export function Profile({ navigate }) {
             )}
           </div>
         </section>
+        {insights && insights.sessions > 0 && <Insights insights={insights} />}
         <section className="card profile-card">
           <div className="section-title">
             <div>
