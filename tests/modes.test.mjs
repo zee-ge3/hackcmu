@@ -11,6 +11,8 @@ import { rubric } from "../src/interviewer.mjs";
 test("answers match across fractions, decimals, LaTeX, and percentages", () => {
   assert.equal(matchAnswer("17/24", "\\frac{17}{24}"), true);
   assert.equal(matchAnswer("0.7083", "\\frac{17}{24}"), true);
+  assert.equal(matchAnswer("0.667", "2/3"), true);
+  assert.equal(matchAnswer("0.66", "2/3"), false);
   assert.equal(matchAnswer("1/3", "\\frac{17}{24}"), false);
   assert.equal(matchAnswer("50%", "\\dfrac{1}{2}"), true);
   assert.equal(matchAnswer("2^10", "1024"), true);

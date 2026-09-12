@@ -127,7 +127,7 @@ export function registerResumeRoutes(app, { openai, store }) {
 export function registerCanvasRoutes(app, { openai }) {
   app.post("/api/interviews/:id/canvas", async (req, res) => {
     const s = req.interview;
-    const { index = 0, revision, image, empty = false } = req.body;
+    const { index = 0, revision, image, empty = false, strokes } = req.body;
     if (
       !Number.isInteger(index) ||
       index < 0 ||
@@ -153,6 +153,13 @@ export function registerCanvasRoutes(app, { openai }) {
         .status(409)
         .json({ error: "This canvas revision is already superseded." });
     const board = { ...(prior || {}), requestedRevision: revision };
+    // Strokes are kept only for rejoin; bounded so a runaway canvas cannot grow memory.
+    if (
+      Array.isArray(strokes) &&
+      strokes.length <= 4000 &&
+      JSON.stringify(strokes).length <= 400000
+    )
+      board.strokes = empty ? [] : strokes;
     s.boards[index] = board;
     let summary = "The candidate cleared the whiteboard. It is now empty.";
     try {

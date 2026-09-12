@@ -119,7 +119,11 @@ export function matchAnswer(candidate, reference) {
   const a = value(candidate),
     b = value(reference);
   if (a === null || b === null) return null;
-  return Math.abs(a - b) <= Math.max(1e-6, Math.abs(b) * 1e-4);
+  // Three significant figures are enough (0.667 for 2/3), matching the grading rule.
+  const sig = (x) => Number(x.toPrecision(3));
+  return (
+    Math.abs(a - b) <= Math.max(1e-6, Math.abs(b) * 1e-3) || sig(a) === sig(b)
+  );
 }
 
 export const designPresets = [

@@ -510,7 +510,21 @@ function Workspace({ session: initial, onExit }) {
   const [workspaceTab, setWorkspaceTab] = useState(
     hasCode ? "code" : usesNotes ? "notes" : "canvas",
   );
-  const boards = useRef({});
+  // Boards restored from the server on rejoin: strokes repaint, and the revision
+  // counter continues past the server's last accepted value.
+  const boards = useRef(
+    Object.fromEntries(
+      Object.entries(initial.boards || {}).map(([i, b]) => [
+        i,
+        {
+          strokes: b.strokes || [],
+          revision: b.revision || 0,
+          ack: b.revision || 0,
+          summary: b.summary || "",
+        },
+      ]),
+    ),
+  );
   const [index, setIndex] = useState(initial.index || 0),
     [editors, setEditors] = useState(initial.editors),
     [code, setCode] = useState(initial.editors[initial.index || 0]?.code || ""),
@@ -566,7 +580,10 @@ function Workspace({ session: initial, onExit }) {
       timeSpent: {},
       nudged: {},
       runs: initial.runs || {},
-      segment: 0,
+      segment: Math.max(
+        0,
+        ...(initial.transcript || []).map((f) => f.segment || 0),
+      ),
       seenEvents: new Set(),
       ending: false,
     }),
@@ -578,7 +595,9 @@ function Workspace({ session: initial, onExit }) {
     editDecorations = useRef([]),
     testsTimer = useRef(null),
     pendingTests = useRef(null),
-    testsChain = useRef(Promise.resolve());
+    testsChain = useRef(Promise.resolve()),
+    debuggerRef = useRef(null),
+    debugSuiteRef = useRef(null);
   const problem = initial.problems[index];
   const base = `/api/interviews/${initial.id}`;
   const captionRows = groupTranscript(transcript);
@@ -594,6 +613,13 @@ function Workspace({ session: initial, onExit }) {
     if (now - c.utteranceAt > 4000) c.utterance = "";
     c.utteranceAt = now;
     c.utterance = (c.utterance + delta).slice(-400);
+    // Judge the utterance once it has paused, so "Wait, is this O(n)?" is a question.
+    clearTimeout(c.quietTimer);
+    c.quietTimer = setTimeout(judgeUtterance, 1200);
+  }
+  function judgeUtterance() {
+    const c = state.current;
+    const now = Date.now();
     if (asksQuiet(c.utterance)) {
       c.quietGraceUntil = now + 8000;
       if (!(c.quietUntil > now)) {
@@ -636,7 +662,11 @@ function Workspace({ session: initial, onExit }) {
   const [problemElapsed, setProblemElapsed] = useState(0);
   useEffect(() => {
     setProblemElapsed(
-      Math.floor((Date.now() - state.current.problemStartedAt) / 1000),
+      Math.floor(
+        ((state.current.timeSpent[state.current.index] || 0) +
+          (Date.now() - state.current.problemStartedAt)) /
+          1000,
+      ),
     );
   }, [elapsed]);
   useEffect(() => {
@@ -815,6 +845,10 @@ function Workspace({ session: initial, onExit }) {
   }, [transcript]);
   async function ask(request, delegationId = null) {
     if (state.current.ending) return;
+    let followUp = null;
+    const segment = state.current.segment;
+    const reply = () =>
+      state.current.segment === segment ? delegationId : null;
     if (state.current.busy) {
       if (delegationId)
         live.current?.send(
@@ -838,6 +872,9 @@ function Workspace({ session: initial, onExit }) {
         transcript: state.current.transcript,
         runResult: state.current.runResult,
         debugTrace: state.current.debugTrace,
+        debuggerCases: initial.debuggerEnabled
+          ? (debugSuiteRef.current?.cases || []).map((c) => c.name).slice(0, 60)
+          : undefined,
       });
       if (result.editor) {
         state.current.editors = state.current.editors.map((e, i) =>
@@ -866,12 +903,34 @@ function Workspace({ session: initial, onExit }) {
         result.nextIndex !== state.current.index
       )
         await goTo(result.nextIndex, { announced: true });
+      // Alex drives the visual debugger: trace a case now, then narrate it.
+      if (result.traceCase && initial.debuggerEnabled && debuggerRef.current) {
+        setBottomTab("debugger");
+        const trace = await debuggerRef.current.trace(result.traceCase);
+        followUp = trace
+          ? `The trace of ${result.traceCase} you requested has finished; debugTrace holds it (${trace.steps.length} steps, ${trace.result.error ? "error: " + trace.result.error : trace.result.ok ? "passed" : "failed"}). Explain the two or three most important steps by number with their variable values, call show_steps with those step numbers, and end with a question for the candidate.`
+          : `The case "${result.traceCase}" is not in the debugger's list; pick one of: ${(
+              debugSuiteRef.current?.cases || []
+            )
+              .map((c) => c.name)
+              .slice(0, 12)
+              .join(", ")}.`;
+      }
+      if (result.debuggerSteps?.length && debuggerRef.current) {
+        setBottomTab("debugger");
+        void (async () => {
+          for (const step of result.debuggerSteps) {
+            debuggerRef.current?.goTo(step);
+            await new Promise((r) => setTimeout(r, 4500));
+          }
+        })();
+      }
 
       if (live.current?.ready) {
         for (const chunk of message.match(/.{1,650}(?:\s|$)/gs) || [
           message.slice(0, 650),
         ])
-          live.current.send("session.commentary.append", chunk, delegationId);
+          live.current.send("session.commentary.append", chunk, reply());
       }
       if (
         result.runCode &&
@@ -887,12 +946,13 @@ function Workspace({ session: initial, onExit }) {
         live.current?.send(
           "session.commentary.append",
           "The backend could not finish this request. Ask the candidate to check the workspace error and retry.",
-          delegationId,
+          reply(),
         );
     } finally {
       state.current.busy = false;
       setBusy(false);
     }
+    if (followUp) return ask(followUp, delegationId);
   }
   // Git-style marking of the lines an interviewer edit added; fades after a while.
   function highlightEdit(before, after) {
@@ -939,10 +999,22 @@ function Workspace({ session: initial, onExit }) {
     if (stageBusy || !design || design.nextAt === null) return;
     if (initial.problems[0].id === "custom") {
       // No script for a custom brief: the backend invents and announces one.
+      // One attempt per stage from the timer; the button can always retry.
+      if (
+        reason === "timer" &&
+        state.current.customAttempt === design.stageIndex
+      )
+        return;
+      state.current.customAttempt = design.stageIndex;
       state.current.lastCheckInAt = Date.now();
-      await ask(
-        "Reveal the next design constraint now: invent one that fits this brief and stresses the current design, then introduce it and ask how the design changes.",
-      );
+      setStageBusy(true);
+      try {
+        await ask(
+          "Reveal the next design constraint now: invent one that fits this brief and stresses the current design, then introduce it and ask how the design changes.",
+        );
+      } finally {
+        setStageBusy(false);
+      }
       return;
     }
     setStageBusy(true);
@@ -1003,7 +1075,9 @@ function Workspace({ session: initial, onExit }) {
       }));
       live.current?.send(
         "session.thinking.append",
-        `The candidate revealed the reference answer for question ${target + 1}: ${result.answer}. Walk through the key idea with them briefly.`,
+        result.answer
+          ? `The candidate revealed the reference answer for question ${target + 1}: ${result.answer}. Walk through the key idea with them briefly.`
+          : `The candidate revealed the reference solution for question ${target + 1}. Walk through its key idea with them briefly.`,
       );
     } catch (e) {
       setError(e.message);
@@ -1015,17 +1089,22 @@ function Workspace({ session: initial, onExit }) {
   function onDebugTrace({ case: testCase, steps, result }) {
     const brief = (v) =>
       JSON.stringify(v.v ?? (v.t === "node" ? "node#" + v.id : v.t));
-    const last = steps
-      .slice(-30)
-      .map(
-        (s) =>
-          `L${s.line}: ` +
-          Object.entries(s.vars)
-            .filter(([, v]) => v.t !== "fn")
-            .map(([k, v]) => `${k}=${brief(v)}`.slice(0, 60))
-            .join(" "),
-      )
-      .join("\n");
+    const line = (s, i) =>
+      `#${i + 1} L${s.line}: ` +
+      Object.entries(s.vars)
+        .filter(([, v]) => v.t !== "fn")
+        .map(([k, v]) => `${k}=${brief(v)}`.slice(0, 60))
+        .join(" ") +
+      (s.ret ? ` → returns ${brief(s.ret)}` : "");
+    const picked =
+      steps.length <= 50
+        ? steps.map(line)
+        : [
+            ...steps.slice(0, 40).map(line),
+            `… ${steps.length - 50} steps omitted …`,
+            ...steps.slice(-10).map((s, i) => line(s, steps.length - 10 + i)),
+          ];
+    const last = picked.join("\n");
     const outcome = result.error
       ? "error: " + result.error
       : result.ok
@@ -1033,7 +1112,7 @@ function Workspace({ session: initial, onExit }) {
         : "failed";
     const headline = `Visual debugger on case "${testCase?.name}": ${steps.length} steps, ${outcome}.`;
     state.current.debugTrace =
-      `${headline}\nLast steps (line: variables):\n${last}`.slice(0, 4000);
+      `${headline}\nSteps (#step Lline: variables):\n${last}`.slice(0, 6000);
     live.current?.send(
       "session.thinking.append",
       headline + " The backend has the full trace.",
@@ -1095,16 +1174,20 @@ function Workspace({ session: initial, onExit }) {
   function connect() {
     setError("");
     setMuted(false);
+    const reconnecting =
+      state.current.segment > 0 || state.current.transcript.length > 0;
     state.current.segment++;
     const connection = new LiveConnection({
-      greeting: {
-        behavioral:
-          "Greet the candidate immediately, introduce yourself as their AI behavioral interviewer, and ask one introductory question grounded in their resume. Follow the configured style. Do not ask them to code. Then listen.",
-        probability:
-          "Greet the candidate immediately, introduce yourself as their AI probability interviewer, and ask them to read the question on screen and describe how they would set it up. Do not state the answer. Then listen.",
-        design:
-          "Greet the candidate immediately, introduce yourself as their AI system design interviewer, present the brief in one or two sentences, and ask them to start by clarifying requirements and estimating scale. Then listen.",
-      }[mode],
+      greeting: reconnecting
+        ? "Voice has reconnected mid-interview. Say in one sentence that you are back, then continue from where the conversation and the work on screen left off; do not restart the introduction."
+        : {
+            behavioral:
+              "Greet the candidate immediately, introduce yourself as their AI behavioral interviewer, and ask one introductory question grounded in their resume. Follow the configured style. Do not ask them to code. Then listen.",
+            probability:
+              "Greet the candidate immediately, introduce yourself as their AI probability interviewer, and ask them to read the question on screen and describe how they would set it up. Do not state the answer. Then listen.",
+            design:
+              "Greet the candidate immediately, introduce yourself as their AI system design interviewer, present the brief in one or two sentences, and ask them to start by clarifying requirements and estimating scale. Then listen.",
+          }[mode],
       onStatus: setVoice,
       onEvent: onLiveEvent,
       onError: setError,
@@ -1280,6 +1363,7 @@ function Workspace({ session: initial, onExit }) {
       cases: [...(prepared?.cases || []), ...own],
     };
   }, [problem, customTests, index, hasCode, initial.debuggerEnabled]);
+  debugSuiteRef.current = debugSuite;
   // Drag the bar above the bottom tabs to resize the panel; double-click resets.
   function startResize(e) {
     const startY = e.clientY;
@@ -1689,6 +1773,7 @@ function Workspace({ session: initial, onExit }) {
                     hidden={bottomTab !== "debugger"}
                   >
                     <Debugger
+                      ref={debuggerRef}
                       key={index}
                       suite={debugSuite}
                       language={initial.language}

@@ -37,12 +37,7 @@ test("instrumented two-pointer code streams scoped snapshots and the return valu
   assert.equal(steps.at(-1).ret.t, "arr");
 });
 test("tracing never captures a block-scoped name before its declaration", () => {
-  const code = `function f(n) { if (n > 0) { const a = n; { let b = a + 1; return b; } } let c = 2; return c; }`;
-  const src = instrument(code);
-  assert.ok(
-    !src.includes("({f, n, c})") ||
-      src.indexOf("({f, n, c})") > src.indexOf("let c"),
-  );
+  const code = `function f(n){ let a = 1; { let a = 2; n += a; } return n + a; }`;
   const steps = [];
   const result = runJavascriptTrace(
     code,
@@ -52,11 +47,14 @@ test("tracing never captures a block-scoped name before its declaration", () => 
       output: "number",
       comparison: "exact",
     },
-    { input: [1], expected: 2 },
+    { input: [1], expected: 4 },
     { onSteps: (s) => steps.push(...s) },
   );
+  assert.equal(result.error, undefined, result.error);
   assert.equal(result.ok, true);
-  assert.ok(steps.every((s) => !("b" in s.vars) || s.line >= 1));
+  // The snapshot taken inside the block before `let a = 2` must not read either `a`.
+  const src = instrument(code);
+  assert.match(src, /\{\s*__t\(1, \(\) => \(\{n\}\)\);\s*let a = 2;/);
 });
 test("linked list snapshots carry node identity and relinking", () => {
   const code = `function reverseList(head){ let prev = null, cur = head; while (cur) { const next = cur.next; cur.next = prev; prev = cur; cur = next; } return prev; }`;

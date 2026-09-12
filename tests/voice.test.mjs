@@ -19,6 +19,8 @@ test("quiet requests are recognised without tripping on unrelated phrases", () =
     "one second thought: hash map",
     "the quiet part is done",
     "not sure about second case",
+    "can you give me a second example",
+    "we need a minute-level bucket",
   ])
     assert.equal(asksQuiet(s), false, s);
   assert.equal(reengages("okay"), false);

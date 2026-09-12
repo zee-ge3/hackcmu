@@ -103,7 +103,7 @@ try {
   // Profile renders for the dev user.
   await page.goto(base + "/profile");
   await page.waitForSelector(".profile-card");
-  assert.equal(await page.locator(".history-card").count(), 1);
+  assert.match(await page.locator(".history-card h2").innerText(), /History/);
   assert.deepEqual(errors, []);
   console.log(
     "PASS: probability answer/reveal/next + rejoin, design countdown/reveal/whiteboard, profile.",

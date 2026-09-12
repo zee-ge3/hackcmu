@@ -1,7 +1,7 @@
 import { verdict } from "./domain.mjs";
 // Phrases that put the interviewer on hold until the candidate speaks again.
 export const QUIET =
-  /\b(shut up|be quiet|keep quiet|stay quiet|quiet please|quiet for a|stop talking|don'?t talk|give me (a|one|two|five) (minute|moment|sec|second)s?|let me think|let me (just )?(code|work|write)|need a (minute|moment|sec))\b/i;
+  /\b(shut up|be quiet|keep quiet|stay quiet|quiet please|quiet for a|stop talking|don'?t talk|give me (a|one|two|five) (minute|moment|sec|second)s?(?=\s*($|[.,!?;]|to\b|here\b|please\b|and\b|so\b|while\b|ok\b|okay\b))|let me think|let me (just )?(code|work|write)|need a (minute|moment|sec)(?=\s*($|[.,!?;]|to\b|here\b|please\b)))/i;
 // Interjections that only count when they are the whole utterance ("hold on"),
 // not narration ("I'll hold on to the left pointer").
 export const QUIET_SHORT = /^\W*(hold on|hang on|one sec(ond)?|wait)\W*$/i;

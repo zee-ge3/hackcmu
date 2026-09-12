@@ -1,4 +1,11 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   Play,
   Pause,
@@ -306,14 +313,10 @@ function Snapshot({ snap, prev }) {
     </div>
   );
 }
-export default function Debugger({
-  suite,
-  language,
-  code,
-  editor,
-  lastRun,
-  onTrace,
-}) {
+const Debugger = forwardRef(function Debugger(
+  { suite, language, code, editor, lastRun, onTrace },
+  ref,
+) {
   const [caseIndex, setCaseIndex] = useState(0),
     [steps, setSteps] = useState([]),
     [cursor, setCursor] = useState(0),
@@ -375,7 +378,25 @@ export default function Debugger({
     },
     [editor],
   );
-  async function start() {
+  // Imperative API for the interviewer backend: trace a case, move the cursor.
+  useImperativeHandle(ref, () => ({
+    caseNames: () => cases.map((c) => c.name || ""),
+    async trace(which) {
+      const i =
+        typeof which === "number"
+          ? which - 1
+          : cases.findIndex((c) =>
+              (c.name || "")
+                .toLowerCase()
+                .includes(String(which).toLowerCase()),
+            );
+      if (i < 0 || i >= cases.length) return null;
+      setCaseIndex(i);
+      return start(i);
+    },
+    goTo: (step) => go(step - 1),
+  }));
+  async function start(which = caseIndex) {
     run.current?.stop();
     setSteps([]);
     setCursor(0);
@@ -384,7 +405,7 @@ export default function Debugger({
     follow.current = true;
     setStatus("running");
     const collected = [];
-    run.current = traceCode(code, language, suite, caseIndex, (batch) => {
+    run.current = traceCode(code, language, suite, which, (batch) => {
       collected.push(...batch);
       setSteps([...collected]);
       if (follow.current) setCursor(collected.length - 1);
@@ -392,7 +413,8 @@ export default function Debugger({
     const outcome = await run.current.done;
     setResult(outcome);
     setStatus("done");
-    onTrace?.({ case: cases[caseIndex], steps: collected, result: outcome });
+    onTrace?.({ case: cases[which], steps: collected, result: outcome });
+    return { case: cases[which], steps: collected, result: outcome };
   }
   function stop() {
     run.current?.stop();
@@ -440,7 +462,11 @@ export default function Debugger({
             <Square size={11} /> Stop
           </button>
         ) : (
-          <button className="run" onClick={start} disabled={!cases.length}>
+          <button
+            className="run"
+            onClick={() => start()}
+            disabled={!cases.length}
+          >
             <Play size={11} /> Trace
           </button>
         )}
@@ -530,4 +556,5 @@ export default function Debugger({
       </div>
     </div>
   );
-}
+});
+export default Debugger;

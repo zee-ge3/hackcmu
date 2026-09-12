@@ -172,6 +172,7 @@ export default function Whiteboard({
         revision: version,
         empty,
         image,
+        strokes: model.current.strokes,
       });
       if (!result.stale) {
         model.current.ack = version;
