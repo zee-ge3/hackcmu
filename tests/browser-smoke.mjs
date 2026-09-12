@@ -186,6 +186,112 @@ try {
   await page.waitForSelector(".monaco-editor .debug-line");
   await page.getByRole("button", { name: "First step", exact: true }).click();
   assert.match(await page.locator(".dbg-steps span").innerText(), /^1 \//);
+  // Alex's edits are typed in, not dumped: intermediate editor states exist,
+  // the new lines carry the git-style marker, and the result is exact.
+  let agentReply = null;
+  await page.route("**/api/interviews/*/agent", async (route) => {
+    const current = await (
+      await page.request.get(`${base}/api/interviews/${session.id}`)
+    ).json();
+    const editor = current.editors[0];
+    const reply = agentReply({ editor });
+    await route.fulfill({ json: reply });
+  });
+  const before = await page.evaluate(() => window.__pairwise.code());
+  const after = [
+    "function twoSum(nums, target) {",
+    "  const seen = new Map();",
+    "  for (let i = 0; i < nums.length; i++) {",
+    "    const need = target - nums[i];",
+    "    if (seen.has(need)) return [seen.get(need), i];",
+    "    seen.set(nums[i], i);",
+    "  }",
+    "  return [];",
+    "}",
+  ].join("\n");
+  agentReply = ({ editor }) => ({
+    message: "I reformatted it into a readable function.",
+    editor: { code: after, revision: editor.revision },
+    edits: [
+      { reason: "readable layout", code: after, revision: editor.revision },
+    ],
+    runCode: false,
+    index: 0,
+  });
+  await page.evaluate(() => {
+    window.__askDone = window.__pairwise.ask("Tidy this up please.");
+  });
+  const seen = new Set();
+  const typingStart = Date.now();
+  while (Date.now() - typingStart < 15000) {
+    const value = await page.evaluate(() => window.__pairwise.code());
+    seen.add(value);
+    if (value === after) break;
+    await page.waitForTimeout(40);
+  }
+  await page.evaluate(() => window.__askDone);
+  assert.equal(await page.evaluate(() => window.__pairwise.code()), after);
+  assert.ok(
+    seen.size >= 4,
+    `typed progressively (${seen.size} distinct states, before was ${JSON.stringify(before).slice(0, 40)})`,
+  );
+  assert.ok(
+    (await page.locator(".monaco-editor .agent-added").count()) >= 3,
+    "added lines are marked",
+  );
+  assert.match(
+    await page.locator(".editor-activity").innerText(),
+    /readable layout/,
+  );
+  // Alex's walkthrough: the reference approach on an example, data only.
+  const { runWalkthrough } = await import("../server/walkthrough.mjs");
+  const walk = await runWalkthrough({
+    problem: session.problems[0],
+    customTests: session.customTests[0],
+    caseName: "Example / boundary 1",
+    solutionsDir: new URL("../data/solutions/", import.meta.url),
+  });
+  agentReply = ({ editor }) => ({
+    message:
+      "Watch the map fill up: at step 4 we look for 7, and it is not there yet.",
+    editor: { code: editor.code, revision: editor.revision },
+    edits: [],
+    runCode: false,
+    walkthrough: walk.client,
+    debuggerSteps: [1, 4],
+    index: 0,
+  });
+  await page.evaluate(() => window.__pairwise.ask("I don't get this problem."));
+  await page.waitForSelector(".debugger.walk");
+  assert.match(
+    await page.locator(".dbg-walk").innerText(),
+    /One pass with a hash map of values already seen · Example \/ boundary 1/,
+  );
+  assert.match(
+    await page.locator(".dbg-note").innerText(),
+    /Start with an empty map/,
+  );
+  assert.equal(await page.locator(".monaco-editor .debug-line").count(), 0);
+  await page.waitForFunction(
+    () =>
+      /^4 \//.test(
+        document.querySelector(".dbg-steps span")?.textContent || "",
+      ),
+    null,
+    { timeout: 12000 },
+  );
+  assert.equal(
+    await page.locator(".dbg-note").innerText(),
+    "Is 7 already in the map?",
+  );
+  const seenRow = page.locator(".dbg-row").filter({ hasText: "seen" });
+  assert.match(await seenRow.innerText(), /empty/, "map still empty at step 4");
+  await page.screenshot({ path: "/tmp/pairwise-walkthrough.png" });
+  await page.getByRole("button", { name: "Last step", exact: true }).click();
+  assert.equal(await seenRow.locator(".dbg-cell").count(), 1, "one map entry");
+  assert.match(await seenRow.locator(".dbg-cell").innerText(), /2\s*0/);
+  assert.match(await page.locator(".dbg-var.returns").innerText(), /\[0, 1\]/);
+  await page.unroute("**/api/interviews/*/agent");
   const pythonTrace = await page.evaluate(async (suite) => {
     const { traceCode } = await import("/src/runner.mjs");
     const steps = [];

@@ -70,6 +70,12 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
       finished_at INTEGER NOT NULL,
       feedback TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS reference_solutions (
+      slug TEXT PRIMARY KEY,
+      code TEXT NOT NULL,
+      source TEXT NOT NULL,
+      created_at INTEGER NOT NULL
+    );
     CREATE INDEX IF NOT EXISTS resumes_user ON resumes(user_id, updated_at);
     CREATE INDEX IF NOT EXISTS interviews_user ON interviews(user_id, finished_at);
   `);
@@ -197,6 +203,19 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
         q("SELECT * FROM users WHERE lower(email) = lower(?)").get(email) ||
         this.upsertUser({ sub: `pending:${email.toLowerCase()}`, email })
       );
+    },
+    // Generated reference solutions (walkthroughs) are verified once per problem.
+    getReference(slug) {
+      return (
+        q(
+          "SELECT slug, code, source FROM reference_solutions WHERE slug = ?",
+        ).get(slug) || null
+      );
+    },
+    saveReference(slug, code, source) {
+      q(
+        "INSERT OR REPLACE INTO reference_solutions (slug, code, source, created_at) VALUES (?, ?, ?, ?)",
+      ).run(slug, code, source, Date.now());
     },
     deleteUser(id) {
       q("DELETE FROM users WHERE id = ?").run(id);

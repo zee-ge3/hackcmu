@@ -15,41 +15,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Bug,
+  Sparkles,
 } from "lucide-react";
 import { traceCode } from "./runner.mjs";
+import { briefValue as text, fillCaption } from "./captions.mjs";
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-const text = (v) => {
-  if (!v) return "";
-  switch (v.t) {
-    case "null":
-      return "null";
-    case "undef":
-      return "undefined";
-    case "str":
-      return JSON.stringify(v.v);
-    case "num":
-    case "bool":
-      return String(v.v);
-    case "fn":
-      return `ƒ ${v.v}`;
-    case "node":
-      return `node#${v.id}`;
-    case "tnode":
-      return `tree#${v.id}`;
-    case "arr":
-      return `[${v.v.map(text).join(", ")}${v.n > v.v.length ? ", …" : ""}]`;
-    case "set":
-      return `{${v.v.map(text).join(", ")}}`;
-    case "map":
-      return `{${v.v.map(([k, x]) => `${text(k)}: ${text(x)}`).join(", ")}}`;
-    case "obj":
-      return `{${Object.entries(v.v)
-        .map(([k, x]) => `${k}: ${text(x)}`)
-        .join(", ")}}`;
-    default:
-      return "…";
-  }
-};
 // A value that changed since the previous step shows the old value struck through.
 function Scalar({ value, prev }) {
   const changed = prev !== undefined && !same(value, prev);
@@ -103,6 +73,39 @@ function Cells({ items, prevItems, pointers, total }) {
       </div>,
     );
   return <div className="dbg-cells">{cells}</div>;
+}
+// Hash maps, sets and plain-object dictionaries as key/value cells; a key that
+// was not there on the previous step is highlighted.
+const entriesOf = (v) =>
+  v.t === "map"
+    ? v.v.map(([k, x]) => [text(k), x])
+    : v.t === "set"
+      ? v.v.map((x) => [text(x), null])
+      : Object.entries(v.v);
+function Entries({ value, prev }) {
+  const entries = entriesOf(value);
+  const before = prev && prev.t === value.t ? new Map(entriesOf(prev)) : null;
+  if (!entries.length) return <span className="dbg-scalar dbg-dim">empty</span>;
+  return (
+    <div className="dbg-cells">
+      {entries.map(([k, x]) => {
+        const changed =
+          before && (!before.has(k) || (x !== null && !same(x, before.get(k))));
+        return (
+          <div key={k} className={"dbg-cell " + (changed ? "changed" : "")}>
+            <span className="dbg-index">{k}</span>
+            <span className="dbg-value">{x === null ? "•" : text(x)}</span>
+          </div>
+        );
+      })}
+      {value.n > entries.length && (
+        <div className="dbg-cell end">
+          <span className="dbg-index">…</span>
+          <span className="dbg-value">+{value.n - entries.length}</span>
+        </div>
+      )}
+    </div>
+  );
 }
 function Chain({ ids, nodes, prevNodes, pointers }) {
   return (
@@ -186,6 +189,12 @@ function Tree({ id, nodes, pointers, depth = 0 }) {
     </div>
   );
 }
+const isTable = (v) =>
+  v.t === "map" ||
+  v.t === "set" ||
+  (v.t === "obj" &&
+    Object.keys(v.v).length > 0 &&
+    Object.keys(v.v).length <= 40);
 function Snapshot({ snap, prev }) {
   if (!snap) return null;
   const vars = Object.entries(snap.vars).filter(([, v]) => v.t !== "fn");
@@ -197,6 +206,7 @@ function Snapshot({ snap, prev }) {
     ([, v]) =>
       v.t === "arr" || (v.t === "str" && v.v.length > 1 && v.v.length <= 80),
   );
+  const tables = vars.filter(([, v]) => isTable(v));
   const pointerFor = (name, length) =>
     ints
       .filter(([n, v]) => n !== name && v.v <= length)
@@ -270,6 +280,12 @@ function Snapshot({ snap, prev }) {
           </div>
         );
       })}
+      {tables.map(([name, v]) => (
+        <div className="dbg-row" key={name}>
+          <span className="dbg-name">{name}</span>
+          <Entries value={v} prev={prev?.vars[name]} />
+        </div>
+      ))}
       {chains.map((ids) => (
         <div className="dbg-row" key={"chain" + ids[0]}>
           <span className="dbg-name">list</span>
@@ -292,6 +308,7 @@ function Snapshot({ snap, prev }) {
           .filter(
             ([name, v]) =>
               !["arr", "node", "tnode"].includes(v.t) &&
+              !isTable(v) &&
               !(v.t === "str" && sequences.some(([n]) => n === name)),
           )
           .map(([name, v]) => (
@@ -322,10 +339,15 @@ const Debugger = forwardRef(function Debugger(
     [cursor, setCursor] = useState(0),
     [status, setStatus] = useState("idle"),
     [result, setResult] = useState(null),
-    [playing, setPlaying] = useState(false);
+    [playing, setPlaying] = useState(false),
+    // "code" traces the editor; "walk" shows Alex's walkthrough of the
+    // reference approach, which has captions and no source lines.
+    [source, setSource] = useState("code"),
+    [walk, setWalk] = useState(null);
   const run = useRef(null),
     follow = useRef(true),
-    decorations = useRef([]);
+    decorations = useRef([]),
+    stepsRef = useRef([]);
   const cases = suite?.cases || [];
   useEffect(() => {
     const failing = lastRun?.results?.findIndex((r) => !r.passed);
@@ -339,7 +361,7 @@ const Debugger = forwardRef(function Debugger(
     if (!playing) return;
     const timer = setInterval(() => {
       setCursor((c) => {
-        if (c + 1 >= steps.length) {
+        if (c + 1 >= stepsRef.current.length) {
           setPlaying(false);
           return c;
         }
@@ -347,13 +369,14 @@ const Debugger = forwardRef(function Debugger(
       });
     }, 350);
     return () => clearInterval(timer);
-  }, [playing, steps.length]);
+  }, [playing]);
   const snap = steps[cursor];
   useEffect(() => {
     if (!editor) return;
+    const live = source === "code" && snap;
     decorations.current = editor.deltaDecorations(
       decorations.current,
-      snap
+      live
         ? [
             {
               range: {
@@ -371,8 +394,8 @@ const Debugger = forwardRef(function Debugger(
           ]
         : [],
     );
-    if (snap) editor.revealLineInCenterIfOutsideViewport(snap.line);
-  }, [snap, editor]);
+    if (live) editor.revealLineInCenterIfOutsideViewport(snap.line);
+  }, [snap, editor, source]);
   // Clear the line highlight when the debugger goes away.
   useEffect(
     () => () => {
@@ -381,7 +404,12 @@ const Debugger = forwardRef(function Debugger(
     },
     [editor],
   );
-  // Imperative API for the interviewer backend: trace a case, move the cursor.
+  const show = (list) => {
+    stepsRef.current = list;
+    setSteps(list);
+  };
+  // Imperative API for the interviewer backend: trace a case, load a
+  // walkthrough, move the cursor.
   useImperativeHandle(ref, () => ({
     caseNames: () => cases.map((c) => c.name || ""),
     async trace(which) {
@@ -397,12 +425,25 @@ const Debugger = forwardRef(function Debugger(
       setCaseIndex(i);
       return start(i);
     },
+    load(walkthrough) {
+      run.current?.stop();
+      setPlaying(false);
+      follow.current = false;
+      setSource("walk");
+      setWalk(walkthrough);
+      show(walkthrough.steps || []);
+      setCursor(0);
+      setResult(null);
+      setStatus("done");
+    },
     goTo: (step) => go(step - 1),
   }));
   async function start(which = caseIndex) {
     if (which >= cases.length) which = 0;
     run.current?.stop();
-    setSteps([]);
+    setSource("code");
+    setWalk(null);
+    show([]);
     setCursor(0);
     setResult(null);
     setPlaying(false);
@@ -411,7 +452,7 @@ const Debugger = forwardRef(function Debugger(
     const collected = [];
     run.current = traceCode(code, language, suite, which, (batch) => {
       collected.push(...batch);
-      setSteps([...collected]);
+      show([...collected]);
       if (follow.current) setCursor(collected.length - 1);
     });
     const outcome = await run.current.done;
@@ -426,10 +467,11 @@ const Debugger = forwardRef(function Debugger(
   const go = (index) => {
     follow.current = false;
     setPlaying(false);
-    setCursor(Math.max(0, Math.min(steps.length - 1, index)));
+    setCursor(Math.max(0, Math.min(stepsRef.current.length - 1, index)));
   };
+  const caption = snap?.note ? fillCaption(snap.note, snap.vars) : "";
   return (
-    <div className="debugger">
+    <div className={"debugger " + (source === "walk" ? "walk" : "")}>
       <div className="dbg-toolbar">
         <Bug size={13} />
         <select
@@ -474,19 +516,26 @@ const Debugger = forwardRef(function Debugger(
             <Play size={11} /> Trace
           </button>
         )}
-        <span className="dbg-status">
-          {status === "running"
-            ? `Tracing… ${steps.length} steps`
-            : result
-              ? result.error
+        {source === "walk" && walk ? (
+          <span className="dbg-walk" title="Alex's walkthrough">
+            <Sparkles size={11} />
+            {walk.approach || "Reference approach"} · {walk.case?.name}
+          </span>
+        ) : (
+          <span className="dbg-status">
+            {status === "running"
+              ? `Tracing… ${steps.length} steps`
+              : result
                 ? result.error
-                : result.ok
-                  ? `Passed · ${steps.length} steps`
-                  : `Failed · ${steps.length} steps`
-              : cases.length
-                ? "Pick a case, then Trace."
-                : "Add a testcase with an expected value to trace it."}
-        </span>
+                  ? result.error
+                  : result.ok
+                    ? `Passed · ${steps.length} steps`
+                    : `Failed · ${steps.length} steps`
+                : cases.length
+                  ? "Pick a case, then Trace."
+                  : "Add a testcase with an expected value to trace it."}
+          </span>
+        )}
         <div className="dbg-steps">
           <button
             aria-label="First step"
@@ -537,12 +586,18 @@ const Debugger = forwardRef(function Debugger(
           />
           <span>
             {steps.length
-              ? `${cursor + 1} / ${steps.length} · line ${snap?.line}`
+              ? `${cursor + 1} / ${steps.length}` +
+                (source === "code" && snap ? ` · line ${snap.line}` : "")
               : "—"}
           </span>
         </div>
       </div>
       <div className="dbg-body">
+        {source === "walk" && walk && (
+          <p className="dbg-note" aria-live="polite">
+            {caption || `Step ${cursor + 1}`}
+          </p>
+        )}
         {snap ? (
           <Snapshot snap={snap} prev={steps[cursor - 1]} />
         ) : (
@@ -552,7 +607,10 @@ const Debugger = forwardRef(function Debugger(
               : "No trace yet."}
           </p>
         )}
-        {result?.output && (
+        {source === "walk" && walk?.result?.error && (
+          <pre className="dbg-result failed">{walk.result.error}</pre>
+        )}
+        {source === "code" && result?.output && (
           <pre className={"dbg-result " + (result.ok ? "" : "failed")}>
             {result.output}
           </pre>

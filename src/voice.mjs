@@ -30,3 +30,17 @@ export function spokenResult(result) {
 // Small talk that should not count as re-engaging the interviewer.
 export const reengages = (utterance) =>
   utterance.trim().split(/\s+/).length >= 4 || /\balex\b/i.test(utterance);
+
+// Silence policy. A human interviewer checks in after about a minute of
+// silence, then backs off (2, then 4 minutes) so a quiet candidate is not
+// nagged; speaking again resets the back-off. Quiet mode suppresses it.
+export function checkInDue(c, now) {
+  if (c.quietUntil > now) return false;
+  if (now - c.lastSpeechAt < 60000) return false;
+  const gap = Math.min(4, 2 ** (c.checkIns || 0)) * 60000;
+  return now - c.lastCheckInAt >= gap;
+}
+export const checkInRequest = (coding) =>
+  coding
+    ? "Check-in: the candidate has been working silently for over a minute. In at most two sentences, acknowledge the specific progress you can see (editor, notes, or whiteboard) and ask them to talk through their current step. No hints unless they are clearly stuck."
+    : "Check-in: the candidate has been silent for over a minute with no visible progress. In one or two sentences, check in gently: ask whether they want to think out loud, or whether a clarifying question about the problem would help. No hints unless they are clearly stuck.";

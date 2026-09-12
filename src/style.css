@@ -2213,6 +2213,36 @@ img.avatar {
   color: #dfa495;
 }
 
+.dbg-walk {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #2b3a25;
+  border: 1px solid #45592f;
+  color: #d4eeab;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 360px;
+}
+
+.dbg-note {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border-left: 3px solid #9fba78;
+  background: #242a21;
+  color: #e6efd8;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.dbg-dim {
+  color: #7b896e;
+}
+
 .monaco-editor .debug-line {
   background: rgba(159, 186, 120, 0.22);
 }

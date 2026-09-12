@@ -40,8 +40,14 @@ import Whiteboard from "./Whiteboard.jsx";
 import Debugger from "./Debugger.jsx";
 import { Testcases, TestResult, verdict } from "./TestPanel.jsx";
 import { buildCustomSuite, resolveRunMode } from "./domain.mjs";
-import { asksQuiet, spokenResult, reengages } from "./voice.mjs";
-import { lineDiff } from "./diff.mjs";
+import {
+  asksQuiet,
+  spokenResult,
+  reengages,
+  checkInDue,
+  checkInRequest,
+} from "./voice.mjs";
+import { lineDiff, lineOps } from "./diff.mjs";
 import { DiffEditor } from "@monaco-editor/react";
 import { Bug, GitCompare } from "lucide-react";
 import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
@@ -584,6 +590,8 @@ function Workspace({ session: initial, onExit }) {
       lastSpeechAt: Date.now(),
       lastActivityAt: 0,
       lastCheckInAt: Date.now(),
+      checkIns: 0,
+      typing: false,
       quietUntil: 0,
       quietGraceUntil: 0,
       quietTimer: null,
@@ -708,10 +716,12 @@ function Workspace({ session: initial, onExit }) {
       );
     }
   }, [problemElapsed]);
-  // A silent candidate still gets an interviewer: after a stretch of work with
-  // no speech, the backend is asked for a short spoken check-in.
+  // A silent candidate still gets an interviewer: after a minute without
+  // speech the backend is asked for a short spoken check-in (acknowledging
+  // visible progress when there is any), backing off while they stay quiet.
+  // If the backend cannot answer, the voice agent is told to check in itself.
   useEffect(() => {
-    const timer = setInterval(() => {
+    const timer = setInterval(async () => {
       const c = state.current;
       const now = Date.now();
       if (quiet && !(c.quietUntil > now)) endQuiet();
@@ -720,19 +730,28 @@ function Workspace({ session: initial, onExit }) {
         c.busy ||
         c.ending ||
         feedback ||
-        c.quietUntil > now ||
-        now - c.lastSpeechAt < 75000 ||
-        now - c.lastCheckInAt < 90000 ||
-        c.lastActivityAt <= c.lastCheckInAt
+        !checkInDue(c, now)
       )
         return;
+      const coding = c.lastActivityAt > c.lastCheckInAt;
       c.lastCheckInAt = now;
-      void ask(
-        "Check-in: the candidate has been working silently for over a minute. In at most two sentences, acknowledge the specific progress you can see (editor, notes, or whiteboard) and ask them to talk through their current step. No hints unless they are clearly stuck.",
-      );
+      c.checkIns = (c.checkIns || 0) + 1;
+      const spoken = await ask(checkInRequest(coding)).catch(() => null);
+      if (!spoken && live.current?.ready && !isQuiet())
+        live.current.send(
+          "session.instructions.append",
+          coding
+            ? "The candidate has been coding silently for over a minute. Check in now in one short sentence: acknowledge that they are making progress and ask them to talk through the step they are on."
+            : "The candidate has been silent for over a minute. Check in now in one short sentence: ask whether they want to think out loud or have a question about the problem.",
+        );
     }, 15000);
     return () => clearInterval(timer);
   }, [feedback, quiet]);
+  // Dev-only hook so browser tests can drive the agent path without voice.
+  useEffect(() => {
+    if (import.meta.env.DEV)
+      window.__pairwise = { ask, code: () => codeRef.current?.getValue() };
+  });
   // Design rooms: reveal the next constraint on its timer and flag the time limit.
   useEffect(() => {
     if (!isDesign || !design || feedback) return;
@@ -762,11 +781,161 @@ function Workspace({ session: initial, onExit }) {
     };
   }, []);
   function changeCode(value) {
+    if (state.current.typing) return;
     value = value || "";
     state.current.code = value;
     state.current.lastActivityAt = Date.now();
     setCode(value);
     setSaved("");
+  }
+  // Code that arrived from Alex: adopted without counting as candidate activity.
+  function adoptCode(value) {
+    state.current.code = value;
+    setCode(value);
+    setSaved("Saved");
+  }
+  const addedLine = (line) => ({
+    range: {
+      startLineNumber: line,
+      startColumn: 1,
+      endLineNumber: line,
+      endColumn: 1,
+    },
+    options: {
+      isWholeLine: true,
+      className: "agent-added",
+      linesDecorationsClassName: "agent-added-gutter",
+    },
+  });
+  // Alex's edits are typed into the editor the way a person would make them:
+  // removed lines go first, then each new line is opened and typed in small
+  // chunks, marked git-style in the gutter. The whole edit lands within about
+  // six seconds however large it is; the editor is read-only meanwhile.
+  async function typeEdit(before, after, target, reason) {
+    const editor = codeRef.current;
+    const model = editor?.getModel();
+    const ops =
+      model && !model.isDisposed() && model.getValue() === before
+        ? lineOps(before, after)
+        : null;
+    const valid = () =>
+      state.current.index === target &&
+      codeRef.current === editor &&
+      !model.isDisposed();
+    if (!ops) {
+      if (state.current.index !== target) return;
+      adoptCode(after);
+      highlightEdit(before, after);
+      return;
+    }
+    const c = state.current;
+    c.typing = true;
+    editor.updateOptions({ readOnly: true });
+    setActivity(reason ? `Alex is typing · ${reason}` : "Alex is typing");
+    const chars = ops
+      .filter((o) => o.op === "add")
+      .reduce((n, o) => n + o.text.length + 1, 0);
+    const perChar = Math.min(16, 5000 / Math.max(chars, 1));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const at = (line, column) => ({
+      startLineNumber: line,
+      startColumn: column,
+      endLineNumber: line,
+      endColumn: column,
+    });
+    const added = [];
+    // A model always has one line, so an empty document is one blank line
+    // that the first typed line must reuse rather than push down.
+    let docLines = before.split("\n").length;
+    let line = 1;
+    let aborted = false;
+    try {
+      for (const o of ops) {
+        if (!valid()) {
+          aborted = true;
+          break;
+        }
+        if (o.op === "keep") {
+          line++;
+          continue;
+        }
+        if (o.op === "del") {
+          docLines--;
+          const last = model.getLineCount();
+          model.applyEdits([
+            {
+              range:
+                line < last
+                  ? {
+                      startLineNumber: line,
+                      startColumn: 1,
+                      endLineNumber: line + 1,
+                      endColumn: 1,
+                    }
+                  : {
+                      startLineNumber: Math.max(1, line - 1),
+                      startColumn:
+                        line > 1 ? model.getLineMaxColumn(line - 1) : 1,
+                      endLineNumber: line,
+                      endColumn: model.getLineMaxColumn(line),
+                    },
+              text: "",
+            },
+          ]);
+          await sleep(45);
+          continue;
+        }
+        if (docLines === 0) {
+          // nothing to push down: type into the blank line
+        } else if (line <= model.getLineCount())
+          model.applyEdits([{ range: at(line, 1), text: "\n" }]);
+        else {
+          const end = model.getLineCount();
+          model.applyEdits([
+            { range: at(end, model.getLineMaxColumn(end)), text: "\n" },
+          ]);
+        }
+        docLines++;
+        added.push(line);
+        editDecorations.current = editor.deltaDecorations(
+          editDecorations.current,
+          added.map(addedLine),
+        );
+        editor.revealLineInCenterIfOutsideViewport(line);
+        let column = 1;
+        for (const chunk of o.text.match(/.{1,6}/g) || []) {
+          if (!valid()) {
+            aborted = true;
+            break;
+          }
+          model.applyEdits([{ range: at(line, column), text: chunk }]);
+          column += chunk.length;
+          await sleep(chunk.length * perChar);
+        }
+        if (aborted) break;
+        line++;
+      }
+    } finally {
+      c.typing = false;
+      if (codeRef.current === editor) editor.updateOptions({ readOnly: false });
+    }
+    if (aborted) return;
+    if (model.getValue() !== after) {
+      model.setValue(after);
+      editDecorations.current = editor.deltaDecorations(
+        editDecorations.current,
+        lineDiff(before, after).added.map(addedLine),
+      );
+    }
+    adoptCode(after);
+    setActivity(reason || "");
+    setTimeout(() => {
+      if (codeRef.current === editor)
+        editDecorations.current = editor.deltaDecorations(
+          editDecorations.current,
+          [],
+        );
+    }, 15000);
   }
   // The Testcase panel syncs to the server as it is edited (debounced) so the
   // interviewer always sees the candidate's current cases.
@@ -900,13 +1069,15 @@ function Workspace({ session: initial, onExit }) {
       let message = result.message;
       for (const stage of result.stages || (result.stage ? [result.stage] : []))
         applyStage(stage, result.design);
+      let typed = null;
       if (result.edits.length) {
         if (state.current.index === target && state.current.code === snapshot) {
-          state.current.code = result.editor.code;
-          setCode(result.editor.code);
-          setSaved("Saved");
-          setActivity(result.edits.map((e) => e.reason).join(" · "));
-          highlightEdit(snapshot, result.editor.code);
+          typed = typeEdit(
+            snapshot,
+            result.editor.code,
+            target,
+            result.edits.map((e) => e.reason).join(" · "),
+          );
         } else {
           setPendingEdit(result.editor);
           message +=
@@ -931,6 +1102,20 @@ function Workspace({ session: initial, onExit }) {
               .slice(0, 12)
               .join(", ")}.`;
       }
+      // Alex's walkthrough: the reference approach's data, step by step,
+      // without any source; the backend narrates it with show_steps.
+      if (
+        result.walkthrough &&
+        initial.debuggerEnabled &&
+        debuggerRef.current
+      ) {
+        setBottomTab("debugger");
+        debuggerRef.current.load(result.walkthrough);
+        live.current?.send(
+          "session.thinking.append",
+          `A step-by-step walkthrough of ${result.walkthrough.case?.name || "an example"} (${result.walkthrough.approach || "reference approach"}, ${result.walkthrough.steps?.length || 0} steps) is now on screen in the Debugger tab. The backend's reply narrates it.`,
+        );
+      }
       if (result.debuggerSteps?.length && debuggerRef.current) {
         setBottomTab("debugger");
         void (async () => {
@@ -947,6 +1132,7 @@ function Workspace({ session: initial, onExit }) {
         ])
           live.current.send("session.commentary.append", chunk, reply());
       }
+      if (typed) await typed;
       if (
         result.runCode &&
         state.current.index === target &&
@@ -1154,6 +1340,7 @@ function Workspace({ session: initial, onExit }) {
       if (e.event_id) state.current.seenEvents.add(e.event_id);
       if (e.type.includes("input")) {
         state.current.lastSpeechAt = Date.now();
+        state.current.checkIns = 0;
         heardUser(e.delta || "");
       }
       const row = {
@@ -1749,9 +1936,12 @@ function Workspace({ session: initial, onExit }) {
                   </button>
                   <button
                     onClick={() => {
-                      const before = state.current.code;
-                      changeCode(pendingEdit.code);
-                      highlightEdit(before, pendingEdit.code);
+                      void typeEdit(
+                        state.current.code,
+                        pendingEdit.code,
+                        state.current.index,
+                        "Alex's edit",
+                      );
                       setPendingEdit(null);
                       setShowDiff(false);
                     }}
@@ -2019,9 +2209,12 @@ function Workspace({ session: initial, onExit }) {
               <button
                 className="primary"
                 onClick={() => {
-                  const before = state.current.code;
-                  changeCode(pendingEdit.code);
-                  highlightEdit(before, pendingEdit.code);
+                  void typeEdit(
+                    state.current.code,
+                    pendingEdit.code,
+                    state.current.index,
+                    "Alex's edit",
+                  );
                   setPendingEdit(null);
                   setShowDiff(false);
                 }}

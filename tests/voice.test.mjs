@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { asksQuiet, spokenResult, reengages } from "../src/voice.mjs";
+import {
+  asksQuiet,
+  spokenResult,
+  reengages,
+  checkInDue,
+  checkInRequest,
+} from "../src/voice.mjs";
 test("quiet requests are recognised without tripping on unrelated phrases", () => {
   for (const s of [
     "shut up",
@@ -74,4 +80,34 @@ test("spoken reactions match the verdict and name the failing case", () => {
     }),
     /timed out/,
   );
+});
+test("silence check-ins fire after a minute, back off, and respect quiet mode", () => {
+  const t0 = 1_000_000;
+  const base = {
+    lastSpeechAt: t0,
+    lastCheckInAt: t0,
+    quietUntil: 0,
+    checkIns: 0,
+  };
+  assert.equal(checkInDue(base, t0 + 45_000), false, "too early");
+  assert.equal(checkInDue(base, t0 + 61_000), true, "one minute of silence");
+  assert.equal(
+    checkInDue({ ...base, quietUntil: t0 + 600_000 }, t0 + 120_000),
+    false,
+    "quiet mode",
+  );
+  assert.equal(
+    checkInDue({ ...base, lastSpeechAt: t0 + 100_000 }, t0 + 120_000),
+    false,
+    "spoke recently",
+  );
+  // After one check-in the next needs two minutes, then four, capped at four.
+  const once = { ...base, lastCheckInAt: t0 + 60_000, checkIns: 1 };
+  assert.equal(checkInDue(once, t0 + 150_000), false);
+  assert.equal(checkInDue(once, t0 + 181_000), true);
+  const thrice = { ...base, lastCheckInAt: t0, checkIns: 3 };
+  assert.equal(checkInDue(thrice, t0 + 239_000), false);
+  assert.equal(checkInDue(thrice, t0 + 241_000), true);
+  assert.match(checkInRequest(true), /progress you can see/);
+  assert.match(checkInRequest(false), /think out loud/);
 });
