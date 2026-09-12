@@ -100,14 +100,29 @@ svg {
   flex-shrink: 0;
 }
 
+/* Three columns so the middle (nav or room label) is centered on the page
+   regardless of how wide the brand and the actions are. */
 .topbar {
   height: 60px;
   border-bottom: 1px solid #e0e5dc;
   padding: 0 4.5%;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: space-between;
+  column-gap: 16px;
   background: #fafbf7;
+}
+
+.topbar > :first-child {
+  justify-self: start;
+}
+
+.topbar > :nth-child(2) {
+  justify-self: center;
+}
+
+.topbar > :last-child {
+  justify-self: end;
 }
 
 .brand {
@@ -1624,10 +1639,15 @@ select {
 @media (max-width: 600px) {
   .app-shell > .topbar {
     height: auto;
-    min-height: 100px;
-    padding: 16px 20px 0;
-    flex-wrap: wrap;
-    gap: var(--s3);
+    min-height: 0;
+    padding: 12px 20px;
+    grid-template-columns: auto auto;
+    row-gap: 10px;
+  }
+
+  .app-shell > .topbar > :nth-child(2) {
+    grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .app-shell > .topbar .avatar {
@@ -2251,14 +2271,27 @@ img.avatar {
   margin-left: 3px;
 }
 
+/* Alex's added lines: a git-style mark that fades out over a few seconds. */
 .monaco-editor .agent-added {
-  background: rgba(120, 190, 110, 0.18);
+  background: rgba(120, 190, 110, 0.22);
+  animation: agent-added-fade 8s ease-out forwards;
 }
 
 .monaco-editor .agent-added-gutter {
   background: #78be6e;
   width: 3px !important;
   margin-left: 3px;
+  animation: agent-added-fade 8s ease-in forwards;
+}
+
+@keyframes agent-added-fade {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 .diff-modal {
@@ -3094,10 +3127,8 @@ terse layout ---- */
   --r-pill: 999px;
 
   --e1: 0 1px 2px rgba(31, 38, 32, 0.06);
-  --e2:
-    0 2px 8px rgba(31, 38, 32, 0.07), 0 1px 2px rgba(31, 38, 32, 0.04);
-  --e3:
-    0 14px 34px rgba(31, 38, 32, 0.11), 0 3px 10px rgba(31, 38, 32, 0.05);
+  --e2: 0 2px 8px rgba(31, 38, 32, 0.07), 0 1px 2px rgba(31, 38, 32, 0.04);
+  --e3: 0 14px 34px rgba(31, 38, 32, 0.11), 0 3px 10px rgba(31, 38, 32, 0.05);
 
   --dur-1: 90ms;
   --dur-2: 150ms;
@@ -3689,9 +3720,10 @@ select {
   grid-column: 1 / -1;
 }
 
-/* room: one dark surface header */
+/* room: one dark surface header — view tabs left, file actions right */
 .surface-tabs {
   display: flex;
+  flex-wrap: nowrap;
   align-items: center;
   gap: var(--s1);
   background: var(--d-card);
@@ -3699,16 +3731,22 @@ select {
   padding: 0 var(--s3);
   height: 46px;
   min-height: 46px;
+  overflow: hidden;
 }
 
 .surface-tabs > button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  white-space: nowrap;
   color: #9aa48e;
   background: transparent;
   border: 0;
   border-radius: var(--r-sm);
   padding: 6px 10px;
   font-size: 12.5px;
-  gap: 7px;
+  line-height: 1;
 }
 
 .surface-tabs > button:hover {
@@ -3726,6 +3764,31 @@ select {
   display: flex;
   align-items: center;
   gap: var(--s2);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.surface-actions .run {
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .surface-actions .save-state,
+  .surface-actions .file-name {
+    display: none;
+  }
+
+  .surface-tabs {
+    padding: 0 6px;
+  }
+
+  .surface-actions {
+    gap: 5px;
+  }
+
+  .surface-actions .run {
+    padding: 6px 8px;
+  }
 }
 
 .file-name {
@@ -4158,6 +4221,38 @@ button.problem-row.pinned .problem-id {
   display: flex;
   gap: var(--s2);
   margin-top: 10px;
+}
+
+.hints {
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.hints li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid #e3e8dc;
+  border-radius: 10px;
+  background: #f7f9f2;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #3e4a35;
+}
+
+.hints li svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #8a9f5f;
+}
+
+.hints li > div {
+  min-width: 0;
 }
 .reset-confirm {
   display: inline-flex;

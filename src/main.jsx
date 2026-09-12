@@ -228,6 +228,8 @@ function Workspace({ session: initial, onExit }) {
     [quiet, setQuiet] = useState(false),
     [stageBusy, setStageBusy] = useState(false),
     [hints, setHints] = useState({}),
+    [hintsGiven, setHintsGiven] = useState({}),
+    [typing, setTyping] = useState(false),
     [resetArmed, setResetArmed] = useState(false),
     // Render-only: drives the agent-row waveform. Deliberately not mirrored
     // into state.current, so async closures are unaffected.
@@ -469,6 +471,7 @@ function Workspace({ session: initial, onExit }) {
   // chunks, marked git-style in the gutter. The whole edit lands within about
   // six seconds however large it is; the editor is read-only meanwhile.
   async function typeEdit(before, after, target, reason) {
+    if (!hasCode) return typeNotes(before, after, target, reason);
     const editor = codeRef.current;
     const model = editor?.getModel();
     const ops =
@@ -592,7 +595,7 @@ function Workspace({ session: initial, onExit }) {
           editDecorations.current,
           [],
         );
-    }, 15000);
+    }, 8000);
   }
   // The Testcase panel syncs to the server as it is edited (debounced) so the
   // interviewer always sees the candidate's current cases.
@@ -788,7 +791,7 @@ function Workspace({ session: initial, onExit }) {
           message.slice(0, 650),
         ])
           live.current.send("session.commentary.append", chunk, reply());
-      }
+      } else noteFromAlex(message);
       if (typed) await typed;
       if (
         result.runCode &&
@@ -811,6 +814,107 @@ function Workspace({ session: initial, onExit }) {
       setBusy(false);
     }
     if (followUp) return ask(followUp, delegationId);
+  }
+  // Without voice, Alex's replies still reach the candidate: they are added
+  // to the transcript as text turns and saved with it.
+  function noteFromAlex(text) {
+    if (!text) return;
+    const at = Date.now() - initial.createdAt;
+    const row = {
+      id: `text-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      segment: state.current.segment,
+      role: "assistant",
+      text,
+      start_ms: at,
+      end_ms: at,
+    };
+    state.current.transcript.push(row);
+    setTranscript((t) => [...t, row]);
+    clearTimeout(state.current.transcriptTimer);
+    state.current.transcriptTimer = setTimeout(
+      () =>
+        api(
+          base + "/transcript",
+          { transcript: state.current.transcript },
+          "PUT",
+        ).catch(() => {}),
+      2000,
+    );
+  }
+  // A hint is spoken when voice is live and always shown as text under the
+  // question, so the button works without a microphone too.
+  async function requestHint(target) {
+    if (state.current.busy) {
+      setError("Alex is still answering; try again in a moment.");
+      return;
+    }
+    state.current.lastCheckInAt = Date.now();
+    const given = (hintsGiven[target] || []).length;
+    const text = await ask(
+      `The candidate pressed Hint (${given} given so far). Give the next smallest hint for this question in one or two sentences, building on any hint already given; do not reveal the answer.`,
+    );
+    if (!text) return;
+    setHintsGiven((h) => ({ ...h, [target]: [...(h[target] || []), text] }));
+    setHints((h) => ({ ...h, [target]: (h[target] || 0) + 1 }));
+  }
+  // The notes pad has no Monaco model: the same line-by-line typing is played
+  // through React state, with the textarea read-only meanwhile.
+  async function typeNotes(before, after, target, reason) {
+    const ops = lineOps(before, after);
+    if (!ops || state.current.index !== target) {
+      if (state.current.index === target) adoptCode(after);
+      return;
+    }
+    const c = state.current;
+    c.typing = true;
+    setTyping(true);
+    setActivity(reason ? `Alex is typing · ${reason}` : "Alex is typing");
+    const chars = ops
+      .filter((o) => o.op === "add")
+      .reduce((n, o) => n + o.text.length + 1, 0);
+    const perChar = Math.min(16, 5000 / Math.max(chars, 1));
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const lines = before === "" ? [] : before.split("\n");
+    let line = 0;
+    let aborted = false;
+    try {
+      for (const o of ops) {
+        if (c.index !== target) {
+          aborted = true;
+          break;
+        }
+        if (o.op === "keep") {
+          line++;
+          continue;
+        }
+        if (o.op === "del") {
+          lines.splice(line, 1);
+          adoptCode(lines.join("\n"));
+          await sleep(45);
+          continue;
+        }
+        lines.splice(line, 0, "");
+        let typed = "";
+        for (const chunk of o.text.match(/.{1,6}/g) || []) {
+          if (c.index !== target) {
+            aborted = true;
+            break;
+          }
+          typed += chunk;
+          lines[line] = typed;
+          adoptCode(lines.join("\n"));
+          await sleep(chunk.length * perChar);
+        }
+        if (aborted) break;
+        line++;
+      }
+    } finally {
+      c.typing = false;
+      setTyping(false);
+    }
+    if (aborted) return;
+    adoptCode(after);
+    setActivity(reason || "");
   }
   // Git-style marking of the lines an interviewer edit added; fades after a while.
   function highlightEdit(before, after) {
@@ -841,7 +945,7 @@ function Workspace({ session: initial, onExit }) {
         editDecorations.current,
         [],
       );
-    }, 15000);
+    }, 8000);
   }
   function applyStage(stage, nextDesign) {
     if (!stage) return;
@@ -1393,13 +1497,8 @@ function Workspace({ session: initial, onExit }) {
             onSubmit={submitAnswer}
             onReveal={revealAnswer}
             hints={hints[index] || 0}
-            onHint={() => {
-              setHints((h) => ({ ...h, [index]: (h[index] || 0) + 1 }));
-              state.current.lastCheckInAt = Date.now();
-              void ask(
-                "The candidate pressed Hint. Give the next smallest hint for this question in one or two sentences, building on any hint already given; do not reveal the answer.",
-              );
-            }}
+            hintList={hintsGiven[index] || []}
+            onHint={() => void requestHint(index)}
             onNext={next}
           />
         ) : isDesign ? (
@@ -1559,6 +1658,7 @@ function Workspace({ session: initial, onExit }) {
             >
               <NotesEditor
                 value={code}
+                readOnly={typing}
                 onChange={changeCode}
                 label={isDesign ? "design-notes.md" : "scratch-work.md"}
                 placeholder="Notes"

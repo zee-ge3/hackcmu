@@ -427,6 +427,10 @@ const Debugger = forwardRef(function Debugger(
     },
     load(walkthrough) {
       run.current?.stop();
+      // Drop the traced line's highlight now rather than after the next
+      // render, so a walkthrough never shows with a stale line marker.
+      if (editor)
+        decorations.current = editor.deltaDecorations(decorations.current, []);
       setPlaying(false);
       follow.current = false;
       setSource("walk");

@@ -271,7 +271,9 @@ try {
     await page.locator(".dbg-note").innerText(),
     /Start with an empty map/,
   );
-  assert.equal(await page.locator(".monaco-editor .debug-line").count(), 0);
+  await page.waitForFunction(
+    () => !document.querySelector(".monaco-editor .debug-line"),
+  );
   await page.waitForFunction(
     () =>
       /^4 \//.test(

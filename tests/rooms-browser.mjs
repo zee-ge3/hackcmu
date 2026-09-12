@@ -50,6 +50,77 @@ try {
   await page.getByLabel("Answer", { exact: true }).fill("999/1000");
   await page.getByRole("button", { name: "Check" }).click();
   await page.waitForSelector(".attempts li.wrong");
+  // Hint: the backend's reply is shown under the question and, with voice
+  // off, lands in the transcript as an Alex turn.
+  await page.route("**/api/interviews/*/agent", (route) =>
+    route.fulfill({
+      json: {
+        message: "Think about how many equally likely outcomes there are.",
+        edits: [],
+        runCode: false,
+        index: 0,
+      },
+    }),
+  );
+  await page.getByRole("button", { name: /^Hint/ }).click();
+  await page.waitForSelector(".hints li");
+  assert.match(
+    await page.locator(".hints li").innerText(),
+    /equally likely outcomes/,
+  );
+  assert.match(
+    await page.getByRole("button", { name: /^Hint/ }).innerText(),
+    /Hint · 1/,
+  );
+  assert.match(
+    await page.locator(".caption-turn.assistant").last().innerText(),
+    /equally likely outcomes/,
+    "text reply in the transcript",
+  );
+  await page.unroute("**/api/interviews/*/agent");
+  // Alex can write into the scratch pad when asked; the text is typed in.
+  const sessionId = page.url().split("/session/")[1];
+  await page.route("**/api/interviews/*/agent", async (route) => {
+    const current = await (
+      await page.request.get(`${base}/api/interviews/${sessionId}`)
+    ).json();
+    const editor = current.editors[current.index];
+    const code =
+      editor.code + "\n\n## Sample space\n- 6 × 6 = 36 ordered pairs\n";
+    await route.fulfill({
+      json: {
+        message: "I wrote the sample space down for you.",
+        editor: { code, revision: editor.revision },
+        edits: [{ reason: "sample space", code, revision: editor.revision }],
+        runCode: false,
+        index: current.index,
+      },
+    });
+  });
+  await page.evaluate(() => {
+    window.__askDone = window.__pairwise.ask("Write the sample space down.");
+  });
+  const notes = page.locator(".notes-pane textarea");
+  const partials = new Set();
+  const typingStart = Date.now();
+  while (Date.now() - typingStart < 15000) {
+    const value = await notes.inputValue();
+    partials.add(value);
+    if (/36 ordered pairs\n$/.test(value)) break;
+    await page.waitForTimeout(40);
+  }
+  await page.evaluate(() => window.__askDone);
+  assert.match(
+    await notes.inputValue(),
+    /## Setup\n- 36 outcomes[\s\S]*36 ordered pairs/,
+  );
+  assert.ok(partials.size >= 3, `notes typed progressively (${partials.size})`);
+  assert.equal(
+    await notes.getAttribute("readonly"),
+    null,
+    "pad editable again",
+  );
+  await page.unroute("**/api/interviews/*/agent");
   await page.getByRole("button", { name: "Reveal answer" }).click();
   await page.waitForSelector(".solution");
   await page.getByRole("button", { name: "Next", exact: true }).click();

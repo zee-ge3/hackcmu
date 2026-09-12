@@ -84,6 +84,7 @@ export function ProbabilityPane({
   onReveal,
   onHint,
   hints = 0,
+  hintList = [],
   onNext,
 }) {
   const [answer, setAnswer] = useState("");
@@ -157,6 +158,16 @@ export function ProbabilityPane({
               </li>
             ))}
           </ul>
+        )}
+        {hintList.length > 0 && (
+          <ol className="hints" aria-label="Hints">
+            {hintList.map((h, i) => (
+              <li key={i}>
+                <Lightbulb size={13} />
+                <MathText text={h} />
+              </li>
+            ))}
+          </ol>
         )}
         {!done && (
           <div className="answer-actions">
@@ -272,7 +283,13 @@ export function DesignPane({
     </section>
   );
 }
-export function NotesEditor({ value, onChange, placeholder, label }) {
+export function NotesEditor({
+  value,
+  onChange,
+  placeholder,
+  label,
+  readOnly = false,
+}) {
   return (
     <section className="notes-pane">
       <div className="editor-toolbar">
@@ -283,6 +300,7 @@ export function NotesEditor({ value, onChange, placeholder, label }) {
         aria-label={label}
         value={value}
         placeholder={placeholder}
+        readOnly={readOnly}
         onChange={(e) => onChange(e.target.value)}
         spellCheck={false}
       />
