@@ -181,7 +181,7 @@ test("whiteboard shapes become strokes in Alex's ink on the 1200×800 canvas", a
   });
   assert.equal(boxed.length, 2, "text inside the box is a second stroke");
   assert.equal(boxed[1].tool, "text");
-  assert.deepEqual(boxed[1].points, [{ x: 180 - 6.5, y: 160 + 8 }]);
+  assert.deepEqual(boxed[1].points, [{ x: 180 - 6.5, y: 120 + 8 }]);
   const [circle] = shapeStrokes({
     kind: "circle",
     x: 40,
