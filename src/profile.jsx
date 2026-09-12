@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { Check, ChevronDown, LogOut, Trash2 } from "lucide-react";
+import { Check, ChevronDown, LogOut, Trash2, UserRound } from "lucide-react";
 import { rubric, scoreLabels } from "./interviewer.mjs";
 import { behavioralRubric } from "./behavioral.mjs";
 import { probabilityRubric, designRubric } from "./modes.mjs";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
-import { useAsync, ErrorBanner, ListSkeleton } from "./ui.jsx";
+import { useAsync, ErrorBanner, ListSkeleton, PageHead } from "./ui.jsx";
+import { Sparkline } from "./charts.jsx";
+const whenShort = (ms) =>
+  new Date(ms).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 const when = (ms) =>
   new Date(ms).toLocaleDateString(undefined, {
     year: "numeric",
@@ -138,22 +141,31 @@ function Insights({ insights }) {
             <p className="muted">No graded sessions yet.</p>
           )}
         </div>
+        {insights.strongest?.length > 0 && (
+          <div>
+            <h4>Strongest topics</h4>
+            {insights.strongest.map((t) => (
+              <div className="insight-row" key={t.topic}>
+                <span className="insight-label">
+                  {t.topic}
+                  <small>
+                    {t.modes.map((m) => modeNames[m]).join(", ")} · {t.n}
+                  </small>
+                </span>
+                <Bar value={t.avg} />
+                <b>{t.avg.toFixed(1)}</b>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
       {insights.trend.length > 1 && (
         <div className="trend">
           <h4>Recent scores</h4>
-          <div className="trend-bars">
-            {insights.trend.map((t) => (
-              <span
-                key={t.id}
-                title={`${modeNames[t.mode]} · ${t.title} · ${t.score.toFixed(1)}`}
-              >
-                <i
-                  style={{ height: `${(t.score / 5) * 100}%` }}
-                  className={t.mode}
-                />
-              </span>
-            ))}
+          <Sparkline points={insights.trend} ariaLabel="Average score per session over time" />
+          <div className="trend-axis">
+            <span>{whenShort(insights.trend[0].at)}</span>
+            <span>{whenShort(insights.trend[insights.trend.length - 1].at)}</span>
           </div>
         </div>
       )}
@@ -223,9 +235,12 @@ export function Profile({ navigate }) {
     .toUpperCase();
   return (
     <main className="setup profile-page page">
-      <header className="page-head">
-        <h1>Profile</h1>
-      </header>
+      <PageHead
+        icon={UserRound}
+        title="Profile"
+        subtitle="Your API key, saved résumés, and every graded session."
+      />
+
       <div className="profile-grid">
         <section className="card profile-card account-card">
           {user.picture ? (

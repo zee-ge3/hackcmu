@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, Search, X } from "lucide-react";
+import { ArrowRight, Check, Search, X, Code2, Dices, Network } from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 import { KeyNotice } from "./pages.jsx";
 import { PresetPicker } from "./PresetPicker.jsx";
-import { useAsync, ErrorBanner } from "./ui.jsx";
+import { useAsync, ErrorBanner, PageHead } from "./ui.jsx";
 import { sourceLabels } from "./modes.mjs";
 import {
   probabilityPresets,
@@ -133,9 +133,12 @@ export function CodingSetup({ onStart, navigate }) {
   );
   return (
     <main className="setup page">
-      <header className="page-head">
-        <h1>Coding</h1>
-      </header>
+      <PageHead
+        icon={Code2}
+        title="Coding"
+        subtitle="Pick your problems, then talk through the approach while Alex reads along."
+      />
+
       <div className="setup-grid">
         <section className="config card">
           <h2>Problems</h2>
@@ -421,9 +424,12 @@ export function ProbabilitySetup({ onStart, navigate }) {
   }
   return (
     <main className="setup page">
-      <header className="page-head">
-        <h1>Probability</h1>
-      </header>
+      <PageHead
+        icon={Dices}
+        title="Probability"
+        subtitle="Quant questions graded against a hidden reference answer, with hints on request."
+      />
+
       <div className="setup-grid">
         <section className="config card">
           <h2>Questions</h2>
@@ -626,9 +632,12 @@ export function DesignSetup({ onStart, navigate }) {
   }
   return (
     <main className="setup page">
-      <header className="page-head">
-        <h1>System design</h1>
-      </header>
+      <PageHead
+        icon={Network}
+        title="System design"
+        subtitle="A brief, a clock, and three constraints that land while you are still drawing."
+      />
+
       <div className="setup-grid">
         <section className="config card">
           <h2>System</h2>

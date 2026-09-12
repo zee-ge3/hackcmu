@@ -47,7 +47,14 @@ import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
 import { Profile } from "./profile.jsx";
 import { CodingSetup, ProbabilitySetup, DesignSetup } from "./setups.jsx";
 import { Loader2, PenTool, RotateCcw } from "lucide-react";
-import { ProbabilityPane, DesignPane, NotesEditor } from "./rooms.jsx";
+import {
+  ProbabilityPane,
+  DesignPane,
+  NotesEditor,
+  AgentStatus,
+  agentState,
+} from "./rooms.jsx";
+import { Ring, Meter } from "./charts.jsx";
 import { probabilityRubric, designRubric } from "./modes.mjs";
 import { NotebookPen } from "lucide-react";
 self.MonacoEnvironment = {
@@ -221,7 +228,11 @@ function Workspace({ session: initial, onExit }) {
     [quiet, setQuiet] = useState(false),
     [stageBusy, setStageBusy] = useState(false),
     [hints, setHints] = useState({}),
-    [resetArmed, setResetArmed] = useState(false);
+    [resetArmed, setResetArmed] = useState(false),
+    // Render-only: drives the agent-row waveform. Deliberately not mirrored
+    // into state.current, so async closures are unaffected.
+    [speaking, setSpeaking] = useState(false);
+  const speakingTimer = useRef(null);
   const state = useRef({
       index: initial.index || 0,
       editors: initial.editors,
@@ -988,6 +999,12 @@ function Workspace({ session: initial, onExit }) {
         state.current.lastSpeechAt = Date.now();
         state.current.checkIns = 0;
         heardUser(e.delta || "");
+      } else {
+        // Output deltas arrive continuously while Alex talks; hold the
+        // speaking indicator until they stop.
+        setSpeaking(true);
+        clearTimeout(speakingTimer.current);
+        speakingTimer.current = setTimeout(() => setSpeaking(false), 700);
       }
       const row = {
         id: e.event_id,
@@ -1283,15 +1300,22 @@ function Workspace({ session: initial, onExit }) {
         : elapsed;
   const mmss = (sec) =>
     `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
-  const voiceLabel =
-    {
-      offline: "Voice off",
-      connecting: "Connecting…",
-      live: quiet ? "On hold" : "Listening",
-      closing: "Stopping…",
-      ended: "Voice ended",
-      disconnected: "Disconnected",
-    }[voice] || voice;
+  const overallScore = feedback
+    ? (() => {
+        const s = Object.values(feedback.criteria || {})
+          .map((c) => c.score)
+          .filter((x) => typeof x === "number");
+        return s.length ? s.reduce((a, b) => a + b, 0) / s.length : null;
+      })()
+    : null;
+  const agentPhase = agentState({
+    voice,
+    quiet,
+    // A stale speaking timer must never outlive the connection.
+    speaking: speaking && voice === "live",
+    busy,
+    reconnecting: state.current.segment > 0,
+  });
   return (
     <div className="workspace">
       <header className="topbar">
@@ -1714,10 +1738,7 @@ function Workspace({ session: initial, onExit }) {
           </div>
         </div>
         <aside className="interviewer-pane">
-          <div className="agent-row">
-            <span className={"live-dot " + (voice === "live" ? "on" : "")} />
-            <strong>Alex</strong>
-            <span className="agent-state">{voiceLabel}</span>
+          <AgentStatus state={agentPhase}>
             <div className="voice-controls">
               {["offline", "ended", "disconnected"].includes(voice) ? (
                 <button className="primary" onClick={connect}>
@@ -1756,10 +1777,9 @@ function Workspace({ session: initial, onExit }) {
                 </>
               )}
             </div>
-          </div>
+          </AgentStatus>
           <div className="transcript-label">
             <span>Transcript</span>
-            <span>{busy ? "Thinking…" : ""}</span>
           </div>
           <div
             className="conversation"
@@ -1773,11 +1793,17 @@ function Workspace({ session: initial, onExit }) {
             {!transcript.length && (
               <div className="conversation-empty">
                 <p>
-                  {voice === "live"
-                    ? "Listening…"
-                    : voice === "connecting"
+                  {agentPhase === "listening" || agentPhase === "speaking"
+                    ? "Say your approach out loud — Alex is listening."
+                    : agentPhase === "connecting"
                       ? "Connecting…"
-                      : ""}
+                      : agentPhase === "reconnecting"
+                        ? "Reconnecting…"
+                        : agentPhase === "hold"
+                          ? "On hold. Say anything to bring Alex back."
+                          : agentPhase === "thinking"
+                            ? "Thinking…"
+                            : "Voice is off. Connect to start the conversation."}
                 </p>
               </div>
             )}
@@ -1877,11 +1903,27 @@ function Workspace({ session: initial, onExit }) {
           </section>
         </div>
       )}
+      {ending && !feedback && (
+        <div className="modal-backdrop grading-backdrop">
+          <div className="grading" role="status">
+            <span className="grading-spinner" aria-hidden="true" />
+            <strong>Grading your interview</strong>
+            <ul className="grading-steps">
+              <li>Reading your code and test runs</li>
+              <li>Reviewing the spoken transcript</li>
+              <li>Scoring each rubric criterion</li>
+            </ul>
+          </div>
+        </div>
+      )}
       {feedback && (
         <div className="modal-backdrop">
           <section className="feedback card">
             <h2>Feedback</h2>
-            <p className="feedback-summary">{feedback.summary}</p>
+            <div className="feedback-head">
+              <Ring value={overallScore} size={84} thickness={7} />
+              <p className="feedback-summary">{feedback.summary}</p>
+            </div>
             <div className="rubric-legend">
               1 Needs work · 2 Developing · 3 Competent · 4 Strong · 5 Excellent
             </div>
@@ -1908,6 +1950,7 @@ function Workspace({ session: initial, onExit }) {
                         ? "Insufficient evidence"
                         : scoreLabels[grade.score]}
                     </div>
+                    {grade.score !== null && <Meter value={grade.score} />}
                     <p className="rubric-description">{item.description}</p>
                     <p>{grade.evidence}</p>
                     <div className="rubric-improvement">

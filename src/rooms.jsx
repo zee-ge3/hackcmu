@@ -17,6 +17,62 @@ const mmss = (ms) => {
   const s = Math.max(0, Math.floor(ms / 1000));
   return `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 };
+
+const AGENT_LABELS = {
+  offline: "Voice off",
+  connecting: "Connecting…",
+  reconnecting: "Reconnecting…",
+  listening: "Listening",
+  speaking: "Speaking",
+  hold: "On hold",
+  thinking: "Thinking…",
+  closing: "Stopping…",
+  ended: "Voice ended",
+  disconnected: "Disconnected",
+};
+
+// Collapses the several signals that describe the interviewer (connection
+// state, quiet mode, whether audio is flowing, whether the backend is mid
+// reply) into one state name, so each gets its own visual treatment instead of
+// sharing a grey dot.
+export function agentState({ voice, quiet, speaking, busy, reconnecting }) {
+  if (voice === "live") {
+    if (speaking) return "speaking";
+    if (quiet) return "hold";
+    if (busy) return "thinking";
+    return "listening";
+  }
+  if (voice === "connecting") return reconnecting ? "reconnecting" : "connecting";
+  if (voice === "closing") return "closing";
+  if (voice === "ended") return "ended";
+  if (voice === "disconnected") return "disconnected";
+  return "offline";
+}
+
+export function AgentStatus({ state, children }) {
+  return (
+    <div className="agent-row" data-agent={state}>
+      {state === "speaking" ? (
+        <span className="agent-wave" aria-hidden="true">
+          <i />
+          <i />
+          <i />
+          <i />
+        </span>
+      ) : (
+        <span
+          className={"live-dot " + (state === "listening" || state === "thinking" ? "on" : "")}
+          data-agent={state}
+        />
+      )}
+      <strong>Alex</strong>
+      <span className="agent-state" role="status">
+        {AGENT_LABELS[state] || state}
+      </span>
+      {children}
+    </div>
+  );
+}
 export function ProbabilityPane({
   problem,
   index,
@@ -116,7 +172,10 @@ export function ProbabilityPane({
         )}
         {done && solution && (
           <div className="solution">
-            <div className="meta">{solved ? "Solved" : "Reference"}</div>
+            <div className={"meta solution-verdict " + (solved ? "solved" : "")}>
+              {solved ? <Check size={13} /> : null}
+              {solved ? "Solved" : "Reference"}
+            </div>
             {solution.answer && (
               <MathText
                 className="solution-answer"

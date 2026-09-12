@@ -216,10 +216,12 @@ export function TestResult({ spec, cases, result, running }) {
     );
   if (!result) return <p className="tc-empty">Run or submit to see results.</p>;
   const v = verdict(result);
+  // Keyed on runId, so the entry animation replays on every run rather than
+  // needing a state flag to retrigger it.
   const status = (extra) => (
     <div
       key={result.runId}
-      className={"tc-status " + v.tone}
+      className={"tc-status " + v.tone + (v.tone === "good" ? " just" : "")}
       aria-live="polite"
     >
       {v.label}

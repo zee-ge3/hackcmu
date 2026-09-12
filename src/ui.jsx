@@ -19,6 +19,23 @@ export function useAsync() {
   return { loading, error, setError, run };
 }
 
+export function PageHead({ icon: Icon, title, subtitle, children }) {
+  return (
+    <header className="page-head">
+      {Icon && (
+        <span className="page-head-icon" aria-hidden="true">
+          <Icon size={20} />
+        </span>
+      )}
+      <div className="page-head-text">
+        <h1>{title}</h1>
+        {subtitle && <p>{subtitle}</p>}
+      </div>
+      {children && <div className="page-head-extra">{children}</div>}
+    </header>
+  );
+}
+
 export function ErrorBanner({ error }) {
   if (!error) return null;
   return (

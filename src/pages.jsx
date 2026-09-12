@@ -1,33 +1,30 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
   Braces,
-  Code2,
-  Mic,
   ArrowRight,
   Upload,
   FileText,
   Check,
   Trash2,
   KeyRound,
-  Dices,
-  Network,
+  Mic,
 } from "lucide-react";
 import { behavioralPresets } from "./behavioral.mjs";
 import { api } from "./api.mjs";
 import { useAccount, GoogleSignIn } from "./account.jsx";
 import { PresetPicker } from "./PresetPicker.jsx";
-import { ErrorBanner } from "./ui.jsx";
-const modeNames = {
-  coding: "Coding",
-  behavioral: "Behavioral",
-  probability: "Probability",
-  design: "System design",
-};
-const when = (ms) =>
-  new Date(ms).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-  });
+import { ErrorBanner, PageHead } from "./ui.jsx";
+import {
+  Hero,
+  ModeGrid,
+  HowItWorks,
+  FirmStrip,
+  DashboardBand,
+  TrendCard,
+  StrengthsCard,
+  ModeAverages,
+  RecentSessions,
+} from "./dashboard.jsx";
 export function KeyNotice({ navigate }) {
   return (
     <p className="key-notice">
@@ -121,59 +118,6 @@ export function SiteHeader({ path, navigate }) {
     </header>
   );
 }
-const n = (x) => (x === undefined ? "…" : x.toLocaleString());
-const modeCards = (stats = {}) => [
-  {
-    url: "/coding",
-    title: "Coding",
-    icon: Code2,
-    line: "LeetCode problems in a shared editor with your own testcases.",
-    facts: [
-      `${n(stats.tested)} with hidden tests`,
-      `${n(stats.problems)} statements`,
-      "JavaScript · Python",
-    ],
-  },
-  {
-    url: "/probability",
-    title: "Probability",
-    icon: Dices,
-    line: "Quant interview questions checked against reference answers.",
-    facts: [
-      `${n(stats.questions)} questions`,
-      stats.firms?.length
-        ? `Asked at ${stats.firms.join(", ")}`
-        : "AMC · AIME · AoPS",
-      "Levels 1–10",
-    ],
-  },
-  {
-    url: "/design",
-    title: "System design",
-    icon: Network,
-    line: "A brief, a clock, and constraints that arrive as you design.",
-    facts: [
-      `${n(stats.designs)} systems or your own`,
-      "20–45 minutes",
-      "3 constraints",
-    ],
-  },
-  {
-    url: "/behavioral",
-    title: "Behavioral",
-    icon: Mic,
-    line: "Questions grounded in your résumé.",
-    facts: ["PDF · DOCX · TXT", "Story-structure rubric"],
-  },
-];
-const average = (feedback) => {
-  const scores = Object.values(feedback?.criteria || {})
-    .map((c) => c.score)
-    .filter((s) => typeof s === "number");
-  return scores.length
-    ? scores.reduce((a, b) => a + b, 0) / scores.length
-    : null;
-};
 export function Home({ navigate }) {
   const { user, loading } = useAccount();
   const [recent, setRecent] = useState(null);
@@ -184,7 +128,6 @@ export function Home({ navigate }) {
       .then(setStats)
       .catch(() => {});
   }, []);
-  const modes = modeCards(stats);
   const load = () => {
     setRecent(null);
     Promise.all([
@@ -205,81 +148,57 @@ export function Home({ navigate }) {
     navigate(url);
   };
   const history = Array.isArray(recent) ? recent : null;
+  const hasSessions = history?.length > 0;
   return (
     <main className="home page">
-      <section className="modes">
-        {modes.map((m) => (
-          <a key={m.url} className="mode" href={m.url} onClick={go(m.url)}>
-            <div className="mode-head">
-              <m.icon size={18} />
-              <h2>{m.title}</h2>
-            </div>
-            <p>{m.line}</p>
-            <small>{m.facts.join(" · ")}</small>
-          </a>
-        ))}
-      </section>
       {!loading && !user && (
-        <section className="card side-card">
-          <h2>Sign in</h2>
+        <Hero stats={stats}>
           <GoogleSignIn />
-        </section>
+        </Hero>
       )}
-      {user && (
+      {user && hasSessions && (
+        <DashboardBand insights={insights} history={history} name={user.name} />
+      )}
+      {user && !hasSessions && recent !== null && !recent.error && (
+        <Hero stats={stats}>
+          <a className="primary start" href="/coding" onClick={go("/coding")}>
+            Start your first interview
+          </a>
+        </Hero>
+      )}
+      {user && recent === null && <div className="skeleton dash-skeleton" />}
+
+      <ModeGrid stats={stats} go={go} />
+
+      {user && hasSessions && (
+        <>
+          <div className="home-lower">
+            <TrendCard trend={insights?.trend} />
+            <StrengthsCard insights={insights} />
+          </div>
+          <div className="home-lower">
+            <RecentSessions
+              history={history}
+              go={go}
+              onRetry={load}
+              error={recent?.error}
+            />
+            <ModeAverages insights={insights} />
+          </div>
+        </>
+      )}
+
+      {user && recent?.error && (
         <div className="home-lower">
-          <section className="card side-card">
-            <h2>History</h2>
-            {recent === null ? (
-              <div className="skeleton" />
-            ) : recent.error ? (
-              <p className="muted">
-                Couldn't load history.{" "}
-                <button className="quiet" onClick={load}>
-                  Retry
-                </button>
-              </p>
-            ) : history.length ? (
-              <ul className="recent">
-                {history.map((h) => {
-                  const score = average(h.feedback);
-                  return (
-                    <li key={h.id}>
-                      <a href="/profile" onClick={go("/profile")}>
-                        <span className="recent-mode">{modeNames[h.mode]}</span>
-                        <span className="recent-title">{h.title}</span>
-                        <span className="recent-when">
-                          {when(h.finishedAt)}
-                        </span>
-                        {score !== null && (
-                          <span className="score">{score.toFixed(1)}</span>
-                        )}
-                      </a>
-                    </li>
-                  );
-                })}
-              </ul>
-            ) : (
-              <p className="muted">No sessions yet.</p>
-            )}
-          </section>
-          {insights?.weakestCriteria?.length > 0 && (
-            <section className="card side-card">
-              <h2>Weakest areas</h2>
-              {insights.weakestCriteria.slice(0, 5).map((c) => (
-                <div className="insight-row" key={c.mode + c.id}>
-                  <span className="insight-label">
-                    {c.label}
-                    <small>{modeNames[c.mode]}</small>
-                  </span>
-                  <span className="score-bar" aria-hidden="true">
-                    <i style={{ width: `${(c.avg / 5) * 100}%` }} />
-                  </span>
-                  <b>{c.avg.toFixed(1)}</b>
-                </div>
-              ))}
-            </section>
-          )}
+          <RecentSessions history={[]} go={go} onRetry={load} error={recent.error} />
         </div>
+      )}
+
+      {(!user || (user && !hasSessions)) && (
+        <>
+          <HowItWorks />
+          <FirmStrip firms={stats.firms} />
+        </>
       )}
     </main>
   );
@@ -379,9 +298,12 @@ export function BehavioralSetup({ onStart, navigate }) {
   }
   return (
     <main className="setup page">
-      <header className="page-head">
-        <h1>Behavioral</h1>
-      </header>
+      <PageHead
+        icon={Mic}
+        title="Behavioral"
+        subtitle="Upload a résumé and Alex will ask about the work you actually did."
+      />
+
       <div className="behavioral-grid">
         <section className="card config">
           <h2>Résumé</h2>
