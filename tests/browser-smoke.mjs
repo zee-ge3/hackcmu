@@ -403,7 +403,22 @@ try {
     path: "/tmp/pairwise-workspace.png",
     fullPage: true,
   });
-  await page.getByRole("button", { name: "Finish", exact: true }).click();
+  // Alex ends the interview from the backend: the closing line is delivered,
+  // then grading starts without the candidate pressing Finish.
+  await page.route("**/api/interviews/*/agent", (route) =>
+    route.fulfill({
+      json: {
+        message:
+          "Great work today. Let's stop here and I'll write up feedback.",
+        edits: [],
+        runCode: false,
+        endInterview: true,
+        index: 0,
+      },
+    }),
+  );
+  await page.evaluate(() => window.__pairwise.ask("Let's wrap up."));
+  await page.unroute("**/api/interviews/*/agent");
   await page.waitForSelector(".rubric-card", { timeout: 120000 });
   assert.equal(await page.locator(".rubric-card").count(), 5);
   assert.equal(await page.locator(".rubric-improvement").count(), 5);

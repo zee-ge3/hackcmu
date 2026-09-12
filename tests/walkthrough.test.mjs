@@ -132,3 +132,68 @@ test("walkthrough cases mirror the Debugger list and derived problems verify on 
   assert.equal(out.forAgent.source, "curated");
   assert.match(out.forAgent.steps.at(-1), /returns \[0, 1\]/);
 });
+test("whiteboard shapes become strokes in Alex's ink on the 1200×800 canvas", async () => {
+  const { shapeStrokes, ALEX_INK } = await import("../src/shapes.mjs");
+  const [box] = shapeStrokes({
+    kind: "box",
+    x: 10,
+    y: 20,
+    w: 50,
+    h: 25,
+    text: "",
+  });
+  assert.equal(box.tool, "pen");
+  assert.equal(box.color, ALEX_INK);
+  assert.equal(box.by, "alex");
+  assert.deepEqual(box.points[0], { x: 120, y: 160 });
+  assert.deepEqual(box.points[2], { x: 720, y: 360 });
+  assert.deepEqual(box.points[4], box.points[0], "box is closed");
+  const [arrow] = shapeStrokes({
+    kind: "arrow",
+    x: 0,
+    y: 0,
+    w: 50,
+    h: 100,
+    text: "",
+  });
+  assert.equal(arrow.tool, "arrow");
+  assert.deepEqual(arrow.points, [
+    { x: 0, y: 0 },
+    { x: 600, y: 800 },
+  ]);
+  const [label] = shapeStrokes({
+    kind: "label",
+    x: 5,
+    y: 5,
+    w: 0,
+    h: 0,
+    text: "head",
+  });
+  assert.equal(label.tool, "text");
+  assert.equal(label.text, "head");
+  const boxed = shapeStrokes({
+    kind: "box",
+    x: 10,
+    y: 10,
+    w: 10,
+    h: 10,
+    text: "7",
+  });
+  assert.equal(boxed.length, 2, "text inside the box is a second stroke");
+  assert.equal(boxed[1].tool, "text");
+  assert.deepEqual(boxed[1].points, [{ x: 180 - 6.5, y: 160 + 8 }]);
+  const [circle] = shapeStrokes({
+    kind: "circle",
+    x: 40,
+    y: 40,
+    w: 20,
+    h: 20,
+    text: "",
+  });
+  assert.equal(circle.points.length, 41);
+  assert.ok(
+    circle.points.every(
+      (p) => Math.abs(Math.hypot(p.x - 600, (p.y - 400) * 1.5) - 120) < 1e-6,
+    ),
+  );
+});

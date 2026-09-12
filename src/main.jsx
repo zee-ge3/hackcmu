@@ -263,6 +263,8 @@ function Workspace({ session: initial, onExit }) {
       lastCheckInAt: Date.now(),
       checkIns: 0,
       typing: false,
+      lastOutputAt: 0,
+      endRequested: false,
       quietUntil: 0,
       quietGraceUntil: 0,
       quietTimer: null,
@@ -291,6 +293,7 @@ function Workspace({ session: initial, onExit }) {
     pendingTests = useRef(null),
     testsChain = useRef(Promise.resolve()),
     debuggerRef = useRef(null),
+    boardRef = useRef(null),
     debugSuiteRef = useRef(null);
   const problem = initial.problems[index];
   const base = `/api/interviews/${initial.id}`;
@@ -421,7 +424,11 @@ function Workspace({ session: initial, onExit }) {
   // Dev-only hook so browser tests can drive the agent path without voice.
   useEffect(() => {
     if (import.meta.env.DEV)
-      window.__pairwise = { ask, code: () => codeRef.current?.getValue() };
+      window.__pairwise = {
+        ask,
+        code: () => codeRef.current?.getValue(),
+        strokes: () => boardRef.current?.strokeCount() ?? 0,
+      };
   });
   // Design rooms: reveal the next constraint on its timer and flag the time limit.
   useEffect(() => {
@@ -717,6 +724,7 @@ function Workspace({ session: initial, onExit }) {
     state.current.busy = true;
     setBusy(true);
     setError("");
+    let message;
     try {
       await save();
       await flushTests();
@@ -738,7 +746,7 @@ function Workspace({ session: initial, onExit }) {
         );
         setEditors(state.current.editors);
       }
-      let message = result.message;
+      message = result.message;
       for (const stage of result.stages || (result.stage ? [result.stage] : []))
         applyStage(stage, result.design);
       let typed = null;
@@ -804,6 +812,14 @@ function Workspace({ session: initial, onExit }) {
         ])
           live.current.send("session.commentary.append", chunk, reply());
       } else noteFromAlex(message);
+      // Alex sketches on the shared whiteboard: open it and draw the shapes.
+      if (result.boardShapes?.length && state.current.index === target) {
+        setWorkspaceTab("canvas");
+        await boardRef.current?.addShapes(result.boardShapes);
+      }
+      // The backend ended the interview: the reply above is Alex's closing
+      // line; grading starts once it has been said.
+      if (result.endInterview) state.current.endRequested = true;
       if (typed) await typed;
       if (
         result.runCode &&
@@ -812,7 +828,6 @@ function Workspace({ session: initial, onExit }) {
       ) {
         await execute(state.current.code, result.runTarget || "submit");
       }
-      return message;
     } catch (e) {
       setError(e.message);
       if (delegationId)
@@ -825,7 +840,31 @@ function Workspace({ session: initial, onExit }) {
       state.current.busy = false;
       setBusy(false);
     }
+    // Reached on success as well as failure: a `return` inside the try above
+    // would skip the follow-up narration and the end-of-interview handoff.
+    if (state.current.endRequested) {
+      state.current.endRequested = false;
+      void endAfterSpeech();
+      return message;
+    }
     if (followUp) return ask(followUp, delegationId);
+    return message;
+  }
+  // Waits for Alex's closing words (no output transcript for 1.5 s, at most
+  // 12 s) before closing voice and grading; without voice, grades at once.
+  async function endAfterSpeech() {
+    const c = state.current;
+    const started = Date.now();
+    if (live.current?.ready) {
+      c.lastOutputAt = Math.max(c.lastOutputAt, started);
+      while (Date.now() - started < 12000) {
+        await new Promise((r) => setTimeout(r, 300));
+        if (c.ending || feedback) return;
+        if (Date.now() - c.lastOutputAt > 1500 && Date.now() - started > 2500)
+          break;
+      }
+    }
+    await finish();
   }
   // Without voice, Alex's replies still reach the candidate: they are added
   // to the transcript as text turns and saved with it.
@@ -1119,6 +1158,7 @@ function Workspace({ session: initial, onExit }) {
         // Output deltas arrive continuously while Alex talks; hold the
         // speaking indicator until they stop.
         setSpeaking(true);
+        state.current.lastOutputAt = Date.now();
         clearTimeout(speakingTimer.current);
         speakingTimer.current = setTimeout(() => setSpeaking(false), 700);
       }
@@ -1848,6 +1888,7 @@ function Workspace({ session: initial, onExit }) {
             style={{ display: workspaceTab === "canvas" ? "flex" : "none" }}
           >
             <Whiteboard
+              ref={boardRef}
               key={index}
               base={base}
               index={index}

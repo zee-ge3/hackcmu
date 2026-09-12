@@ -170,6 +170,38 @@ try {
   await page.getByLabel("Whiteboard label").fill("API -> queue");
   await page.locator("canvas").click({ position: { x: 60, y: 90 } });
   await page.waitForSelector('[data-status="shared"]');
+  // Alex sketches on the whiteboard: shapes become strokes in its own ink.
+  await page.getByRole("button", { name: "Notes", exact: true }).click();
+  const before = await page.evaluate(() => window.__pairwise.strokes());
+  await page.route("**/api/interviews/*/agent", (route) =>
+    route.fulfill({
+      json: {
+        message: "Here is the API in front of a queue.",
+        edits: [],
+        runCode: false,
+        boardShapes: [
+          { kind: "box", x: 10, y: 40, w: 20, h: 12, text: "" },
+          { kind: "label", x: 12, y: 48, w: 0, h: 0, text: "API" },
+          { kind: "arrow", x: 32, y: 46, w: 14, h: 0, text: "" },
+          { kind: "circle", x: 48, y: 38, w: 18, h: 16, text: "" },
+        ],
+        index: 0,
+      },
+    }),
+  );
+  await page.evaluate(() => window.__pairwise.ask("Can you sketch it?"));
+  await page.unroute("**/api/interviews/*/agent");
+  assert.equal(
+    await page.evaluate(() => window.__pairwise.strokes()),
+    before + 4,
+    "four strokes added",
+  );
+  assert.match(
+    await page.locator(".surface-tabs > button.active").innerText(),
+    /Whiteboard/,
+    "whiteboard opened for the sketch",
+  );
+  await page.waitForSelector('[data-status="shared"]');
   await dismiss();
   // Profile renders for the dev user.
   await page.goto(base + "/profile");

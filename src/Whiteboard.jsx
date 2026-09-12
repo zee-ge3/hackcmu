@@ -1,4 +1,10 @@
-import React, { useRef, useState, useEffect } from "react";
+import React, {
+  forwardRef,
+  useImperativeHandle,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
 import {
   Pencil,
   Eraser,
@@ -9,14 +15,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { api } from "./api.mjs";
-export default function Whiteboard({
-  base,
-  index,
-  store,
-  onContext,
-  onActivity,
-  disabled = false,
-}) {
+import { shapeStrokes } from "./shapes.mjs";
+const Whiteboard = forwardRef(function Whiteboard(
+  { base, index, store, onContext, onActivity, disabled = false },
+  ref,
+) {
   const model = useRef(store),
     canvas = useRef(null),
     draft = useRef(null),
@@ -84,8 +87,8 @@ export default function Whiteboard({
       }
     }
   }
-  function changed() {
-    onActivity?.();
+  function changed({ agent = false } = {}) {
+    if (!agent) onActivity?.();
     model.current.revision = (model.current.revision || 0) + 1;
     setRevision(model.current.revision);
     setStatus("pending");
@@ -202,6 +205,27 @@ export default function Whiteboard({
     }
   }
   syncRef.current = sync;
+  // Alex's sketch: shapes are added one at a time so the drawing is watched
+  // happening, then synced like any other change (without counting as the
+  // candidate's activity).
+  useImperativeHandle(ref, () => ({
+    async addShapes(shapes) {
+      if (disabledRef.current) return 0;
+      let added = 0;
+      for (const shape of shapes) {
+        if (!alive.current) break;
+        for (const stroke of shapeStrokes(shape)) {
+          model.current.strokes.push(stroke);
+          added++;
+        }
+        paint();
+        await new Promise((r) => setTimeout(r, 220));
+      }
+      if (added && alive.current) changed({ agent: true });
+      return added;
+    },
+    strokeCount: () => model.current.strokes.length,
+  }));
   useEffect(() => {
     paint();
     return () => {
@@ -319,4 +343,5 @@ export default function Whiteboard({
       )}
     </section>
   );
-}
+});
+export default Whiteboard;
