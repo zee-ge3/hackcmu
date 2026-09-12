@@ -70,6 +70,12 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
       finished_at INTEGER NOT NULL,
       feedback TEXT NOT NULL
     );
+    CREATE TABLE IF NOT EXISTS interview_sessions (
+      id TEXT PRIMARY KEY,
+      owner TEXT NOT NULL,
+      touched_at INTEGER NOT NULL,
+      data TEXT NOT NULL
+    );
     CREATE TABLE IF NOT EXISTS reference_solutions (
       slug TEXT PRIMARY KEY,
       code TEXT NOT NULL,
@@ -203,6 +209,36 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
         q("SELECT * FROM users WHERE lower(email) = lower(?)").get(email) ||
         this.upsertUser({ sub: `pending:${email.toLowerCase()}`, email })
       );
+    },
+    // Live interview sessions survive a restart or deploy: the in-memory map
+    // is written through here and reloaded at startup.
+    saveInterviewSession(session) {
+      q(
+        "INSERT OR REPLACE INTO interview_sessions (id, owner, touched_at, data) VALUES (?, ?, ?, ?)",
+      ).run(
+        session.id,
+        session.owner,
+        session.touchedAt || Date.now(),
+        JSON.stringify(session, (key, value) =>
+          key === "busy" ? undefined : value,
+        ),
+      );
+    },
+    loadInterviewSessions(since) {
+      return q(
+        "SELECT data FROM interview_sessions WHERE touched_at >= ? ORDER BY touched_at",
+      )
+        .all(since)
+        .flatMap((row) => {
+          try {
+            return [{ ...JSON.parse(row.data), busy: false }];
+          } catch {
+            return [];
+          }
+        });
+    },
+    deleteInterviewSession(id) {
+      q("DELETE FROM interview_sessions WHERE id = ?").run(id);
     },
     // Generated reference solutions (walkthroughs) are verified once per problem.
     getReference(slug) {

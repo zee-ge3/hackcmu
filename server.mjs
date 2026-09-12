@@ -133,15 +133,43 @@ const designNotesTemplate =
 // Live interviews stay in memory (voice state, editors, whiteboard images) and
 // are dropped after a few idle hours. Résumés, keys, and feedback go to the store.
 const sessions = new Map();
+// Sessions are kept in memory for speed and written through to SQLite so a
+// deploy or crash does not end every interview in progress.
+const persistTimers = new Map();
+function persistSession(s, { now = false } = {}) {
+  clearTimeout(persistTimers.get(s.id));
+  const write = () => {
+    persistTimers.delete(s.id);
+    if (!sessions.has(s.id)) return;
+    try {
+      store.saveInterviewSession(s);
+    } catch (e) {
+      console.error(`Could not persist session ${s.id}: ${e.message}`);
+    }
+  };
+  if (now) write();
+  else persistTimers.set(s.id, setTimeout(write, 1500).unref());
+}
+function remember(s) {
+  sessions.set(s.id, s);
+  persistSession(s, { now: true });
+}
 const SESSION_IDLE_MS = 3 * 60 * 60 * 1000;
 setInterval(
   () => {
     const cutoff = Date.now() - SESSION_IDLE_MS;
     for (const [id, s] of sessions)
-      if (!s.busy && s.touchedAt < cutoff) sessions.delete(id);
+      if (!s.busy && s.touchedAt < cutoff) {
+        sessions.delete(id);
+        store.deleteInterviewSession(id);
+      }
   },
   10 * 60 * 1000,
 ).unref();
+for (const s of store.loadInterviewSessions(Date.now() - SESSION_IDLE_MS))
+  sessions.set(s.id, s);
+if (sessions.size)
+  console.log(`Restored ${sessions.size} interview session(s).`);
 app.use(express.json({ limit: "8mb" }));
 app.use((req, _res, next) => {
   if (!req.body || typeof req.body !== "object") req.body = {};
@@ -336,7 +364,7 @@ app.post("/api/interviews", async (req, res) => {
         revision: 0,
       })),
     };
-    sessions.set(session.id, session);
+    remember(session);
     return res.status(201).json(publicSession(session));
   }
   if (mode === "design") {
@@ -378,7 +406,7 @@ app.post("/api/interviews", async (req, res) => {
       design: { durationMs: duration * 60000, stageIndex: 0, revealedAt: [] },
       editors: [{ code: designNotesTemplate, revision: 0 }],
     };
-    sessions.set(session.id, session);
+    remember(session);
     return res.status(201).json(publicSession(session));
   }
   if (mode === "behavioral") {
@@ -434,7 +462,7 @@ app.post("/api/interviews", async (req, res) => {
       touchedAt: Date.now(),
       busy: false,
     };
-    sessions.set(session.id, session);
+    remember(session);
     return res.status(201).json(publicSession(session));
   }
   if (
@@ -529,7 +557,7 @@ app.post("/api/interviews", async (req, res) => {
   s.seeded = s.customTests.map((list) =>
     list.map((c) => JSON.stringify(c.input)),
   );
-  sessions.set(s.id, s);
+  remember(s);
   res.status(201).json(publicSession(s));
 });
 const publicSession = (s) => ({
@@ -616,6 +644,8 @@ app.use("/api/interviews/:id", (req, res, next) => {
       .json({ error: "Interview not found. Start a new session." });
   s.touchedAt = Date.now();
   req.interview = s;
+  // Whatever the route changed is written through shortly after it responds.
+  res.on("finish", () => persistSession(s));
   next();
 });
 registerCanvasRoutes(app, { openai });
@@ -1429,6 +1459,13 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       debuggerSteps,
       index,
     });
+  } catch (e) {
+    // Route errors are otherwise silent in production; the client only sees
+    // "could not finish", so record what actually failed.
+    console.error(
+      `agent(${s.mode}) failed for ${req.params.id}: ${e.stack || e.message}`,
+    );
+    throw e;
   } finally {
     s.busy = false;
   }

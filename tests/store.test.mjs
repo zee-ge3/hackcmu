@@ -95,3 +95,35 @@ test("a provisioned email is adopted by the first Google sign-in", () => {
   assert.equal(store.openaiKey(user.id).endsWith("1234"), true);
   assert.equal(store.provisionUser("someone@example.com").id, user.id);
 });
+test("interview sessions are written through and restored, without clobbering logins", () => {
+  const store = fresh();
+  const user = store.upsertUser({ sub: "g9", email: "s@example.com" });
+  const token = store.createSession(user.id);
+  const now = Date.now();
+  const session = {
+    id: "abc",
+    owner: user.id,
+    mode: "coding",
+    touchedAt: now,
+    busy: true,
+    problems: [{ title: "Two Sum" }],
+    editors: [{ code: "x", revision: 2 }],
+  };
+  store.saveInterviewSession(session);
+  store.saveInterviewSession({
+    ...session,
+    id: "old",
+    touchedAt: now - 10_000_000,
+  });
+  const restored = store.loadInterviewSessions(now - 5_000_000);
+  assert.deepEqual(
+    restored.map((s) => s.id),
+    ["abc"],
+    "stale sessions are not restored",
+  );
+  assert.equal(restored[0].busy, false, "busy never survives a restart");
+  assert.deepEqual(restored[0].editors, session.editors);
+  store.deleteInterviewSession("abc");
+  assert.equal(store.loadInterviewSessions(0).length, 1);
+  assert.equal(store.userForSession(token).id, user.id, "login untouched");
+});
