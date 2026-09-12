@@ -161,7 +161,7 @@ export function registerCanvasRoutes(app, { openai }) {
     )
       board.strokes = empty ? [] : strokes;
     s.boards[index] = board;
-    let summary = "The candidate cleared the whiteboard. It is now empty.";
+    let summary = "The whiteboard was cleared. It is now empty.";
     try {
       if (!empty) {
         const result = await openai(

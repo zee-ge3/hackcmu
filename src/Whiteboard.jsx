@@ -224,6 +224,19 @@ const Whiteboard = forwardRef(function Whiteboard(
       if (added && alive.current) changed({ agent: true });
       return added;
     },
+    // "mine" removes Alex's own strokes; "all" wipes the board (only when the
+    // candidate asked). Synced like any other change.
+    clear(scope) {
+      if (disabledRef.current) return 0;
+      const before = model.current.strokes.length;
+      model.current.strokes =
+        scope === "all"
+          ? []
+          : model.current.strokes.filter((st) => st.by !== "alex");
+      const removed = before - model.current.strokes.length;
+      if (removed) changed({ agent: true });
+      return removed;
+    },
     strokeCount: () => model.current.strokes.length,
   }));
   useEffect(() => {

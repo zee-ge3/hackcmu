@@ -202,6 +202,32 @@ try {
     "whiteboard opened for the sketch",
   );
   await page.waitForSelector('[data-status="shared"]');
+  // Alex clears its own sketch, then (when asked) the whole board.
+  const clearWith = (scope) =>
+    page.route("**/api/interviews/*/agent", (route) =>
+      route.fulfill({
+        json: {
+          message: "Cleared.",
+          edits: [],
+          runCode: false,
+          boardClear: scope,
+          index: 0,
+        },
+      }),
+    );
+  await clearWith("mine");
+  await page.evaluate(() => window.__pairwise.ask("Clear your sketch."));
+  await page.unroute("**/api/interviews/*/agent");
+  assert.equal(
+    await page.evaluate(() => window.__pairwise.strokes()),
+    before,
+    "only Alex's strokes removed",
+  );
+  await clearWith("all");
+  await page.evaluate(() => window.__pairwise.ask("Clear the whole board."));
+  await page.unroute("**/api/interviews/*/agent");
+  assert.equal(await page.evaluate(() => window.__pairwise.strokes()), 0);
+  await page.waitForSelector('[data-status="empty"], [data-status="shared"]');
   await dismiss();
   // Profile renders for the dev user.
   await page.goto(base + "/profile");

@@ -821,6 +821,11 @@ function Workspace({ session: initial, onExit }) {
         if (fresh.length) changeTests([...current, ...fresh], target);
         setBottomTab("testcase");
       }
+      // Alex clears its sketch (or, when asked, the board) before drawing.
+      if (result.boardClear && state.current.index === target) {
+        setWorkspaceTab("canvas");
+        boardRef.current?.clear(result.boardClear);
+      }
       // Alex sketches on the shared whiteboard: open it and draw the shapes.
       if (result.boardShapes?.length && state.current.index === target) {
         setWorkspaceTab("canvas");

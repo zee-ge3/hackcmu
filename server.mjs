@@ -1051,8 +1051,33 @@ function shapesFrom(args) {
 }
 const drawOutput = (drawn) =>
   drawn.error ? drawn : { ok: true, drawn: drawn.shapes.length };
+const clearBoardTool = tool(
+  "clear_whiteboard",
+  "Clear the shared whiteboard. scope 'mine' removes only your own sketch (do this before drawing a new one so sketches do not pile up); scope 'all' also wipes the candidate's drawing and is only for when they ask you to clear the board.",
+  { scope: { type: "string", enum: ["mine", "all"] } },
+);
+const boardTools = [boardTool, clearBoardTool];
+// Whiteboard tool calls for any mode: shapes to draw and a pending clear,
+// applied by the browser (clear first, then shapes). Returns the tool output
+// or null when the call is not a whiteboard action.
+function boardAction(call, board, args) {
+  if (call.name === "draw_on_whiteboard") {
+    const drawn = shapesFrom(args ?? JSON.parse(call.arguments || "{}"));
+    if (!drawn.error) board.shapes.push(...drawn.shapes);
+    return drawOutput(drawn);
+  }
+  if (call.name === "clear_whiteboard") {
+    const scope =
+      (args ?? JSON.parse(call.arguments || "{}")).scope === "all"
+        ? "all"
+        : "mine";
+    board.clear = board.clear === "all" ? "all" : scope;
+    return { ok: true, cleared: scope };
+  }
+  return null;
+}
 const BOARD_RULE =
-  " draw_on_whiteboard lets you sketch on the shared whiteboard when a picture explains better than words (arrays with pointers, lists, trees, components); keep it small and leave the candidate's drawing alone.";
+  " draw_on_whiteboard lets you sketch on the shared whiteboard when a picture explains better than words (arrays with pointers, lists, trees, components); keep it small and leave the candidate's drawing alone. clear_whiteboard removes your own sketch before you draw a new one, or everything when the candidate asks you to clear the board.";
 const END_RULE =
   " Use end_interview when the candidate asks to finish, wrap up or stop, or when the interview is complete; put a brief closing line in the same reply and do not ask another question.";
 function notesCall(s, index, call, edits) {
@@ -1136,11 +1161,11 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         ),
         ...notesTools("scratch pad"),
         endTool,
-        boardTool,
+        ...boardTools,
       ];
       const edits = [];
       let endInterview = false;
-      const boardShapes = [];
+      const sketch = { shapes: [], clear: null };
       let message = "",
         nextIndex = null;
       for (let step = 0; step < 3; step++) {
@@ -1168,12 +1193,10 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         for (const call of calls) {
           let output;
           const notes = notesCall(s, index, call, edits);
+          const onBoard = notes ? null : boardAction(call, sketch);
           if (notes) output = notes;
-          else if (call.name === "draw_on_whiteboard") {
-            const drawn = shapesFrom(JSON.parse(call.arguments || "{}"));
-            if (!drawn.error) boardShapes.push(...drawn.shapes);
-            output = drawOutput(drawn);
-          } else if (call.name === "end_interview") {
+          else if (onBoard) output = onBoard;
+          else if (call.name === "end_interview") {
             endInterview = true;
             output = {
               ok: true,
@@ -1204,7 +1227,8 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         runCode: false,
         nextIndex,
         endInterview,
-        boardShapes,
+        boardShapes: sketch.shapes,
+        boardClear: sketch.clear,
         index,
       });
     }
@@ -1244,11 +1268,11 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       ];
       const edits = [];
       let endInterview = false;
-      const boardShapes = [];
+      const sketch = { shapes: [], clear: null };
       const tools = [
         ...notesTools("design document"),
         endTool,
-        boardTool,
+        ...boardTools,
         tool(
           "reveal_next_constraint",
           "Reveal the next constraint to the candidate now because the current step of the design is settled or time is moving on. For a custom brief you must supply a short title and a concrete constraint that stresses the current design; for preset problems the fields are ignored. Returns the constraint, which you must then introduce in your reply.",
@@ -1283,15 +1307,11 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
           const notes = notesCall(s, index, call, edits);
           const ending = !notes && call.name === "end_interview";
           if (ending) endInterview = true;
-          const drawn =
-            !notes && call.name === "draw_on_whiteboard"
-              ? shapesFrom(JSON.parse(call.arguments || "{}"))
-              : null;
-          if (drawn && !drawn.error) boardShapes.push(...drawn.shapes);
+          const onBoard = notes ? null : boardAction(call, sketch);
           const stage =
             !notes &&
             !ending &&
-            !drawn &&
+            !onBoard &&
             call.name === "reveal_next_constraint"
               ? revealStage(s, JSON.parse(call.arguments || "{}"))
               : null;
@@ -1301,7 +1321,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
             call_id: call.call_id,
             output: JSON.stringify(
               notes ||
-                (drawn && drawOutput(drawn)) ||
+                onBoard ||
                 stage ||
                 (ending
                   ? {
@@ -1323,7 +1343,8 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         edits,
         runCode: false,
         endInterview,
-        boardShapes,
+        boardShapes: sketch.shapes,
+        boardClear: sketch.clear,
         index,
         stage: revealed.at(-1) || null,
         stages: revealed,
@@ -1352,7 +1373,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       ];
       let message = "";
       let endInterview = false;
-      const boardShapes = [];
+      const sketch = { shapes: [], clear: null };
       for (let step = 0; step < 2; step++) {
         const d = await openai(
           "responses",
@@ -1365,7 +1386,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
               BOARD_RULE +
               " Keep the response under 120 words.",
             input,
-            tools: [endTool, boardTool],
+            tools: [endTool, ...boardTools],
             parallel_tool_calls: false,
             max_output_tokens: 1500,
           },
@@ -1383,11 +1404,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
               ok: true,
               message: "The interview ends after this reply.",
             };
-          } else if (call.name === "draw_on_whiteboard") {
-            const drawn = shapesFrom(JSON.parse(call.arguments || "{}"));
-            if (!drawn.error) boardShapes.push(...drawn.shapes);
-            output = drawOutput(drawn);
-          }
+          } else output = boardAction(call, sketch) || output;
           input.push({
             type: "function_call_output",
             call_id: call.call_id,
@@ -1400,7 +1417,8 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         edits: [],
         runCode: false,
         endInterview,
-        boardShapes,
+        boardShapes: sketch.shapes,
+        boardClear: sketch.clear,
         index,
       });
     }
@@ -1411,7 +1429,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
     let traceCase = null;
     let walkthrough = null;
     let endInterview = false;
-    const boardShapes = [];
+    const sketch = { shapes: [], clear: null };
     const addedTests = [];
     const debuggerSteps = [];
     const edits = [];
@@ -1488,7 +1506,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         {},
       ),
       endTool,
-      boardTool,
+      ...boardTools,
       tool(
         "add_testcases",
         'Add testcases to the candidate\'s Testcase panel (Run executes them). Each case gives `inputs` as JSON text per argument in signature order (for twoSum(nums, target): ["[3,3]", "6"]) and `expected` as JSON text, or an empty string when you want them to work it out. Use it when the candidate asks you to add a case, or to make a specific point concrete (a boundary, an empty or single-element input, a case their code fails) once they have added cases of their own. Check candidateTests first and never repeat an input already in the panel. At most three per call; say in your reply what each one covers. The cases are marked as yours in the panel and to the grader.',
@@ -1550,6 +1568,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       for (const call of calls) {
         let output;
         const args = JSON.parse(call.arguments);
+        const onBoard = boardAction(call, sketch, args);
         if (call.name === "read_editor") output = s.editors[index];
         else if (call.name === "replace_editor") {
           output = applyEdit(s.editors[index], args);
@@ -1595,10 +1614,8 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
               .slice(0, 12),
           );
           output = { ok: true };
-        } else if (call.name === "draw_on_whiteboard") {
-          const drawn = shapesFrom(args);
-          if (!drawn.error) boardShapes.push(...drawn.shapes);
-          output = drawOutput(drawn);
+        } else if (onBoard) {
+          output = onBoard;
         } else if (call.name === "add_testcases") {
           output = addTestcases(s, index, args);
           if (output.ok)
@@ -1651,7 +1668,8 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       walkthrough,
       debuggerSteps,
       endInterview,
-      boardShapes,
+      boardShapes: sketch.shapes,
+      boardClear: sketch.clear,
       addedTests,
       index,
     });
