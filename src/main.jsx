@@ -812,6 +812,15 @@ function Workspace({ session: initial, onExit }) {
         ])
           live.current.send("session.commentary.append", chunk, reply());
       } else noteFromAlex(message);
+      // Alex added testcases: append the ones this browser does not have yet
+      // (the candidate may have edited meanwhile) and show the panel.
+      if (result.addedTests?.length && state.current.index === target) {
+        const current = state.current.customTests[target] || [];
+        const known = new Set(current.map((c) => c.id));
+        const fresh = result.addedTests.filter((c) => !known.has(c.id));
+        if (fresh.length) changeTests([...current, ...fresh], target);
+        setBottomTab("testcase");
+      }
       // Alex sketches on the shared whiteboard: open it and draw the shapes.
       if (result.boardShapes?.length && state.current.index === target) {
         setWorkspaceTab("canvas");
@@ -1473,7 +1482,7 @@ function Workspace({ session: initial, onExit }) {
     reconnecting: state.current.segment > 0,
   });
   return (
-    <div className="workspace">
+    <div className={"workspace " + ideTheme}>
       <header className="topbar">
         <span className="brand">
           <span className="brand-mark">
@@ -1597,7 +1606,7 @@ function Workspace({ session: initial, onExit }) {
             </div>
           </section>
         )}
-        <div className={"work-surface " + ideTheme}>
+        <div className="work-surface">
           <div className="surface-tabs">
             {hasCode && (
               <button
@@ -1627,11 +1636,11 @@ function Workspace({ session: initial, onExit }) {
             <div className="surface-actions">
               <button
                 className="quiet ide-theme"
-                title={ideTheme === "light" ? "Dark editor" : "Light editor"}
+                title={ideTheme === "light" ? "Dark theme" : "Light theme"}
                 aria-label={
                   ideTheme === "light"
-                    ? "Switch to the dark editor"
-                    : "Switch to the light editor"
+                    ? "Switch to the dark theme"
+                    : "Switch to the light theme"
                 }
                 aria-pressed={ideTheme === "light"}
                 onClick={() => {

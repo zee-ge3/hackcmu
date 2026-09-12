@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Plus, X } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
+import { Plus, X, Sparkles } from "lucide-react";
 import { verdict } from "./domain.mjs";
 export { verdict };
 const preview = (v) => {
@@ -35,7 +35,7 @@ export const caseProblems = (c, spec) => {
     problems.push("expected is not valid JSON");
   return problems;
 };
-function CaseTabs({ count, active, onSelect, onRemove, onAdd, marks }) {
+function CaseTabs({ count, active, onSelect, onRemove, onAdd, marks, owners }) {
   const removable = onRemove && count > 1;
   return (
     <div className="tc-tabs">
@@ -59,6 +59,13 @@ function CaseTabs({ count, active, onSelect, onRemove, onAdd, marks }) {
               }}
             >
               {marks?.[i] && <i className="tc-dot" />}
+              {owners?.[i] === "alex" && (
+                <Sparkles
+                  size={10}
+                  className="tc-alex"
+                  aria-label="Added by Alex"
+                />
+              )}
               Case {i + 1}
             </button>
             {removable && (
@@ -91,8 +98,13 @@ function Field({ label, children }) {
 }
 export function Testcases({ spec, cases, onChange }) {
   const [active, setActive] = useState(0);
+  const previous = useRef(cases.length);
   useEffect(() => {
     if (active >= cases.length) setActive(Math.max(0, cases.length - 1));
+    // A case Alex just added is shown, so the candidate sees what it covers.
+    if (cases.length > previous.current && cases.at(-1)?.by === "alex")
+      setActive(cases.length - 1);
+    previous.current = cases.length;
   }, [cases.length]);
   if (!spec)
     return (
@@ -111,6 +123,7 @@ export function Testcases({ spec, cases, onChange }) {
         count={cases.length}
         active={active}
         marks={marks}
+        owners={cases.map((x) => x.by)}
         onSelect={setActive}
         onRemove={(i) => {
           onChange(cases.filter((_, j) => j !== i));

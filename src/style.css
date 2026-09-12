@@ -536,8 +536,8 @@ select {
 }
 
 .workspace .topbar .quiet:hover:not(:disabled) {
-  background: #2c3326;
-  border-color: #46503d;
+  background: var(--d-hover);
+  border-color: var(--d-hover-line);
 }
 
 .workspace .problem-jump {
@@ -570,14 +570,14 @@ select {
   border-right: 1px solid var(--d-line);
   min-height: 0;
   min-width: 0;
-  background: var(--bg);
+  background: var(--pane-bg);
 }
 
 .pane-tabs {
   height: 48px;
   display: flex;
   align-items: stretch;
-  border-bottom: 1px solid #e4e9de;
+  border-bottom: 1px solid var(--pane-line);
   padding: 0 20px;
   gap: 20px;
 }
@@ -587,12 +587,12 @@ select {
   border-radius: 0;
   padding: 0 0;
   font-size: var(--fs-xs);
-  color: #9aa48e;
+  color: var(--pane-tab-ink);
 }
 
 .pane-tabs .active {
-  border-bottom: 2px solid #839c64;
-  color: #415335;
+  border-bottom: 2px solid var(--pane-tab-line);
+  color: var(--pane-tab-active);
 }
 
 .statement-scroll {
@@ -618,8 +618,8 @@ select {
 
 .problem-meta > span:not(.difficulty) {
   font-size: 8px;
-  color: #8d977f;
-  border: 1px solid #e0e5d8;
+  color: var(--pane-muted);
+  border: 1px solid var(--pane-chip-line);
   border-radius: 4px;
   padding: 3px 6px;
 }
@@ -627,15 +627,15 @@ select {
 .statement {
   font-size: var(--fs-sm);
   line-height: 1.9;
-  color: #5d6953;
+  color: var(--pane-text);
   overflow-wrap: anywhere;
 }
 
 .statement pre {
   white-space: pre-wrap;
   font-size: var(--fs-xs);
-  background: #f0f3e9;
-  border: 1px solid #e6ebdc;
+  background: var(--pane-pre-bg);
+  border: 1px solid var(--pane-pre-line);
   border-radius: var(--r);
   padding: 13px;
   overflow-wrap: anywhere;
@@ -643,8 +643,8 @@ select {
 
 .statement code {
   font-size: var(--fs-xs);
-  color: #586c45;
-  background: #eef2e6;
+  color: var(--pane-code-ink);
+  background: var(--pane-code-bg);
   border-radius: 3px;
   padding: 1px 4px;
 }
@@ -659,7 +659,7 @@ select {
 }
 
 .problem-bottom {
-  border-top: 1px solid #e4e9de;
+  border-top: 1px solid var(--pane-line);
   padding: 14px;
   display: flex;
   justify-content: space-between;
@@ -669,7 +669,7 @@ select {
 
 .problem-bottom a {
   font-size: 9px;
-  color: #91a080;
+  color: var(--pane-faint);
   display: flex;
   gap: var(--s1);
 }
@@ -1112,7 +1112,7 @@ select {
 /* The candidate's own turns read as the quieter side. */
 .caption-turn.user {
   background: transparent;
-  border-color: #2a3026;
+  border-color: var(--d-user-line);
 }
 
 @keyframes caption-in {
@@ -1426,7 +1426,7 @@ select {
   align-items: center;
   gap: var(--s2);
   font-size: 10px;
-  color: #76866a;
+  color: var(--pane-muted);
 }
 
 .focus-note {
@@ -1439,14 +1439,14 @@ select {
   overflow-wrap: anywhere;
   font-size: var(--fs-sm);
   line-height: 1.85;
-  color: #606e54;
-  border-top: 1px solid #e0e6d9;
+  color: var(--pane-body);
+  border-top: 1px solid var(--pane-line);
   padding-top: 18px;
 }
 
 .resume-pane .problem-bottom {
   font-size: 10px;
-  color: #88957d;
+  color: var(--pane-muted);
   overflow-wrap: anywhere;
 }
 
@@ -2420,8 +2420,8 @@ img.avatar {
 }
 
 .problem-meta .firm {
-  background: #edf3e4;
-  color: var(--brand-dark);
+  background: var(--pane-soft-bg);
+  color: var(--pane-soft-ink);
 }
 
 .answer-form {
@@ -2437,9 +2437,9 @@ img.avatar {
   flex: 1;
   min-width: 0;
   padding: 11px 12px;
-  border: 1px solid #dce3d3;
+  border: 1px solid var(--pane-input-line);
   border-radius: var(--r);
-  background: #fbfcf7;
+  background: var(--pane-card-bg);
   font: inherit;
   font-size: var(--fs-base);
 }
@@ -2466,26 +2466,26 @@ img.avatar {
   font-size: var(--fs-sm);
   padding: 7px 10px;
   border-radius: var(--r-sm);
-  background: #fff0e9;
-  color: #994d3d;
+  background: var(--pane-bad-bg);
+  color: var(--pane-bad-ink);
 }
 
 .attempts li.correct {
-  background: #edf3e4;
-  color: var(--brand-dark);
+  background: var(--pane-soft-bg);
+  color: var(--pane-soft-ink);
 }
 
 .attempts li.revealed {
-  background: #eef0ec;
-  color: #6f7a67;
+  background: var(--pane-neutral-bg);
+  color: var(--pane-neutral-ink);
 }
 
 .solution {
   margin-top: 22px;
   padding: var(--s4);
-  border: 1px solid #dfe4d9;
+  border: 1px solid var(--pane-card-line);
   border-radius: var(--r-md);
-  background: #fbfcf7;
+  background: var(--pane-card-bg);
 }
 
 .solution-answer {
@@ -2495,7 +2495,7 @@ img.avatar {
 
 .solution details {
   font-size: 12.5px;
-  color: #4b5b40;
+  color: var(--pane-body);
 }
 
 .solution summary {
@@ -2516,12 +2516,12 @@ img.avatar {
   gap: 7px;
   font-size: 10px;
   letter-spacing: 1.2px;
-  color: #5a7743;
+  color: var(--pane-tab-active);
   font-weight: 700;
 }
 
 .design-pane .pane-tabs .stage-count {
-  color: #8e9788;
+  color: var(--pane-muted);
 }
 
 .time-bar {
@@ -2543,7 +2543,7 @@ img.avatar {
 .brief {
   font-size: 13.5px;
   line-height: 1.75;
-  color: #4b5b40;
+  color: var(--pane-body);
 }
 
 .stages {
@@ -2558,19 +2558,19 @@ img.avatar {
   grid-template-columns: 26px 1fr;
   gap: var(--s3);
   padding: 13px 14px;
-  border: 1px solid #dfe4d9;
+  border: 1px solid var(--pane-card-line);
   border-radius: var(--r-md);
-  background: #fbfcf7;
+  background: var(--pane-card-bg);
 }
 
 .stage.latest {
-  border-color: var(--brand-mid);
-  background: #edf3e4;
+  border-color: var(--pane-tab-line);
+  background: var(--pane-soft-bg);
 }
 
 .stage.upcoming {
   border-style: dashed;
-  color: #7f8b75;
+  color: var(--pane-num-off-ink);
 }
 
 .stage-num {
@@ -2579,16 +2579,16 @@ img.avatar {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: var(--brand-darker);
-  color: #d4eeab;
+  background: var(--pane-num-bg);
+  color: var(--pane-num-ink);
   font-family: Manrope, sans-serif;
   font-weight: 800;
   font-size: var(--fs-sm);
 }
 
 .stage.upcoming .stage-num {
-  background: #e6ebdf;
-  color: #7f8b75;
+  background: var(--pane-num-off-bg);
+  color: var(--pane-num-off-ink);
 }
 
 .stage strong {
@@ -2769,7 +2769,7 @@ img.avatar {
   gap: var(--s2);
   font-size: 10px;
   letter-spacing: 1.2px;
-  color: #76866a;
+  color: var(--pane-muted);
   font-weight: 700;
 }
 
@@ -2910,6 +2910,11 @@ img.avatar {
 
 .tc-tab.good .tc-dot {
   background: var(--brand);
+}
+
+.tc-alex {
+  color: #b39ddb;
+  margin-right: 1px;
 }
 
 .tc-tab.bad .tc-dot {
@@ -3825,7 +3830,7 @@ select {
 .panel-handle {
   height: 6px;
   cursor: row-resize;
-  background: #1c201a;
+  background: var(--ide-bg);
   border-top: 1px solid #353b2e;
 }
 
@@ -3915,12 +3920,12 @@ select {
 }
 
 .agent-row[data-agent="hold"] .agent-state {
-  color: #d8a94f;
+  color: var(--d-hold);
 }
 
 .agent-row[data-agent="disconnected"] .agent-state,
 .agent-row[data-agent="ended"] .agent-state {
-  color: #d98d7c;
+  color: var(--d-danger);
 }
 
 .agent-row[data-agent="speaking"] .agent-state,
@@ -4003,7 +4008,7 @@ select {
 }
 
 .agent-row .voice-controls button:hover:not(:disabled) {
-  background: #2c3326;
+  background: var(--d-hover);
   color: var(--d-ink);
 }
 
@@ -4023,9 +4028,9 @@ select {
 }
 
 .agent-row .voice-controls .muted-button {
-  background: #4a2f26;
-  border-color: #6b4436;
-  color: #e8b9a6;
+  background: var(--d-muted-btn-bg);
+  border-color: var(--d-muted-btn-line);
+  color: var(--d-muted-btn-ink);
 }
 
 .transcript-label {
@@ -4237,18 +4242,18 @@ button.problem-row.pinned .problem-id {
   align-items: flex-start;
   gap: 9px;
   padding: 10px 12px;
-  border: 1px solid #e3e8dc;
+  border: 1px solid var(--pane-hint-line);
   border-radius: 10px;
-  background: #f7f9f2;
+  background: var(--pane-hint-bg);
   font-size: 13px;
   line-height: 1.5;
-  color: #3e4a35;
+  color: var(--pane-hint-ink);
 }
 
 .hints li svg {
   flex-shrink: 0;
   margin-top: 3px;
-  color: #8a9f5f;
+  color: var(--pane-hint-icon);
 }
 
 .hints li > div {
@@ -5032,7 +5037,105 @@ button.problem-row.pinned .problem-id {
   --ide-paper: #fffef8;
 }
 
-.work-surface.light {
+/* Room theme. The class on .workspace picks the whole room: dark is a
+   green-tinted dark for the chrome, the reading pane and the IDE alike;
+   .workspace.light turns all of it white. Pane tokens default to light so
+   pane components also render outside a room. */
+:root {
+  --pane-bg: #f6f7f3;
+  --pane-ink: #1f2620;
+  --pane-text: #5d6953;
+  --pane-body: #4b5b40;
+  --pane-muted: #8d977f;
+  --pane-faint: #91a080;
+  --pane-line: #e4e9de;
+  --pane-chip-line: #e0e5d8;
+  --pane-pre-bg: #f0f3e9;
+  --pane-pre-line: #e6ebdc;
+  --pane-code-ink: #586c45;
+  --pane-code-bg: #eef2e6;
+  --pane-card-bg: #fbfcf7;
+  --pane-card-line: #dfe4d9;
+  --pane-soft-bg: #edf3e4;
+  --pane-soft-ink: #455e31;
+  --pane-tab-ink: #9aa48e;
+  --pane-tab-active: #415335;
+  --pane-tab-line: #839c64;
+  --pane-input-bg: #fbfcf7;
+  --pane-input-line: #dce3d3;
+  --pane-bad-bg: #fff0e9;
+  --pane-bad-ink: #994d3d;
+  --pane-neutral-bg: #eef0ec;
+  --pane-neutral-ink: #6f7a67;
+  --pane-hint-bg: #f7f9f2;
+  --pane-hint-line: #e3e8dc;
+  --pane-hint-ink: #3e4a35;
+  --pane-hint-icon: #8a9f5f;
+  --pane-button-line: #dce2db;
+  --pane-easy-ink: #719356;
+  --pane-easy-bg: #edf5e5;
+  --pane-medium-ink: #ad8c45;
+  --pane-medium-bg: #fbf4df;
+  --pane-hard-ink: #bd7970;
+  --pane-hard-bg: #fcf0e9;
+  --pane-num-bg: #253a2b;
+  --pane-num-ink: #d4eeab;
+  --pane-num-off-bg: #e6ebdf;
+  --pane-num-off-ink: #7f8b75;
+}
+
+.workspace {
+  --d-hover: #2c3326;
+  --d-hover-line: #46503d;
+  --d-user-line: #2a3026;
+  --d-muted-btn-bg: #4a2f26;
+  --d-muted-btn-line: #6b4436;
+  --d-muted-btn-ink: #e8b9a6;
+  --d-hold: #d8a94f;
+  --d-danger: #d98d7c;
+  --pane-bg: #1f251e;
+  --pane-ink: #e6efd8;
+  --pane-text: #b9c8a8;
+  --pane-body: #b9c8a8;
+  --pane-muted: #8fa07d;
+  --pane-faint: #7b896e;
+  --pane-line: #33382e;
+  --pane-chip-line: #3a4233;
+  --pane-pre-bg: #272c24;
+  --pane-pre-line: #3a4233;
+  --pane-code-ink: #c9e79b;
+  --pane-code-bg: #2c3126;
+  --pane-card-bg: #242a21;
+  --pane-card-line: #3a4233;
+  --pane-soft-bg: #2b3a25;
+  --pane-soft-ink: #d4eeab;
+  --pane-tab-ink: #8fa07d;
+  --pane-tab-active: #e6efd8;
+  --pane-tab-line: #9fba78;
+  --pane-input-bg: #272c24;
+  --pane-input-line: #3a4233;
+  --pane-bad-bg: #3d2a25;
+  --pane-bad-ink: #f0c2b5;
+  --pane-neutral-bg: #2c3126;
+  --pane-neutral-ink: #a6b596;
+  --pane-hint-bg: #242a21;
+  --pane-hint-line: #33382e;
+  --pane-hint-ink: #d5e0c6;
+  --pane-hint-icon: #9fba78;
+  --pane-button-line: #3a4233;
+  --pane-easy-ink: #b9d68f;
+  --pane-easy-bg: #2b3a25;
+  --pane-medium-ink: #e8cf8a;
+  --pane-medium-bg: #3d3524;
+  --pane-hard-ink: #f0b3a8;
+  --pane-hard-bg: #3d2a25;
+  --pane-num-bg: #9fba78;
+  --pane-num-ink: #16200f;
+  --pane-num-off-bg: #2c3126;
+  --pane-num-off-ink: #7b896e;
+}
+
+.workspace.light {
   --ide-bg: #ffffff;
   --ide-bg-2: #f6f8f2;
   --ide-bg-3: #f1f4ec;
@@ -5062,6 +5165,61 @@ button.problem-row.pinned .problem-id {
   --ide-warn-bg: #f6ecd8;
   --ide-warn-ink: #7a5410;
   --ide-paper: #fffef8;
+
+  --d-bg: #fafbf7;
+  --d-card: #ffffff;
+  --d-line: #e2e6dd;
+  --d-ink: #1f2620;
+  --d-muted: #6b7566;
+  --d-faint: #8a967f;
+  --d-hover: #e9eee2;
+  --d-hover-line: #d4dccb;
+  --d-user-line: #d4dccb;
+  --d-muted-btn-bg: #f7e6e0;
+  --d-muted-btn-line: #e6c5b8;
+  --d-muted-btn-ink: #a3452f;
+  --d-hold: #b5761f;
+  --d-danger: #a3452f;
+  --pane-bg: #f6f7f3;
+  --pane-ink: #1f2620;
+  --pane-text: #5d6953;
+  --pane-body: #4b5b40;
+  --pane-muted: #8d977f;
+  --pane-faint: #91a080;
+  --pane-line: #e4e9de;
+  --pane-chip-line: #e0e5d8;
+  --pane-pre-bg: #f0f3e9;
+  --pane-pre-line: #e6ebdc;
+  --pane-code-ink: #586c45;
+  --pane-code-bg: #eef2e6;
+  --pane-card-bg: #fbfcf7;
+  --pane-card-line: #dfe4d9;
+  --pane-soft-bg: #edf3e4;
+  --pane-soft-ink: #455e31;
+  --pane-tab-ink: #9aa48e;
+  --pane-tab-active: #415335;
+  --pane-tab-line: #839c64;
+  --pane-input-bg: #fbfcf7;
+  --pane-input-line: #dce3d3;
+  --pane-bad-bg: #fff0e9;
+  --pane-bad-ink: #994d3d;
+  --pane-neutral-bg: #eef0ec;
+  --pane-neutral-ink: #6f7a67;
+  --pane-hint-bg: #f7f9f2;
+  --pane-hint-line: #e3e8dc;
+  --pane-hint-ink: #3e4a35;
+  --pane-hint-icon: #8a9f5f;
+  --pane-button-line: #dce2db;
+  --pane-easy-ink: #719356;
+  --pane-easy-bg: #edf5e5;
+  --pane-medium-ink: #ad8c45;
+  --pane-medium-bg: #fbf4df;
+  --pane-hard-ink: #bd7970;
+  --pane-hard-bg: #fcf0e9;
+  --pane-num-bg: #253a2b;
+  --pane-num-ink: #d4eeab;
+  --pane-num-off-bg: #e6ebdf;
+  --pane-num-off-ink: #7f8b75;
 }
 
 .work-surface {
@@ -5095,4 +5253,43 @@ button.problem-row.pinned .problem-id {
 /* Ink swatches need a ring on the dark desk, where black ink disappears. */
 .board-tools .ink {
   box-shadow: 0 0 0 1px var(--ide-line-2);
+}
+
+/* Reading pane: text, buttons and difficulty pills follow the room theme. */
+.statement-pane {
+  color: var(--pane-ink);
+}
+
+.statement-pane .meta,
+.statement-pane .field-label,
+.statement-pane .problem-id {
+  color: var(--pane-muted);
+}
+
+.statement-pane button:not(.primary) {
+  border-color: var(--pane-button-line);
+}
+
+.statement-pane .easy {
+  color: var(--pane-easy-ink);
+  background: var(--pane-easy-bg);
+}
+
+.statement-pane .medium {
+  color: var(--pane-medium-ink);
+  background: var(--pane-medium-bg);
+}
+
+.statement-pane .hard {
+  color: var(--pane-hard-ink);
+  background: var(--pane-hard-bg);
+}
+
+.statement-pane input,
+.statement-pane textarea {
+  color: var(--pane-ink);
+}
+
+.statement-pane .board-label {
+  color: #1f2620;
 }

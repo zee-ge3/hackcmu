@@ -243,6 +243,43 @@ try {
     await page.locator(".editor-activity").innerText(),
     /readable layout/,
   );
+  // Alex adds a testcase: it lands in the panel, marked and selected, and is
+  // synced to the server with the candidate's own cases.
+  const panelTabs = page.locator(".tc-panel .tc-tab");
+  const tabsBefore = await panelTabs.count();
+  agentReply = () => ({
+    message: "Try a duplicate pair.",
+    edits: [],
+    runCode: false,
+    addedTests: [
+      {
+        id: "alex-smoke-0",
+        input: ["[3,3]", "6"],
+        expected: "[0,1]",
+        by: "alex",
+      },
+    ],
+    index: 0,
+  });
+  const testSync = page.waitForRequest(
+    (r) => r.url().endsWith("/tests") && r.method() === "PUT",
+  );
+  await page.evaluate(() => window.__pairwise.ask("Add a case for me."));
+  await page.waitForFunction(
+    (n) => document.querySelectorAll(".tc-panel .tc-tab").length === n + 1,
+    tabsBefore,
+  );
+  assert.equal(await page.locator(".tc-alex").count(), 1, "Alex marker");
+  assert.equal(
+    await page.getByLabel(`Case ${tabsBefore + 1} nums`).inputValue(),
+    "[3,3]",
+    "Alex's case is selected",
+  );
+  const alexSync = (await testSync).postDataJSON();
+  assert.ok(
+    alexSync.tests.some((t) => t.id === "alex-smoke-0" && t.by === "alex"),
+    "synced with provenance",
+  );
   // Alex's walkthrough: the reference approach on an example, data only.
   const { runWalkthrough } = await import("../server/walkthrough.mjs");
   const walk = await runWalkthrough({
