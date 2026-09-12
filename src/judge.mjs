@@ -106,7 +106,8 @@ export function invokeJavascript(code, suite, inputs, consoleObject = console) {
 }
 export function summarize(suite, results) {
   const passed = results.filter((r) => r.passed).length;
-  const failures = results.filter((r) => !r.passed);
+  const failures = results.filter((r) => r.passed === false);
+  const ungraded = results.filter((r) => r.passed === null);
   const preview = (v) => {
     const text = JSON.stringify(v);
     return text === undefined
@@ -116,13 +117,22 @@ export function summarize(suite, results) {
         : text;
   };
   return {
-    ok: passed === results.length,
+    ok: !failures.length,
     suiteVersion: suite.version,
     passed,
-    total: results.length,
+    total: results.length - ungraded.length,
     results,
     output:
-      `${passed}/${results.length} tests passed · suite v${suite.version}\n` +
+      (suite.custom
+        ? `${passed}/${results.length - ungraded.length} testcases passed${ungraded.length ? ` · ${ungraded.length} without expected output` : ""}\n` +
+          ungraded
+            .map(
+              (r) =>
+                `${r.name}: input ${preview(r.input)} → output ${preview(r.actual)}`,
+            )
+            .join("\n") +
+          (ungraded.length ? "\n" : "")
+        : `${passed}/${results.length} tests passed · suite v${suite.version}\n`) +
       (failures.length
         ? failures
             .slice(0, 8)
@@ -134,7 +144,9 @@ export function summarize(suite, results) {
           (failures.length > 8
             ? `\n\n${failures.length - 8} more failures.`
             : "")
-        : "All prepared example and edge-case tests passed. These tests do not prove correctness for every possible input."),
+        : suite.custom
+          ? ""
+          : "All prepared example and edge-case tests passed. These tests do not prove correctness for every possible input."),
   };
 }
 export function runJavascriptSuite(code, suite, consoleObject = console) {
@@ -144,7 +156,10 @@ export function runJavascriptSuite(code, suite, consoleObject = console) {
       return {
         ...c,
         actual: actual === undefined ? "[undefined]" : actual,
-        passed: matches(actual, c.expected, suite.comparison),
+        passed:
+          "expected" in c
+            ? matches(actual, c.expected, suite.comparison)
+            : null,
       };
     } catch (e) {
       return { ...c, passed: false, error: e.message };

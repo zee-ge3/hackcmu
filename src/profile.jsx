@@ -240,14 +240,13 @@ export function Profile({ navigate }) {
             </div>
             <KeyRound size={20} />
           </div>
-          <p className="upload-note">
-            Interviews run on your own OpenAI account. The key is checked
-            against OpenAI, stored encrypted, and never shown again.
-          </p>
           <div className="key-status">
             {user.openaiKeyHint ? (
               <>
-                <Check size={14} /> Key on file · {user.openaiKeyHint}
+                <Check size={14} /> {user.openaiKeyHint}
+                {user.openaiKeyUpdatedAt && (
+                  <small> · added {when(user.openaiKeyUpdatedAt)}</small>
+                )}
               </>
             ) : (
               "No key yet"
@@ -301,10 +300,6 @@ export function Profile({ navigate }) {
             </div>
             <FileText size={20} />
           </div>
-          <p className="upload-note">
-            Uploaded on the behavioral setup page. Edits you make before
-            entering a room are saved here too.
-          </p>
           <div className="list-rows">
             {resumes?.map((r) => (
               <div className="list-row" key={r.id}>

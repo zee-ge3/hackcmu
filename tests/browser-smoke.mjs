@@ -94,6 +94,7 @@ try {
   await page.screenshot({ path: "/tmp/pairwise-setup.png", fullPage: true });
   await page.getByLabel("Search problem library").fill("1 Two Sum");
   await page.getByLabel("Fewer problems").click();
+  await page.getByText("Visual debugger", { exact: false }).click();
   const creation = page.waitForResponse(
     (r) =>
       r.url().endsWith("/api/interviews") && r.request().method() === "POST",
@@ -114,25 +115,64 @@ try {
   await page.keyboard.insertText(
     "function twoSum(nums,target){const seen=new Map();for(let i=0;i<nums.length;i++){if(seen.has(target-nums[i]))return [seen.get(target-nums[i]),i];seen.set(nums[i],i);}} console.log(twoSum([2,7,11,15],9));",
   );
+  // Testcase panel is seeded from the statement's examples; add one of our own.
+  assert.equal(await page.getByRole("tab", { name: /^Case \d/ }).count(), 3);
+  assert.equal(
+    await page.getByLabel("Case 1 nums").inputValue(),
+    "[2,7,11,15]",
+  );
+  assert.equal(await page.getByLabel("Case 1 expected").inputValue(), "[0,1]");
+  await page.getByRole("button", { name: "Add testcase" }).click();
+  const synced = page.waitForRequest(
+    (r) => r.url().endsWith("/tests") && r.method() === "PUT",
+  );
+  await page.getByLabel("Case 4 nums").fill("[1,5,3]");
+  await page.getByLabel("Case 4 target").fill("8");
+  await page.getByLabel("Case 4 expected").fill("[1,2]");
+  const syncBody = (await synced).postDataJSON();
+  assert.equal(syncBody.tests.length, 4);
+  // A fifth case without an expected value runs but is not graded.
+  await page.getByRole("button", { name: "Add testcase" }).click();
+  await page.getByLabel("Case 5 nums").fill("[0,4,3,0]");
+  await page.getByLabel("Case 5 target").fill("0");
   await page.getByRole("button", { name: "Run", exact: true }).click();
-  await page.waitForFunction(
-    () =>
-      document.querySelector(".console-heading>span")?.textContent !== "Ready",
+  await page.waitForFunction(() =>
+    /Accepted/.test(document.querySelector(".tc-status")?.textContent || ""),
   );
-  assert.ok((await page.locator(".console pre").innerText()).includes("[0,1]"));
-  await page.getByRole("button", { name: "Run tests", exact: false }).click();
-  await page.waitForFunction(
-    () =>
-      document.querySelector(".console-heading>span")?.textContent ===
-      "44/44 passed",
+  assert.match(
+    await page.locator(".tc-status").innerText(),
+    /4\/4 testcases passed/,
   );
-  assert.ok(
-    (await page.locator(".console pre").innerText()).includes(
-      "44/44 tests passed",
+  await page.getByRole("tab", { name: "Case 5" }).click();
+  assert.match(
+    await page.locator(".tc-detail").innerText(),
+    /output =\s*\[0,3\]/,
+  );
+  assert.ok((await page.locator(".tc-stdout").innerText()).includes("[0,1]"));
+  // Invalid JSON is refused before anything runs, LeetCode-style.
+  await page.getByRole("tab", { name: "Testcase" }).click();
+  await page.getByRole("tab", { name: "Case 5" }).click();
+  await page.getByLabel("Case 5 nums").fill("[0,4");
+  assert.equal(await page.locator(".tc-problems li").count(), 1);
+  await page.getByRole("button", { name: "Run", exact: true }).click();
+  await page.waitForFunction(() =>
+    /Invalid Testcase/.test(
+      document.querySelector(".tc-status")?.textContent || "",
     ),
   );
+  await page.getByRole("tab", { name: "Testcase" }).click();
+  await page.getByRole("button", { name: "Remove case 5" }).click();
+  assert.equal(await page.getByRole("tab", { name: /^Case \d/ }).count(), 4);
+  await page.getByRole("button", { name: "Submit", exact: true }).click();
+  await page.waitForFunction(() =>
+    /44\/44/.test(document.querySelector(".tc-status")?.textContent || ""),
+  );
+  assert.match(await page.locator(".tc-status").innerText(), /Accepted/);
   // Opt-in visual debugger: trace the first case, watch pointers and the live line.
-  await page.getByRole("button", { name: "Debugger", exact: true }).click();
+  await page.getByRole("tab", { name: "Debugger" }).click();
+  await page.selectOption('select[aria-label="Debug test case"]', {
+    label: "Your Case 4",
+  });
   await page.getByRole("button", { name: "Trace", exact: true }).click();
   await page.waitForFunction(() =>
     /Passed · \d+ steps/.test(
@@ -143,10 +183,7 @@ try {
     (await page.locator(".dbg-cell.pointed").count()) > 0,
     "pointer markers",
   );
-  assert.ok(
-    (await page.locator(".monaco-editor .debug-line").count()) > 0,
-    "line highlight",
-  );
+  await page.waitForSelector(".monaco-editor .debug-line");
   await page.getByRole("button", { name: "First step", exact: true }).click();
   assert.match(await page.locator(".dbg-steps span").innerText(), /^1 \//);
   const pythonTrace = await page.evaluate(async (suite) => {
@@ -166,10 +203,7 @@ try {
     pythonTrace.steps > 3 && pythonTrace.first.vars.nums.t === "arr",
     "python trace",
   );
-  await page
-    .getByRole("button", { name: "Debugger", exact: true })
-    .first()
-    .click();
+  await page.getByRole("tab", { name: "Testcase" }).click();
   await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
   const box = await page.getByLabel("Shared drawing canvas").boundingBox();
   await page.mouse.move(box.x + 40, box.y + 50);
@@ -198,6 +232,23 @@ try {
   });
   assert.equal(python.ok, true, python.output);
   assert.equal(python.output.trim(), "6");
+  const pythonCases = await page.evaluate(async (spec) => {
+    const { runCode } = await import("/src/runner.mjs");
+    const { buildCustomSuite } = await import("/src/domain.mjs");
+    const { suite } = buildCustomSuite(spec, [
+      { id: "a", input: ["[2,7,11,15]", "9"], expected: "[0,1]" },
+      { id: "b", input: ["[3,3]", "6"], expected: "" },
+    ]);
+    return runCode(
+      "class Solution:\n    def twoSum(self, nums, target):\n        print('py')\n        seen = {}\n        for i, n in enumerate(nums):\n            if target - n in seen:\n                return [seen[target - n], i]\n            seen[n] = i\n        return []",
+      "python3",
+      suite,
+    );
+  }, session.problems[0].testSpec);
+  assert.equal(pythonCases.results[0].passed, true);
+  assert.equal(pythonCases.results[1].passed, null);
+  assert.deepEqual(pythonCases.results[1].actual, [0, 1]);
+  assert.match(pythonCases.stdout, /py/);
   console.log(
     "PASS: filters, editable preset, voice-only room, JavaScript and Python execution.",
   );

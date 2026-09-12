@@ -83,6 +83,12 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
     db.exec(
       "ALTER TABLE interviews ADD COLUMN topics TEXT NOT NULL DEFAULT '[]'",
     );
+  if (
+    !q("PRAGMA table_info(users)")
+      .all()
+      .some((c) => c.name === "openai_key_updated_at")
+  )
+    db.exec("ALTER TABLE users ADD COLUMN openai_key_updated_at INTEGER");
   const hash = (token) => createHash("sha256").update(token).digest("hex");
   const hint = (apiKey) => `${apiKey.slice(0, 3)}…${apiKey.slice(-4)}`;
   const encrypt = (text) => {
@@ -108,6 +114,7 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
           name: row.name,
           picture: row.picture,
           openaiKeyHint: row.openai_key_hint,
+          openaiKeyUpdatedAt: row.openai_key_updated_at ?? null,
           createdAt: row.created_at,
         }
       : null;
@@ -215,10 +222,11 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
     },
     setOpenaiKey(userId, apiKey) {
       q(
-        "UPDATE users SET openai_key = ?, openai_key_hint = ? WHERE id = ?",
+        "UPDATE users SET openai_key = ?, openai_key_hint = ?, openai_key_updated_at = ? WHERE id = ?",
       ).run(
         apiKey ? encrypt(apiKey) : null,
         apiKey ? hint(apiKey) : null,
+        apiKey ? Date.now() : null,
         userId,
       );
     },

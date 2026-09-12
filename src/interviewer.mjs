@@ -39,7 +39,7 @@ export const rubric = [
     id: "correctness",
     label: "Correctness & testing",
     description:
-      "Handles requirements and edge cases, tests deliberately, interprets actual results.",
+      "Handles requirements and edge cases, writes their own testcases beyond the examples, interprets results.",
   },
   {
     id: "language_familiarity",

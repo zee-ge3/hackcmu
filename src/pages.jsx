@@ -359,7 +359,6 @@ export function BehavioralSetup({ onStart, navigate }) {
       <div className="page-heading">
         <span className="eyebrow muted">BEHAVIORAL PRACTICE</span>
         <h1>There’s a story in your experience.</h1>
-        <p>Bring your résumé. We’ll help you make it clear.</p>
       </div>
       <div className="behavioral-grid">
         <section className="card resume-upload-card">
@@ -428,10 +427,6 @@ export function BehavioralSetup({ onStart, navigate }) {
               onChange={(e) => upload(e.target.files?.[0])}
             />
           </label>
-          <p className="upload-note">
-            Parsed with your OpenAI key and saved to your profile. Review the
-            extracted text before starting.
-          </p>
           {resume && (
             <div className="resume-review">
               <div className="parsed-badge">
@@ -457,10 +452,6 @@ export function BehavioralSetup({ onStart, navigate }) {
                 rows={12}
                 onChange={(e) => setResumeText(e.target.value)}
               />
-              <p className="upload-note">
-                Alex uses the reviewed text above. Your edits are saved to this
-                résumé when you enter the room.
-              </p>
             </div>
           )}
         </section>
@@ -532,7 +523,6 @@ export function BehavioralSetup({ onStart, navigate }) {
               {starting ? "Preparing your interview…" : "Enter behavioral room"}
               <ArrowRight size={18} />
             </button>
-            <p>Alex connects and greets you when you enter.</p>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (

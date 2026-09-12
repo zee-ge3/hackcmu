@@ -86,17 +86,25 @@ self.onmessage = async ({ data }) => {
         const results = raw.map((r, i) => ({
           ...suite.cases[i],
           ...r,
-          passed:
-            !r.error &&
-            matches(r.actual, suite.cases[i].expected, suite.comparison),
+          passed: r.error
+            ? false
+            : "expected" in suite.cases[i]
+              ? matches(r.actual, suite.cases[i].expected, suite.comparison)
+              : null,
         }));
-        self.postMessage(summarize(suite, results));
+        self.postMessage({
+          ...summarize(suite, results),
+          stdout: lines.join("\n"),
+        });
         return;
       }
       await py.runPythonAsync(code);
     } else {
       if (suite) {
-        self.postMessage(runJavascriptSuite(code, suite, makeConsole(log)));
+        self.postMessage({
+          ...runJavascriptSuite(code, suite, makeConsole(log)),
+          stdout: lines.join("\n"),
+        });
         return;
       }
       const value = await new Function("console", `"use strict";\n${code}`)(

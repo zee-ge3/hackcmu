@@ -102,10 +102,6 @@ export function SignInGate() {
           feedback in one profile.
         </p>
         <GoogleSignIn />
-        <p className="upload-note">
-          Interviews run on your own OpenAI API key. It is stored encrypted on
-          this server and used only for your sessions.
-        </p>
       </section>
     </main>
   );

@@ -408,11 +408,28 @@ export default function Debugger({
           onChange={(e) => setCaseIndex(Number(e.target.value))}
           disabled={status === "running"}
         >
-          {cases.slice(0, 40).map((c, i) => (
-            <option key={i} value={i}>
-              {c.name || `case ${i + 1}`}
-            </option>
-          ))}
+          {cases.some((c) => c.own) && (
+            <optgroup label="Your testcases">
+              {cases.map((c, i) =>
+                c.own ? (
+                  <option key={i} value={i}>
+                    {c.name}
+                  </option>
+                ) : null,
+              )}
+            </optgroup>
+          )}
+          {cases.some((c) => !c.own) && (
+            <optgroup label="Prepared">
+              {cases.map((c, i) =>
+                c.own ? null : (
+                  <option key={i} value={i}>
+                    {c.name || `case ${i + 1}`}
+                  </option>
+                ),
+              )}
+            </optgroup>
+          )}
         </select>
         {status === "running" ? (
           <button className="run" onClick={stop}>
@@ -432,7 +449,9 @@ export default function Debugger({
                 : result.ok
                   ? `Passed · ${steps.length} steps`
                   : `Failed · ${steps.length} steps`
-              : "Pick a case and trace it. Each step shows every variable in scope."}
+              : cases.length
+                ? "Pick a case, then Trace."
+                : "Add a testcase with an expected value to trace it."}
         </span>
         <div className="dbg-steps">
           <button
@@ -496,7 +515,7 @@ export default function Debugger({
           <p className="dbg-empty">
             {status === "running"
               ? "Waiting for the first step…"
-              : "Trace a case to watch pointers, lists, and trees move line by line."}
+              : "No trace yet."}
           </p>
         )}
         {result?.output && (

@@ -31,8 +31,13 @@ test("OpenAI keys are encrypted at rest and only a hint is public", () => {
   const row = store.getUser(user.id);
   assert.notEqual(row.openai_key, apiKey);
   assert.equal(store.publicUser(row).openaiKeyHint, "sk-…tail");
+  assert.ok(store.publicUser(row).openaiKeyUpdatedAt > 0, "timestamp on write");
   store.setOpenaiKey(user.id, null);
   assert.equal(store.openaiKey(user.id), null);
+  assert.equal(
+    store.publicUser(store.getUser(user.id)).openaiKeyUpdatedAt,
+    null,
+  );
 });
 test("resumes and interview history are scoped to their owner", () => {
   const store = fresh();

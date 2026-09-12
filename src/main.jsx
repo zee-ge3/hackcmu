@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import Editor, { loader } from "@monaco-editor/react";
 import * as monaco from "monaco-editor";
@@ -40,6 +40,8 @@ import { SiteHeader, Home, BehavioralSetup, ResumePane } from "./pages.jsx";
 import { behavioralRubric } from "./behavioral.mjs";
 import Whiteboard from "./Whiteboard.jsx";
 import Debugger from "./Debugger.jsx";
+import { Testcases, TestResult, verdict } from "./TestPanel.jsx";
+import { buildCustomSuite, resolveRunMode } from "./domain.mjs";
 import { lineDiff } from "./diff.mjs";
 import { DiffEditor } from "@monaco-editor/react";
 import { Bug, GitCompare } from "lucide-react";
@@ -72,6 +74,7 @@ function CodingSetup({ onStart, navigate }) {
     [filters, setFilters] = useState(defaultFilters),
     [count, setCount] = useState(2),
     [language, setLanguage] = useState("javascript"),
+    [debuggerEnabled, setDebuggerEnabled] = useState(false),
     [style, setStyle] = useState(interviewerPresets[0].id),
     [prompt, setPrompt] = useState(interviewerPresets[0].prompt),
     [loading, setLoading] = useState(false),
@@ -95,6 +98,7 @@ function CodingSetup({ onStart, navigate }) {
           ...filters,
           count,
           language,
+          debuggerEnabled,
           interviewerStyle: style,
           interviewerPrompt: prompt,
         }),
@@ -122,7 +126,6 @@ function CodingSetup({ onStart, navigate }) {
         <div className="page-heading">
           <span className="eyebrow muted">CODING PRACTICE</span>
           <h1>Find your next challenge.</h1>
-          <p>Choose your focus. The coding room stays yours.</p>
         </div>
         <div className="setup-grid">
           <section className="config card">
@@ -300,6 +303,17 @@ function CodingSetup({ onStart, navigate }) {
                 </small>
               </span>
             </label>
+            <label className="test-filter">
+              <input
+                type="checkbox"
+                checked={debuggerEnabled}
+                onChange={(e) => setDebuggerEnabled(e.target.checked)}
+              />
+              <span>
+                Visual debugger{" "}
+                <small>step-through variable view · a big hint</small>
+              </span>
+            </label>
             <div className="two-fields">
               <div>
                 <label className="field-label" htmlFor="count">
@@ -395,11 +409,6 @@ function CodingSetup({ onStart, navigate }) {
                     Reset to preset
                   </button>
                 </div>
-                <p>
-                  Your instructions guide both the voice interviewer and
-                  code-review backend. The feedback rubric stays consistent
-                  across styles.
-                </p>
               </details>
             </div>
             <div className="start-area">
@@ -422,10 +431,6 @@ function CodingSetup({ onStart, navigate }) {
                 {loading ? "Preparing your interview…" : "Enter interview room"}
                 <ArrowRight size={18} />
               </button>
-              <p>
-                Your microphone connects on entry. Alex will greet you when the
-                room is ready.
-              </p>
               {!hasKey && <KeyNotice navigate={navigate} />}
             </div>
             {error && (
@@ -470,18 +475,9 @@ function CodingSetup({ onStart, navigate }) {
                   <p className="muted">No matches. Try fewer filters.</p>
                 )}
               </div>
-              <p className="library-foot">
-                Imported from your local collection · Statements load on demand
-              </p>
             </section>
           </aside>
         </div>
-        <footer>
-          Built for the moments before the real thing.
-          <span>
-            <span className="live-dot" /> Take your time. You’ve got this.
-          </span>
-        </footer>
       </main>
     </div>
   );
@@ -574,8 +570,10 @@ function Workspace({ session: initial, onExit }) {
     [saved, setSaved] = useState("Saved"),
     [pendingEdit, setPendingEdit] = useState(null),
     [showDiff, setShowDiff] = useState(false),
-    [debugOn, setDebugOn] = useState(false),
-    [bottomTab, setBottomTab] = useState("console"),
+    [bottomTab, setBottomTab] = useState("testcase"),
+    [customTests, setCustomTests] = useState(
+      initial.customTests || initial.problems.map(() => []),
+    ),
     [editorInstance, setEditorInstance] = useState(null),
     [attempts, setAttempts] = useState(initial.attempts || []),
     [solutions, setSolutions] = useState({}),
@@ -591,6 +589,7 @@ function Workspace({ session: initial, onExit }) {
       busy: false,
       runResult: "",
       debugTrace: "",
+      customTests: initial.customTests || initial.problems.map(() => []),
       runs: {},
       segment: 0,
       seenEvents: new Set(),
@@ -601,7 +600,10 @@ function Workspace({ session: initial, onExit }) {
     captions = useRef(null),
     followCaptions = useRef(true),
     codeRef = useRef(null),
-    editDecorations = useRef([]);
+    editDecorations = useRef([]),
+    testsTimer = useRef(null),
+    pendingTests = useRef(null),
+    testsChain = useRef(Promise.resolve());
   const problem = initial.problems[index];
   const base = `/api/interviews/${initial.id}`;
   const captionRows = groupTranscript(transcript);
@@ -641,6 +643,41 @@ function Workspace({ session: initial, onExit }) {
     state.current.code = value;
     setCode(value);
     setSaved("Unsaved");
+  }
+  // The Testcase panel syncs to the server as it is edited (debounced) so the
+  // interviewer always sees the candidate's current cases.
+  function changeTests(list, target = state.current.index) {
+    state.current.customTests = state.current.customTests.map((t, i) =>
+      i === target ? list : t,
+    );
+    setCustomTests(state.current.customTests);
+    pendingTests.current = { target, list };
+    clearTimeout(testsTimer.current);
+    testsTimer.current = setTimeout(() => void flushTests(), 400);
+  }
+  // Syncs are serialized so an older list can never overtake a newer one; a
+  // rejected sync keeps its payload for the next attempt.
+  async function flushTests() {
+    const pending = pendingTests.current;
+    if (!pending) return;
+    pendingTests.current = null;
+    clearTimeout(testsTimer.current);
+    const next = testsChain.current
+      .catch(() => {})
+      .then(() =>
+        api(
+          base + "/tests",
+          { index: pending.target, tests: pending.list },
+          "PUT",
+        ),
+      );
+    testsChain.current = next;
+    try {
+      await next;
+    } catch (e) {
+      setError(e.message);
+      pendingTests.current ??= pending;
+    }
   }
   function save() {
     if (!initial.editors.length) return Promise.resolve();
@@ -710,6 +747,7 @@ function Workspace({ session: initial, onExit }) {
     setError("");
     try {
       await save();
+      await flushTests();
       const target = state.current.index,
         snapshot = state.current.code;
       const result = await api(base + "/agent", {
@@ -750,12 +788,7 @@ function Workspace({ session: initial, onExit }) {
         state.current.index === target &&
         state.current.code === result.editor.code
       ) {
-        await execute(
-          state.current.code,
-          initial.problems[state.current.index].testSuite
-            ? "tests"
-            : "scratchpad",
-        );
+        await execute(state.current.code, result.runTarget || "submit");
       }
       return message;
     } catch (e) {
@@ -967,24 +1000,69 @@ function Workspace({ session: initial, onExit }) {
     live.current = connection;
     void connection.connect(base + "/live");
   }
-  async function execute(value = state.current.code, mode = "scratchpad") {
+  // run = the Testcase panel (like LeetCode Run); submit = the prepared suite
+  // (like LeetCode Submit); scratchpad = execute the file as-is.
+  async function execute(value = state.current.code, requested = "run") {
     const target = state.current.index;
+    const problemAt = initial.problems[target];
+    const spec = problemAt.testSpec;
+    const { mode, fallback } = resolveRunMode(requested, {
+      hasSuite: !!problemAt.testSuite,
+      hasSpec: !!spec,
+    });
+    let suite = null;
+    if (mode === "submit") suite = problemAt.testSuite;
+    else if (mode === "run") {
+      const built = buildCustomSuite(spec, state.current.customTests[target]);
+      if (built.invalid.length || !built.suite.cases.length) {
+        const reason = built.invalid.length
+          ? "invalid testcases: " +
+            built.invalid
+              .map((p) => `Case ${p.index + 1}: ${p.error}`)
+              .join("; ")
+          : "the Testcase panel is empty";
+        setOutput(
+          built.invalid.length
+            ? { kind: "invalid", errors: built.invalid }
+            : { kind: "empty" },
+        );
+        setBottomTab("result");
+        state.current.runResult = `candidate testcases: not run, ${reason}`;
+        live.current?.send(
+          "session.thinking.append",
+          `The candidate's testcases could not run: ${reason}.`,
+        );
+        return null;
+      }
+      suite = built.suite;
+    }
     setRunning(true);
-    const suite = mode === "tests" ? initial.problems[target].testSuite : null;
-    const result = await runCode(value, initial.language, suite);
+    setBottomTab("result");
+    const raw = await runCode(value, initial.language, suite);
+    const result = {
+      ...raw,
+      kind: mode,
+      fallback,
+      casesSnapshot: JSON.stringify(state.current.customTests[target]),
+    };
+    const label =
+      mode === "submit"
+        ? "prepared suite"
+        : mode === "run"
+          ? "candidate testcases"
+          : "scratchpad";
     if (state.current.index === target) {
       setOutput(result);
-      setBottomTab("console");
-      state.current.runResult = result.output;
+      state.current.runResult = `${label}: ${result.output}`;
     }
     state.current.runs[target] = [
       ...(state.current.runs[target] || []),
-      { code: value, ...result },
+      { code: value, mode, ...raw },
     ];
     setRunning(false);
     live.current?.send(
       "session.thinking.append",
-      `The browser ran problem ${target + 1} (${initial.problems[target].title}). Result: ${result.output.slice(0, 650)}`,
+      `The browser ran problem ${target + 1} (${problemAt.title}), ${label}. Result: ${result.output.slice(0, 650)}`,
     );
     return result;
   }
@@ -992,6 +1070,7 @@ function Workspace({ session: initial, onExit }) {
     if (state.current.busy) return;
     try {
       await save();
+      await flushTests();
       await boards.current[state.current.index]?.flush?.();
       const nextIndex = index + 1;
       await api(base + "/current", { index: nextIndex });
@@ -1018,6 +1097,7 @@ function Workspace({ session: initial, onExit }) {
     setError("");
     try {
       await save();
+      await flushTests();
       await boards.current[state.current.index]?.flush?.();
       await live.current?.close();
       const result = await api(base + "/feedback", {
@@ -1032,6 +1112,22 @@ function Workspace({ session: initial, onExit }) {
       setEnding(false);
     }
   }
+  // Debugger cases: the prepared suite first (indexes match Submit results),
+  // then the candidate's own cases that carry an expected value.
+  const debugSuite = useMemo(() => {
+    if (!hasCode || !initial.debuggerEnabled) return null;
+    const prepared = problem.testSuite;
+    const own = problem.testSpec
+      ? buildCustomSuite(problem.testSpec, customTests[index] || [])
+          .suite.cases.filter((c) => "expected" in c)
+          .map((c) => ({ ...c, own: true, name: `Your ${c.name}` }))
+      : [];
+    if (!prepared && !own.length) return null;
+    return {
+      ...(prepared || problem.testSpec),
+      cases: [...(prepared?.cases || []), ...own],
+    };
+  }, [problem, customTests, index, hasCode, initial.debuggerEnabled]);
   function download() {
     const blob = new Blob(
       [
@@ -1043,6 +1139,7 @@ function Workspace({ session: initial, onExit }) {
             problems: initial.problems.map((p) => p.title),
             language: initial.language,
             editors: state.current.editors,
+            testcases: state.current.customTests,
             attempts,
             stages,
             transcript: state.current.transcript,
@@ -1167,22 +1264,9 @@ function Workspace({ session: initial, onExit }) {
               ) : (
                 <>
                   <h2>Think out loud.</h2>
+                  <p>Ask Alex for a hint, a review, or a test by voice.</p>
                   <p>
-                    Clarify the inputs. Explain your approach. Walk through an
-                    example before you start coding.
-                  </p>
-                  <p>
-                    Ask Alex for a hint, a code review, or an example test. Alex
-                    can read and edit this file.
-                  </p>
-                  <p>
-                    Run executes the whole file. Run tests calls your solution
-                    automatically using the prepared suite. A suite pass is not
-                    a full LeetCode judge verdict.
-                  </p>
-                  <p>
-                    Code runs in your browser with a 15-second limit. Python may
-                    take a moment to load.
+                    Run executes your testcases. Submit runs the hidden suite.
                   </p>
                 </>
               )}
@@ -1231,13 +1315,6 @@ function Workspace({ session: initial, onExit }) {
             >
               Whiteboard
             </button>
-            <span>
-              {{
-                behavioral: "Map a project, decision, or story.",
-                probability: "Work the algebra in Notes; draw the setup.",
-                design: "Architecture on the board; APIs and data in Notes.",
-              }[mode] || "Sketch an approach alongside your code."}
-            </span>
           </div>
           {usesNotes && (
             <div
@@ -1272,40 +1349,25 @@ function Workspace({ session: initial, onExit }) {
                 <div>
                   <span className="save-state">{saved}</span>
                   <button
-                    className={"run debug-toggle " + (debugOn ? "active" : "")}
-                    aria-pressed={debugOn}
-                    title="Opt-in visual debugger: trace a test case step by step"
-                    onClick={() => {
-                      setDebugOn(!debugOn);
-                      setBottomTab(!debugOn ? "debugger" : "console");
-                    }}
-                  >
-                    <Bug size={13} />
-                    Debugger
-                  </button>
-                  <button
-                    className="run"
-                    disabled={running || !problem.testSuite}
-                    title={
-                      problem.testSuite
-                        ? `${problem.testCount} prepared tests`
-                        : "No prepared suite for this problem yet"
-                    }
-                    onClick={() => execute(state.current.code, "tests")}
-                  >
-                    <Check size={13} />
-                    Run tests
-                    {problem.testSuite && (
-                      <span className="test-count">{problem.testCount}</span>
-                    )}
-                  </button>
-                  <button
                     className="run"
                     disabled={running}
-                    onClick={() => execute()}
+                    onClick={() => execute(state.current.code, "run")}
                   >
                     <Play size={13} />
-                    {running ? "Running…" : "Run"}
+                    Run
+                  </button>
+                  <button
+                    className="run submit"
+                    disabled={running}
+                    title={
+                      problem.testSuite
+                        ? `${problem.testCount} hidden tests`
+                        : "No hidden tests for this problem: runs your testcases"
+                    }
+                    onClick={() => execute(state.current.code, "submit")}
+                  >
+                    <Check size={13} />
+                    Submit
                   </button>
                 </div>
               </div>
@@ -1363,62 +1425,65 @@ function Workspace({ session: initial, onExit }) {
                   </button>
                 </div>
               )}
-              {debugOn && (
-                <div className="bottom-tabs">
+              <div className="bottom-tabs" role="tablist">
+                <button
+                  role="tab"
+                  aria-selected={bottomTab === "testcase"}
+                  className={bottomTab === "testcase" ? "active" : ""}
+                  onClick={() => setBottomTab("testcase")}
+                >
+                  <Check size={12} /> Testcase
+                </button>
+                <button
+                  role="tab"
+                  aria-selected={bottomTab === "result"}
+                  className={bottomTab === "result" ? "active" : ""}
+                  onClick={() => setBottomTab("result")}
+                >
+                  <Terminal size={12} /> Test Result
+                  {output && !running && (
+                    <i className={"tab-dot " + (verdict(output)?.tone || "")} />
+                  )}
+                </button>
+                {initial.debuggerEnabled && (
                   <button
-                    className={bottomTab === "console" ? "active" : ""}
-                    onClick={() => setBottomTab("console")}
-                  >
-                    <Terminal size={12} /> Console
-                  </button>
-                  <button
+                    role="tab"
+                    aria-selected={bottomTab === "debugger"}
                     className={bottomTab === "debugger" ? "active" : ""}
                     onClick={() => setBottomTab("debugger")}
                   >
                     <Bug size={12} /> Debugger
                   </button>
-                </div>
-              )}
-              {debugOn && bottomTab === "debugger" && (
-                <Debugger
-                  key={index}
-                  suite={problem.testSuite}
-                  language={initial.language}
-                  code={code}
-                  editor={editorInstance}
-                  lastRun={output}
-                  onTrace={onDebugTrace}
-                />
-              )}
-              <div
-                className="console"
-                style={{
-                  display:
-                    debugOn && bottomTab === "debugger" ? "none" : undefined,
-                }}
-              >
-                <div className="console-heading">
-                  <Terminal size={14} /> CONSOLE
-                  <span>
-                    {output
-                      ? output.total !== undefined
-                        ? `${output.passed}/${output.total} passed`
-                        : output.ok
-                          ? "Finished"
-                          : "Error"
-                      : "Ready"}
-                  </span>
-                  <button
-                    aria-label="Clear console"
-                    onClick={() => setOutput(null)}
-                  >
-                    <RotateCcw size={12} />
-                  </button>
-                </div>
-                <pre className={output?.ok === false ? "failed" : ""}>
-                  {output?.output ||
-                    "Run your code to see output here.\nAdd example calls or assertions below your solution."}
-                </pre>
+                )}
+              </div>
+              <div className="bottom-panel">
+                {bottomTab === "testcase" && (
+                  <Testcases
+                    key={index}
+                    spec={problem.testSpec}
+                    cases={customTests[index] || []}
+                    onChange={(list) => changeTests(list)}
+                  />
+                )}
+                {bottomTab === "result" && (
+                  <TestResult
+                    spec={problem.testSpec}
+                    cases={customTests[index] || []}
+                    result={output}
+                    running={running}
+                  />
+                )}
+                {bottomTab === "debugger" && initial.debuggerEnabled && (
+                  <Debugger
+                    key={index}
+                    suite={debugSuite}
+                    language={initial.language}
+                    code={code}
+                    editor={editorInstance}
+                    lastRun={output?.kind === "submit" ? output : null}
+                    onTrace={onDebugTrace}
+                  />
+                )}
               </div>
             </section>
           )}
@@ -1460,9 +1525,6 @@ function Workspace({ session: initial, onExit }) {
             </div>
           </div>
           <h2>Alex</h2>
-          <p className="interviewer-sub">
-            A second perspective on your next step.
-          </p>
           <div className="voice-controls">
             {["offline", "ended", "disconnected"].includes(voice) ? (
               <button className="primary" onClick={connect}>
@@ -1516,13 +1578,12 @@ function Workspace({ session: initial, onExit }) {
           >
             {!transcript.length && (
               <div className="conversation-empty">
-                <span className="quote">“</span>Start with what you know.
-                <br />
-                We’ll work through the rest.
                 <p>
                   {voice === "connecting"
-                    ? "Alex is joining your room…"
-                    : "Your spoken conversation will appear here."}
+                    ? "Connecting…"
+                    : voice === "live"
+                      ? "Listening…"
+                      : "Voice off"}
                 </p>
               </div>
             )}
@@ -1548,14 +1609,6 @@ function Workspace({ session: initial, onExit }) {
               <span>{activity}</span>
             </div>
           )}
-          <p className="speech-hint">
-            <Mic size={13} />
-            {{
-              behavioral: "Talk through an experience. Alex will follow up.",
-              probability: "Think aloud. Ask for a hint when you're stuck.",
-              design: "Narrate your design. Ask Alex what worries them.",
-            }[mode] || "Ask for a hint or code review out loud."}
-          </p>
         </aside>
       </div>
       {error && (

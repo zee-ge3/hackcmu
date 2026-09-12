@@ -63,7 +63,7 @@ export function ProbabilityPane({
           }}
         >
           <label htmlFor="answer" className="field-label">
-            Your answer <span>fraction, decimal, or expression</span>
+            Your answer
           </label>
           <div className="answer-row">
             <input
@@ -197,8 +197,8 @@ export function DesignPane({
                 <strong>Next constraint</strong>
                 <p>
                   {nextIn !== null && nextIn > 0
-                    ? `Arrives in about ${mmss(nextIn)}, or sooner when Alex decides this step is settled.`
-                    : "Arriving as soon as the current step is settled."}
+                    ? `In ${mmss(nextIn)}, or when this step is settled.`
+                    : "When this step is settled."}
                 </p>
                 <button className="quiet" onClick={onAdvance} disabled={busy}>
                   I've finished this step <ChevronRight size={14} />
@@ -212,12 +212,6 @@ export function DesignPane({
             Time is up. Summarize your design and press Finish interview.
           </div>
         )}
-      </div>
-      <div className="problem-bottom">
-        <span>
-          Keep requirements, APIs, and the data model in Notes. Draw the
-          architecture on the whiteboard.
-        </span>
       </div>
     </section>
   );

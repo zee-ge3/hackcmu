@@ -149,10 +149,6 @@ export function ProbabilitySetup({ onStart, navigate }) {
       <div className="page-heading">
         <span className="eyebrow muted">PROBABILITY PRACTICE</span>
         <h1>Reason under uncertainty, out loud.</h1>
-        <p>
-          Quant-style probability questions with a spoken interviewer, a notes
-          pad, and a whiteboard.
-        </p>
       </div>
       <div className="setup-grid">
         <section className="config card">
@@ -289,10 +285,6 @@ export function ProbabilitySetup({ onStart, navigate }) {
               {loading ? "Preparing your interview…" : "Enter probability room"}
               <ArrowRight size={18} />
             </button>
-            <p>
-              Answers are checked against the reference; Alex only hints until
-              you solve or reveal.
-            </p>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
@@ -329,10 +321,6 @@ export function ProbabilitySetup({ onStart, navigate }) {
                 <p className="muted">No matches. Try fewer filters.</p>
               )}
             </div>
-            <p className="library-foot">
-              QuantProf free tier, AoPS, MATH, AIME · levels 1–10 · answers
-              hidden until solved
-            </p>
           </section>
         </aside>
       </div>
@@ -387,12 +375,8 @@ export function DesignSetup({ onStart, navigate }) {
       <div className="page-heading">
         <span className="eyebrow muted">SYSTEM DESIGN PRACTICE</span>
         <h1>Design it before the clock runs out.</h1>
-        <p>
-          A brief to start, then new constraints as your design takes shape — on
-          the whiteboard, out loud.
-        </p>
       </div>
-      <div className="setup-grid">
+      <div className="setup-grid single">
         <section className="config card">
           <div className="section-title">
             <div>
@@ -493,10 +477,6 @@ export function DesignSetup({ onStart, navigate }) {
               {loading ? "Preparing your interview…" : "Enter design room"}
               <ArrowRight size={18} />
             </button>
-            <p>
-              Constraints arrive on a timer or when Alex decides a step is
-              settled. The clock starts when you enter.
-            </p>
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
           {error && (
@@ -505,35 +485,6 @@ export function DesignSetup({ onStart, navigate }) {
             </div>
           )}
         </section>
-        <aside>
-          <section className="library card">
-            <div className="library-title">
-              <div>
-                <span className="eyebrow muted">HOW IT RUNS</span>
-                <h3>Requirements → design → the constraints pile on.</h3>
-              </div>
-              <SlidersHorizontal size={18} />
-            </div>
-            <ol className="how-list">
-              <li>
-                Read the brief. Clarify requirements and estimate scale with
-                Alex.
-              </li>
-              <li>
-                Sketch the high-level design on the whiteboard; keep your API
-                and data model in Notes.
-              </li>
-              <li>
-                Each new constraint is announced when you finish a step or when
-                its time comes. Adapt the design.
-              </li>
-              <li>
-                Finish before the clock ends for a five-criterion review of
-                scoping, architecture, data, scaling, and clarity.
-              </li>
-            </ol>
-          </section>
-        </aside>
       </div>
     </main>
   );

@@ -293,8 +293,7 @@ export default function Whiteboard({
         <span className="live-dot" />
         {
           {
-            empty:
-              "Sketch your thinking. Changes are shared with Alex automatically.",
+            empty: "Shared with Alex as you draw.",
             pending: "Drawing updated · waiting for a pause…",
             sharing: "Sharing the latest drawing with Alex…",
             shared: "Alex has the latest drawing.",
