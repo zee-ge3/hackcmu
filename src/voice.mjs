@@ -1,7 +1,12 @@
 import { verdict } from "./domain.mjs";
 // Phrases that put the interviewer on hold until the candidate speaks again.
 export const QUIET =
-  /\b(shut up|be quiet|keep quiet|stay quiet|quiet please|quiet for a|stop talking|don'?t talk|give me (a|one|two|five) (minute|moment|sec|second)s?|let me think|let me (just )?(code|work|write)|hold on|one sec\b|hang on|need a (minute|moment|sec))\b/i;
+  /\b(shut up|be quiet|keep quiet|stay quiet|quiet please|quiet for a|stop talking|don'?t talk|give me (a|one|two|five) (minute|moment|sec|second)s?|let me think|let me (just )?(code|work|write)|need a (minute|moment|sec))\b/i;
+// Interjections that only count when they are the whole utterance ("hold on"),
+// not narration ("I'll hold on to the left pointer").
+export const QUIET_SHORT = /^\W*(hold on|hang on|one sec(ond)?|wait)\W*$/i;
+export const asksQuiet = (utterance) =>
+  QUIET.test(utterance) || QUIET_SHORT.test(utterance.trim());
 // One spoken sentence for a run, so a silent candidate still hears a reaction.
 export function spokenResult(result) {
   const v = verdict(result);
@@ -24,4 +29,4 @@ export function spokenResult(result) {
 
 // Small talk that should not count as re-engaging the interviewer.
 export const reengages = (utterance) =>
-  utterance.trim().split(/\s+/).length >= 4;
+  utterance.trim().split(/\s+/).length >= 4 || /\balex\b/i.test(utterance);

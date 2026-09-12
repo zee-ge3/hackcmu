@@ -383,7 +383,9 @@ export function DesignSetup({ onStart, navigate }) {
               ))}
             </div>
             <p className="field-hint">
-              3 constraints, revealed on a timer or when a step is done.
+              {useCustom
+                ? "3 constraints improvised by the interviewer as the design matures."
+                : "3 constraints, revealed on a timer or when a step is done."}
             </p>
             <PresetPicker
               presets={designPresets}

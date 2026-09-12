@@ -14,6 +14,7 @@ export default function Whiteboard({
   index,
   store,
   onContext,
+  onActivity,
   disabled = false,
 }) {
   const model = useRef(store),
@@ -84,6 +85,7 @@ export default function Whiteboard({
     }
   }
   function changed() {
+    onActivity?.();
     model.current.revision = (model.current.revision || 0) + 1;
     setRevision(model.current.revision);
     setStatus("pending");

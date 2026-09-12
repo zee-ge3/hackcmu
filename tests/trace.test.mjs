@@ -104,3 +104,46 @@ test("line diff reports lines an edit added", () => {
   assert.deepEqual(lineDiff("a\nb\nc", "a\nx\nb\nc\ny").added, [2, 5]);
   assert.deepEqual(lineDiff("a\nb", "a").removed, [2]);
 });
+test("labeled loops, shadowed bindings, and brace-less bodies trace correctly", () => {
+  const spec = {
+    method: "f",
+    arguments: ["json"],
+    output: "json",
+    comparison: "exact",
+  };
+  const labeled = `function f(n){ let hits = 0; outer: for (let i = 0; i < n; i++) { for (let j = 0; j < n; j++) { if (j === 1) continue outer; hits++; } } return hits; }`;
+  const r1 = runJavascriptTrace(
+    labeled,
+    spec,
+    { input: [3], expected: 3 },
+    { onSteps: () => {} },
+  );
+  assert.equal(r1.error, undefined, r1.error);
+  assert.equal(r1.ok, true);
+  const shadow = `function f(n){ const a = 1; if (n > 0) { const a = 5; const b = a + 1; return b + a; } return a; }`;
+  const r2 = runJavascriptTrace(
+    shadow,
+    spec,
+    { input: [1], expected: 11 },
+    { onSteps: () => {} },
+  );
+  assert.equal(r2.error, undefined, r2.error);
+  assert.equal(r2.ok, true);
+  const cases = `function f(n){ switch (n) { case 1: { const x = 10; return x; } case 2: return n * 2; default: return 0; } }`;
+  const r3 = runJavascriptTrace(
+    cases,
+    spec,
+    { input: [2], expected: 4 },
+    { onSteps: () => {} },
+  );
+  assert.equal(r3.error, undefined, r3.error);
+  const braceless = `function f(n){ let c = 0; for (let i = 0; i < n; i++) if (i % 2) c++\n c += 10; return c; }`;
+  const r4 = runJavascriptTrace(
+    braceless,
+    spec,
+    { input: [4], expected: 12 },
+    { onSteps: () => {} },
+  );
+  assert.equal(r4.error, undefined, r4.error);
+  assert.equal(r4.ok, true);
+});

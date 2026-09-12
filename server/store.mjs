@@ -168,9 +168,11 @@ export function openStore(dir, { file = "pairwise.sqlite" } = {}) {
       // the first real Google sign-in with that address.
       const existing =
         q("SELECT id FROM users WHERE google_sub = ?").get(sub) ||
-        q(
-          "SELECT id FROM users WHERE google_sub LIKE 'pending:%' AND lower(email) = lower(?)",
-        ).get(email);
+        (sub.startsWith("dev:")
+          ? null
+          : q(
+              "SELECT id FROM users WHERE google_sub LIKE 'pending:%' AND lower(email) = lower(?)",
+            ).get(email));
       if (existing)
         q(
           "UPDATE users SET google_sub = ?, email = ?, name = ?, picture = ?, last_login = ? WHERE id = ?",

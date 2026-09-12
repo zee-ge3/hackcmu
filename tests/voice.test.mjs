@@ -1,25 +1,28 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { QUIET, spokenResult, reengages } from "../src/voice.mjs";
+import { asksQuiet, spokenResult, reengages } from "../src/voice.mjs";
 test("quiet requests are recognised without tripping on unrelated phrases", () => {
   for (const s of [
     "shut up",
     "give me a minute",
     "let me think about it",
     "hold on",
+    "hang on.",
     "can you be quiet for a sec",
     "let me just code this",
   ])
-    assert.ok(QUIET.test(s), s);
+    assert.ok(asksQuiet(s), s);
   for (const s of [
     "what's the time complexity",
-    "I think the map is fine",
-    "not sure about second case",
-    "the quiet part is done",
+    "I'll hold on to the left pointer",
+    "hang on to the previous node",
     "one second thought: hash map",
+    "the quiet part is done",
+    "not sure about second case",
   ])
-    assert.equal(QUIET.test(s), false, s);
+    assert.equal(asksQuiet(s), false, s);
   assert.equal(reengages("okay"), false);
+  assert.equal(reengages("Alex?"), true);
   assert.equal(reengages("okay what do you think of this"), true);
 });
 test("spoken reactions match the verdict and name the failing case", () => {

@@ -121,6 +121,7 @@ export class LiveConnection {
         }
       };
       await this.peer.setLocalDescription(await this.peer.createOffer());
+      if (this.closed) return;
       if (this.peer.iceGatheringState !== "complete")
         await new Promise((resolve, reject) => {
           const timer = setTimeout(() => {
@@ -158,6 +159,8 @@ export class LiveConnection {
           this.onError("The voice session did not start. Please reconnect.");
         }, 20000);
     } catch (e) {
+      // Stop pressed while connecting: the abandoned attempt must not resurface.
+      if (this.closed) return;
       this.cleanup();
       this.onStatus("disconnected");
       this.onError(e.message);

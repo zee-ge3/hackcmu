@@ -42,7 +42,7 @@ import Whiteboard from "./Whiteboard.jsx";
 import Debugger from "./Debugger.jsx";
 import { Testcases, TestResult, verdict } from "./TestPanel.jsx";
 import { buildCustomSuite, resolveRunMode } from "./domain.mjs";
-import { QUIET, spokenResult, reengages } from "./voice.mjs";
+import { asksQuiet, spokenResult, reengages } from "./voice.mjs";
 import { lineDiff } from "./diff.mjs";
 import { DiffEditor } from "@monaco-editor/react";
 import { Bug, GitCompare } from "lucide-react";
@@ -67,6 +67,7 @@ const defaultFilters = {
   companies: [],
   topics: [],
   lists: [],
+  pinned: [],
   difficulty: "all",
   search: "",
 };
@@ -92,6 +93,10 @@ function CodingSetup({ onStart, navigate }) {
       .catch((e) => setError(e.message));
   }, []);
   const matching = filterProblems(catalog, filters).filter((p) => !p.paid_only);
+  const pinned = filters.pinned
+    .map((slug) => catalog.find((p) => p.slug === slug))
+    .filter(Boolean);
+  const total = Math.max(count, pinned.length);
   async function start() {
     setLoading(true);
     setError("");
@@ -99,7 +104,7 @@ function CodingSetup({ onStart, navigate }) {
       onStart(
         await api("/api/interviews", {
           ...filters,
-          count,
+          count: total,
           language,
           debuggerEnabled,
           interviewerStyle: style,
@@ -322,14 +327,32 @@ function CodingSetup({ onStart, navigate }) {
               className="primary start"
               onClick={start}
               disabled={
-                loading || matching.length < count || !prompt.trim() || !hasKey
+                loading ||
+                matching.filter((p) => !filters.pinned.includes(p.slug))
+                  .length +
+                  pinned.length <
+                  total ||
+                !prompt.trim() ||
+                !hasKey
               }
             >
-              {loading ? "Starting…" : "Start"}
+              {loading
+                ? "Starting…"
+                : pinned.length
+                  ? `Start · ${pinned.length} pinned`
+                  : "Start"}
               <ArrowRight size={16} />
             </button>
             {ready && matching.length < count && (
               <span className="match-count">Only {matching.length} match</span>
+            )}
+            {pinned.length > 0 && (
+              <button
+                className="quiet"
+                onClick={() => setFilters({ ...filters, pinned: [] })}
+              >
+                Clear pins
+              </button>
             )}
             {!hasKey && <KeyNotice navigate={navigate} />}
           </div>
@@ -343,17 +366,34 @@ function CodingSetup({ onStart, navigate }) {
           <section className="library card">
             <h2>
               Matches <small>{matching.length.toLocaleString()}</small>
+              <small className="hint">click to pin</small>
             </h2>
             <div className="problem-list">
-              {matching.slice(0, 30).map((p) => (
-                <div className="problem-row" key={p.id}>
-                  <span className="problem-id">{p.id}</span>
-                  <span>{p.title}</span>
-                  <span className={"difficulty " + p.difficulty}>
-                    {p.difficulty}
-                  </span>
-                </div>
-              ))}
+              {[
+                ...pinned,
+                ...matching.filter((p) => !filters.pinned.includes(p.slug)),
+              ]
+                .slice(0, 30)
+                .map((p) => {
+                  const on = filters.pinned.includes(p.slug);
+                  return (
+                    <button
+                      type="button"
+                      className={"problem-row " + (on ? "pinned" : "")}
+                      key={p.id}
+                      aria-pressed={on}
+                      onClick={() => toggle("pinned", p.slug)}
+                    >
+                      <span className="problem-id">
+                        {on ? <Check size={12} /> : p.id}
+                      </span>
+                      <span>{p.title}</span>
+                      <span className={"difficulty " + p.difficulty}>
+                        {p.difficulty}
+                      </span>
+                    </button>
+                  );
+                })}
               {ready && !matching.length && (
                 <p className="muted">No matches.</p>
               )}
@@ -396,10 +436,7 @@ function App() {
     if (!sessionId || !user || session?.id === sessionId) return;
     api(`/api/interviews/${sessionId}`, undefined, "GET")
       .then((s) => setSession(s))
-      .catch((e) => {
-        setError(e.message);
-        navigate("/");
-      });
+      .catch((e) => setError(e.message));
   }, [sessionId, user]);
   const startSession = (s) => {
     window.history.pushState({}, "", `/session/${s.id}`);
@@ -423,7 +460,22 @@ function App() {
         <SignInGate />
       ) : sessionId ? (
         <main className="setup page">
-          <p className="muted">{error || "Rejoining…"}</p>
+          {error ? (
+            <div className="error">
+              {error}{" "}
+              <a
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate("/");
+                }}
+              >
+                Home
+              </a>
+            </div>
+          ) : (
+            <p className="muted">Rejoining…</p>
+          )}
         </main>
       ) : path === "/coding" ? (
         <CodingSetup onStart={startSession} navigate={navigate} />
@@ -464,7 +516,7 @@ function Workspace({ session: initial, onExit }) {
     [code, setCode] = useState(initial.editors[initial.index || 0]?.code || ""),
     [voice, setVoice] = useState("offline"),
     [muted, setMuted] = useState(false),
-    [transcript, setTranscript] = useState([]),
+    [transcript, setTranscript] = useState(initial.transcript || []),
     [activity, setActivity] = useState(""),
     [busy, setBusy] = useState(false),
     [running, setRunning] = useState(null),
@@ -483,7 +535,11 @@ function Workspace({ session: initial, onExit }) {
     ),
     [editorInstance, setEditorInstance] = useState(null),
     [attempts, setAttempts] = useState(initial.attempts || []),
-    [solutions, setSolutions] = useState({}),
+    [solutions, setSolutions] = useState(() =>
+      Object.fromEntries(
+        (initial.solutions || []).map((s, i) => [i, s]).filter(([, s]) => s),
+      ),
+    ),
     [answering, setAnswering] = useState(false),
     [design, setDesign] = useState(initial.design || null),
     [stages, setStages] = useState(initial.problems[0]?.stages || []),
@@ -493,18 +549,23 @@ function Workspace({ session: initial, onExit }) {
       index: initial.index || 0,
       editors: initial.editors,
       code: initial.editors[initial.index || 0]?.code || "",
-      transcript: [],
+      transcript: initial.transcript || [],
       busy: false,
       runResult: "",
       debugTrace: "",
       customTests: initial.customTests || initial.problems.map(() => []),
+      runInFlight: false,
+      transcriptTimer: null,
       lastSpeechAt: Date.now(),
       lastActivityAt: 0,
       lastCheckInAt: Date.now(),
       quietUntil: 0,
       utterance: "",
       utteranceAt: 0,
-      runs: {},
+      problemStartedAt: Date.now(),
+      timeSpent: {},
+      nudged: {},
+      runs: initial.runs || {},
       segment: 0,
       seenEvents: new Set(),
       ending: false,
@@ -533,7 +594,8 @@ function Workspace({ session: initial, onExit }) {
     if (now - c.utteranceAt > 4000) c.utterance = "";
     c.utteranceAt = now;
     c.utterance = (c.utterance + delta).slice(-400);
-    if (QUIET.test(c.utterance)) {
+    if (asksQuiet(c.utterance)) {
+      c.quietGraceUntil = now + 8000;
       if (!(c.quietUntil > now)) {
         c.quietUntil = now + 10 * 60 * 1000;
         setQuiet(true);
@@ -545,22 +607,69 @@ function Workspace({ session: initial, onExit }) {
       c.utterance = "";
       return;
     }
-    if (c.quietUntil > now && reengages(c.utterance)) {
-      c.quietUntil = 0;
-      setQuiet(false);
-      live.current?.send(
-        "session.instructions.append",
-        "The candidate is talking to you again. Resume the normal interview style.",
-      );
+    if (
+      c.quietUntil > now &&
+      now > (c.quietGraceUntil || 0) &&
+      reengages(c.utterance)
+    ) {
+      endQuiet();
     }
   }
   const isQuiet = () => state.current.quietUntil > Date.now();
+  function endQuiet() {
+    state.current.quietUntil = 0;
+    setQuiet(false);
+    live.current?.send(
+      "session.instructions.append",
+      "The candidate is talking to you again. Resume the normal interview style.",
+    );
+  }
+  // Time budget per problem (a realistic pace), used for the clock and two nudges.
+  const budgetSeconds = (p) =>
+    !p
+      ? 0
+      : isProbability
+        ? 600
+        : { easy: 15, medium: 25, hard: 40 }[
+            String(p.difficulty).toLowerCase()
+          ] * 60 || 1500;
+  const [problemElapsed, setProblemElapsed] = useState(0);
+  useEffect(() => {
+    setProblemElapsed(
+      Math.floor((Date.now() - state.current.problemStartedAt) / 1000),
+    );
+  }, [elapsed]);
+  useEffect(() => {
+    if (
+      !(hasCode || isProbability) ||
+      !live.current?.ready ||
+      isQuiet() ||
+      feedback
+    )
+      return;
+    const budget = budgetSeconds(problem);
+    if (!budget) return;
+    const c = state.current;
+    const level =
+      problemElapsed >= budget ? 2 : problemElapsed >= budget * 0.8 ? 1 : 0;
+    if (level > (c.nudged[index] || 0)) {
+      c.nudged[index] = level;
+      c.lastCheckInAt = Date.now();
+      live.current.send(
+        "session.commentary.append",
+        level === 2
+          ? "We're at time on this one. Wrap up your current thought: finish, or move on?"
+          : `About ${Math.max(1, Math.round((budget - problemElapsed) / 60))} minutes left on this one. Where are you?`,
+      );
+    }
+  }, [problemElapsed]);
   // A silent candidate still gets an interviewer: after a stretch of work with
   // no speech, the backend is asked for a short spoken check-in.
   useEffect(() => {
     const timer = setInterval(() => {
       const c = state.current;
       const now = Date.now();
+      if (quiet && !(c.quietUntil > now)) endQuiet();
       if (
         !live.current?.ready ||
         c.busy ||
@@ -578,7 +687,7 @@ function Workspace({ session: initial, onExit }) {
       );
     }, 15000);
     return () => clearInterval(timer);
-  }, [feedback]);
+  }, [feedback, quiet]);
   // Design rooms: reveal the next constraint on its timer and flag the time limit.
   useEffect(() => {
     if (!isDesign || !design || feedback) return;
@@ -629,7 +738,10 @@ function Workspace({ session: initial, onExit }) {
   // rejected sync keeps its payload for the next attempt.
   async function flushTests() {
     const pending = pendingTests.current;
-    if (!pending) return;
+    if (!pending) {
+      await testsChain.current.catch(() => {});
+      return;
+    }
     pendingTests.current = null;
     clearTimeout(testsTimer.current);
     const next = testsChain.current
@@ -727,17 +839,15 @@ function Workspace({ session: initial, onExit }) {
         runResult: state.current.runResult,
         debugTrace: state.current.debugTrace,
       });
-      state.current.editors = state.current.editors.map((e, i) =>
-        i === target ? result.editor : e,
-      );
-      setEditors(state.current.editors);
+      if (result.editor) {
+        state.current.editors = state.current.editors.map((e, i) =>
+          i === target ? result.editor : e,
+        );
+        setEditors(state.current.editors);
+      }
       let message = result.message;
-      if (result.stage) applyStage(result.stage, result.design);
-      if (
-        Number.isInteger(result.nextIndex) &&
-        result.nextIndex !== state.current.index
-      )
-        await goTo(result.nextIndex, { announced: true });
+      for (const stage of result.stages || (result.stage ? [result.stage] : []))
+        applyStage(stage, result.design);
       if (result.edits.length) {
         if (state.current.index === target && state.current.code === snapshot) {
           state.current.code = result.editor.code;
@@ -751,6 +861,11 @@ function Workspace({ session: initial, onExit }) {
             " Your draft was kept; Alex's edit is available in the editor.";
         }
       }
+      if (
+        Number.isInteger(result.nextIndex) &&
+        result.nextIndex !== state.current.index
+      )
+        await goTo(result.nextIndex, { announced: true });
 
       if (live.current?.ready) {
         for (const chunk of message.match(/.{1,650}(?:\s|$)/gs) || [
@@ -822,6 +937,14 @@ function Workspace({ session: initial, onExit }) {
   }
   async function advanceStage(reason = "candidate") {
     if (stageBusy || !design || design.nextAt === null) return;
+    if (initial.problems[0].id === "custom") {
+      // No script for a custom brief: the backend invents and announces one.
+      state.current.lastCheckInAt = Date.now();
+      await ask(
+        "Reveal the next design constraint now: invent one that fits this brief and stresses the current design, then introduce it and ask how the design changes.",
+      );
+      return;
+    }
     setStageBusy(true);
     try {
       const result = await api(base + "/stage", {});
@@ -949,6 +1072,16 @@ function Workspace({ session: initial, onExit }) {
       };
       state.current.transcript.push(row);
       setTranscript((t) => [...t, row]);
+      clearTimeout(state.current.transcriptTimer);
+      state.current.transcriptTimer = setTimeout(
+        () =>
+          api(
+            base + "/transcript",
+            { transcript: state.current.transcript },
+            "PUT",
+          ).catch(() => {}),
+        2000,
+      );
     }
     if (
       e.type === "session.delegation.created" &&
@@ -1015,6 +1148,8 @@ function Workspace({ session: initial, onExit }) {
       }
       suite = built.suite;
     }
+    if (state.current.runInFlight) return null;
+    state.current.runInFlight = true;
     setRunning(mode);
     setBottomTab("result");
     const raw = await runCode(value, initial.language, suite);
@@ -1039,7 +1174,19 @@ function Workspace({ session: initial, onExit }) {
       ...(state.current.runs[target] || []),
       { code: value, mode, ...raw },
     ];
+    state.current.runInFlight = false;
     setRunning(null);
+    void api(base + "/runs", {
+      index: target,
+      run: {
+        code: value,
+        mode,
+        ok: raw.ok,
+        passed: raw.passed,
+        total: raw.total,
+        output: raw.output,
+      },
+    }).catch(() => {});
     live.current?.send(
       "session.thinking.append",
       `The browser ran problem ${target + 1} (${problemAt.title}), ${label}. Result: ${result.output.slice(0, 650)}`,
@@ -1064,6 +1211,10 @@ function Workspace({ session: initial, onExit }) {
       await flushTests();
       await boards.current[state.current.index]?.flush?.();
       if (!announced) await api(base + "/current", { index: nextIndex });
+      const c = state.current;
+      c.timeSpent[c.index] =
+        (c.timeSpent[c.index] || 0) + (Date.now() - c.problemStartedAt);
+      c.problemStartedAt = Date.now();
       state.current.index = nextIndex;
       state.current.code = state.current.editors[nextIndex].code;
       setIndex(nextIndex);
@@ -1091,9 +1242,19 @@ function Workspace({ session: initial, onExit }) {
       await flushTests();
       await boards.current[state.current.index]?.flush?.();
       await live.current?.close();
+      const c = state.current;
+      c.timeSpent[c.index] =
+        (c.timeSpent[c.index] || 0) + (Date.now() - c.problemStartedAt);
+      c.problemStartedAt = Date.now();
       const result = await api(base + "/feedback", {
-        transcript: state.current.transcript,
-        runs: state.current.runs,
+        transcript: c.transcript,
+        runs: c.runs,
+        timing: Object.fromEntries(
+          Object.entries(c.timeSpent).map(([i, ms]) => [
+            i,
+            Math.round(ms / 1000),
+          ]),
+        ),
       });
       setFeedback(result);
     } catch (e) {
@@ -1167,10 +1328,15 @@ function Workspace({ session: initial, onExit }) {
     a.click();
     URL.revokeObjectURL(url);
   }
+  const budget = hasCode || isProbability ? budgetSeconds(problem) : 0;
   const clockSeconds =
     isDesign && design
       ? Math.max(0, Math.round(design.durationMs / 1000) - elapsed)
-      : elapsed;
+      : budget
+        ? problemElapsed
+        : elapsed;
+  const mmss = (sec) =>
+    `${String(Math.floor(sec / 60)).padStart(2, "0")}:${String(sec % 60).padStart(2, "0")}`;
   const voiceLabel =
     {
       offline: "Voice off",
@@ -1215,12 +1381,20 @@ function Workspace({ session: initial, onExit }) {
         </div>
         <div className="room-actions">
           <span
-            className="clock"
-            title={isDesign ? "Time remaining" : "Elapsed"}
+            className={
+              "clock " + (budget && problemElapsed >= budget ? "over" : "")
+            }
+            title={
+              isDesign
+                ? "Time remaining"
+                : budget
+                  ? "Time on this problem · suggested budget"
+                  : "Elapsed"
+            }
           >
             <Timer size={15} />
-            {String(Math.floor(clockSeconds / 60)).padStart(2, "0")}:
-            {String(clockSeconds % 60).padStart(2, "0")}
+            {mmss(clockSeconds)}
+            {budget ? <small> / {mmss(budget)}</small> : null}
           </span>
           <button
             className="quiet"
@@ -1509,16 +1683,21 @@ function Workspace({ session: initial, onExit }) {
                     running={!!running}
                   />
                 </div>
-                {bottomTab === "debugger" && initial.debuggerEnabled && (
-                  <Debugger
-                    key={index}
-                    suite={debugSuite}
-                    language={initial.language}
-                    code={code}
-                    editor={editorInstance}
-                    lastRun={output?.kind === "submit" ? output : null}
-                    onTrace={onDebugTrace}
-                  />
+                {initial.debuggerEnabled && (
+                  <div
+                    className="bottom-slot"
+                    hidden={bottomTab !== "debugger"}
+                  >
+                    <Debugger
+                      key={index}
+                      suite={debugSuite}
+                      language={initial.language}
+                      code={code}
+                      editor={editorInstance}
+                      lastRun={output?.kind === "submit" ? output : null}
+                      onTrace={onDebugTrace}
+                    />
+                  </div>
                 )}
               </div>
             </section>
@@ -1533,6 +1712,9 @@ function Workspace({ session: initial, onExit }) {
               index={index}
               store={(boards.current[index] ??= { strokes: [], revision: 0 })}
               disabled={ending || !!feedback}
+              onActivity={() => {
+                state.current.lastActivityAt = Date.now();
+              }}
               onContext={(summary, boardIndex) => {
                 if (state.current.index === boardIndex && !state.current.ending)
                   live.current?.send(
@@ -1763,6 +1945,27 @@ function Workspace({ session: initial, onExit }) {
                 </ol>
               </section>
             </div>
+            {captionRows.length > 0 && (
+              <details className="feedback-transcript">
+                <summary>Transcript · {captionRows.length} turns</summary>
+                <div className="feedback-turns">
+                  {captionRows.map((row) => (
+                    <div key={row.key} className={"caption-turn " + row.role}>
+                      <div className="caption-speaker">
+                        <span>{row.role === "user" ? "You" : "Alex"}</span>
+                        <time>
+                          {Math.floor(row.start_ms / 60000)}:
+                          {String(
+                            Math.floor(row.start_ms / 1000) % 60,
+                          ).padStart(2, "0")}
+                        </time>
+                      </div>
+                      <p>{row.text.trim()}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            )}
             <div className="feedback-actions">
               <button className="quiet" onClick={download}>
                 <Download size={16} />

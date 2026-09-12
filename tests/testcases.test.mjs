@@ -225,3 +225,39 @@ test("statement outputs are read through span/code wrappers and rejected when no
     ["[1,1,1,3]", "true", ""],
   );
 });
+import { decode, matches, safeValue } from "../src/judge.mjs";
+test("adapters and comparisons survive odd values", () => {
+  assert.equal(decode(null, "tree"), null);
+  assert.equal(decode(null, "list"), null);
+  assert.equal(matches(NaN, null), false);
+  assert.equal(matches(Infinity, null), false);
+  assert.equal(matches(undefined, null), false);
+  assert.equal(matches([1, NaN], [1, NaN]), true);
+  const cyclic = { a: 1 };
+  cyclic.self = cyclic;
+  assert.deepEqual(safeValue(cyclic), { a: 1, self: "[cycle]" });
+  assert.deepEqual(safeValue([10n, () => 1, Infinity]), [
+    "10n",
+    "[function]",
+    "Infinity",
+  ]);
+  const inPlace = {
+    method: "reorder",
+    arguments: ["list"],
+    output: "argument:0",
+    comparison: "exact",
+  };
+  const { suite } = buildCustomSuite(
+    { ...inPlace, params: [{ name: "head", type: "ListNode", kind: "list" }] },
+    [{ id: "a", input: ["[1,2,3]"], expected: "[1,2,3]" }],
+  );
+  const result = runJavascriptSuite("function reorder(head){ return; }", suite);
+  assert.equal(
+    result.results[0].passed,
+    true,
+    "in-place list argument is encoded",
+  );
+  assert.deepEqual(exampleOutputs("<strong>Output:</strong> &quot;abc&quot;"), [
+    '"abc"',
+  ]);
+});

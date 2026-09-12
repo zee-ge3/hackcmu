@@ -155,7 +155,15 @@ export function exampleOutputs(html) {
       /<strong>\s*Output:?\s*<\/strong>\s*(?:<(?:span|code)[^>]*>\s*)?([^<\n]*)/gi,
     ),
   ]
-    .map((m) => m[1].trim())
+    .map((m) =>
+      m[1]
+        .trim()
+        .replace(/&quot;/g, '"')
+        .replace(/&#0?39;/g, "'")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">")
+        .replace(/&amp;/g, "&"),
+    )
     .map((text) => {
       try {
         JSON.parse(text);

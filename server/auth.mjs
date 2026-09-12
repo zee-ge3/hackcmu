@@ -34,7 +34,13 @@ export function registerAuth(
         name: "Development user",
       });
     if (req.user) {
-      req.openaiKey = store.openaiKey(req.user.id);
+      // A key that no longer decrypts (secret rotated) must not take every route down.
+      try {
+        req.openaiKey = store.openaiKey(req.user.id);
+      } catch {
+        req.openaiKey = null;
+        store.setOpenaiKey(req.user.id, null);
+      }
       if (!req.openaiKey && devUserEmail && process.env.OPENAI_API_KEY) {
         req.openaiKey = process.env.OPENAI_API_KEY;
         req.devFallbackKey = true;
@@ -125,7 +131,7 @@ export function registerAuth(
   app.delete("/api/me/openai-key", requireUser, (req, res) => {
     store.setOpenaiKey(req.user.id, null);
     req.user = store.getUser(req.user.id);
-    req.devFallbackKey = false;
+    req.devFallbackKey = !!(devUserEmail && process.env.OPENAI_API_KEY);
     res.json({ user: me(req) });
   });
   app.delete("/api/me", requireUser, (req, res) => {

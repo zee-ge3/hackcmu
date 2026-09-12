@@ -366,11 +366,15 @@ export default function Debugger({
         : [],
     );
     if (snap) editor.revealLineInCenterIfOutsideViewport(snap.line);
-    return () => {
-      if (!snap)
-        decorations.current = editor.deltaDecorations(decorations.current, []);
-    };
   }, [snap, editor]);
+  // Clear the line highlight when the debugger goes away.
+  useEffect(
+    () => () => {
+      if (editor)
+        decorations.current = editor.deltaDecorations(decorations.current, []);
+    },
+    [editor],
+  );
   async function start() {
     run.current?.stop();
     setSteps([]);

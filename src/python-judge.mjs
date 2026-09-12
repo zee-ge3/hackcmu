@@ -25,6 +25,15 @@ def __decode(value, kind):
         return root
     return value
 
+def __safe(v, depth=0):
+    if isinstance(v, bool) or v is None or isinstance(v, str): return v
+    if isinstance(v, float): return v if v == v and v not in (float('inf'), float('-inf')) else str(v)
+    if isinstance(v, int): return v
+    if depth > 6: return '[…]'
+    if isinstance(v, (list, tuple, set, frozenset, __collections.deque)): return [__safe(x, depth + 1) for x in list(v)[:2000]]
+    if isinstance(v, dict): return {str(k): __safe(x, depth + 1) for k, x in list(v.items())[:2000]}
+    return repr(v)[:200]
+
 def __encode(value, kind):
     if kind == 'list':
         out, seen = [], set()
@@ -59,7 +68,15 @@ for __case in __suite['cases']:
         __fn = getattr(__env['Solution'](), __suite['method']) if 'Solution' in __env else __env.get(__suite['method'])
         if not callable(__fn): raise ValueError('Define Solution.' + __suite['method'] + ' using the supplied starter code.')
         __value = __fn(*__args)
-        __value = __args[int(__suite['output'].split(':')[1])] if __suite['output'].startswith('argument:') else __encode(__value,__suite['output'])
+        if __suite['output'].startswith('argument:'):
+            __i = int(__suite['output'].split(':')[1])
+            __value = __encode(__args[__i], __suite['arguments'][__i])
+        else:
+            __value = __encode(__value, __suite['output'])
+        try:
+            __json.dumps(__value, allow_nan=False)
+        except (TypeError, ValueError) as __e:
+            __value = __safe(__value)
         __results.append({'actual': __value})
     except Exception as __error:
         __results.append({'error':str(__error)})
@@ -150,7 +167,15 @@ try:
         __value = __fn(*__args)
     finally:
         __sys.settrace(None)
-    __value = __args[int(__suite['output'].split(':')[1])] if __suite['output'].startswith('argument:') else __encode(__value, __suite['output'])
+    if __suite['output'].startswith('argument:'):
+        __i = int(__suite['output'].split(':')[1])
+        __value = __encode(__args[__i], __suite['arguments'][__i])
+    else:
+        __value = __encode(__value, __suite['output'])
+    try:
+        __json.dumps(__value, allow_nan=False)
+    except (TypeError, ValueError):
+        __value = __safe(__value)
     __result = {'actual': __value, 'steps': __COUNT[0]}
 except Exception as __error:
     __result = {'error': str(__error), 'steps': __COUNT[0]}

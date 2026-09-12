@@ -9,13 +9,15 @@ export function TreeNode(val = 0, left = null, right = null) {
 }
 export function decode(value, type) {
   if (type === "list") {
+    if (!Array.isArray(value)) return null;
     let head = null;
     for (let i = value.length - 1; i >= 0; i--)
       head = new ListNode(value[i], head);
     return head;
   }
   if (type === "tree") {
-    if (!value.length || value[0] === null) return null;
+    if (!Array.isArray(value) || !value.length || value[0] === null)
+      return null;
     const root = new TreeNode(value[0]),
       queue = [root];
     let i = 1;
@@ -68,6 +70,39 @@ export function encode(value, type) {
   }
   return value;
 }
+// JSON with the values JSON would otherwise lose or conflate: non-finite
+// numbers, bigints, functions, undefined, and cycles.
+export function safeValue(value) {
+  const seen = new WeakSet();
+  const walk = (v) => {
+    if (typeof v === "bigint") return `${v}n`;
+    if (typeof v === "function") return "[function]";
+    if (typeof v === "number" && !Number.isFinite(v)) return String(v);
+    if (v === undefined) return undefined;
+    if (!v || typeof v !== "object") return v;
+    if (seen.has(v)) return "[cycle]";
+    seen.add(v);
+    if (v instanceof Map) return walk([...v]);
+    if (v instanceof Set) return walk([...v]);
+    if (Array.isArray(v))
+      return v.map((x) => (x === undefined ? null : walk(x)));
+    const out = {};
+    for (const [k, x] of Object.entries(v))
+      if (x !== undefined) out[k] = walk(x);
+    return out;
+  };
+  return walk(value);
+}
+const stable = (v) =>
+  JSON.stringify(v, (_k, x) =>
+    typeof x === "number" && !Number.isFinite(x)
+      ? String(x)
+      : typeof x === "bigint"
+        ? `${x}n`
+        : x === undefined
+          ? "__undefined__"
+          : x,
+  );
 export function matches(actual, expected, comparison = "exact") {
   const normalize = (value) => {
     if (!Array.isArray(value)) return value;
@@ -83,9 +118,7 @@ export function matches(actual, expected, comparison = "exact") {
       );
     return value;
   };
-  return (
-    JSON.stringify(normalize(actual)) === JSON.stringify(normalize(expected))
-  );
+  return stable(normalize(actual)) === stable(normalize(expected));
 }
 export function invokeJavascript(code, suite, inputs, consoleObject = console) {
   if (!/^[A-Za-z_$][\w$]*$/.test(suite.method))
@@ -100,9 +133,11 @@ export function invokeJavascript(code, suite, inputs, consoleObject = console) {
   if (!fn)
     throw new Error(`Define ${suite.method} using the supplied starter code.`);
   const result = fn(...args);
-  return suite.output.startsWith("argument:")
-    ? args[Number(suite.output.split(":")[1])]
-    : encode(result, suite.output);
+  if (suite.output.startsWith("argument:")) {
+    const i = Number(suite.output.split(":")[1]);
+    return encode(args[i], suite.arguments[i]);
+  }
+  return encode(result, suite.output);
 }
 export function summarize(suite, results) {
   const passed = results.filter((r) => r.passed).length;
@@ -152,7 +187,9 @@ export function summarize(suite, results) {
 export function runJavascriptSuite(code, suite, consoleObject = console) {
   const results = suite.cases.map((c) => {
     try {
-      const actual = invokeJavascript(code, suite, c.input, consoleObject);
+      const actual = safeValue(
+        invokeJavascript(code, suite, c.input, consoleObject),
+      );
       return {
         ...c,
         actual,

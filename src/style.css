@@ -4301,3 +4301,48 @@ select {
   padding-left: 18px;
   font-size: 12px;
 }
+.clock small {
+  font-size: 11px;
+  color: var(--muted);
+  margin-left: 2px;
+}
+.clock.over {
+  color: #b5533f;
+}
+.feedback-transcript {
+  margin-top: 18px;
+  font-size: 12px;
+}
+.feedback-transcript summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--muted);
+}
+.feedback-turns {
+  max-height: 260px;
+  overflow: auto;
+  margin-top: 10px;
+  padding-right: 6px;
+}
+button.problem-row {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-radius: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  justify-content: flex-start;
+}
+button.problem-row:hover {
+  background: #f1f4ec;
+}
+button.problem-row.pinned {
+  background: var(--accent-soft);
+}
+button.problem-row.pinned .problem-id {
+  color: var(--accent);
+}
+.card h2 small.hint {
+  margin-left: auto;
+  font-size: 11px;
+}

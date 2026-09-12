@@ -1,5 +1,5 @@
 import { parse } from "acorn";
-import { decode, encode, matches } from "./judge.mjs";
+import { decode, encode, matches, safeValue } from "./judge.mjs";
 
 // Names bound by a declaration pattern (`const {a, b: [c]} = …` → a, c).
 function patternNames(node, out = []) {
@@ -56,13 +56,23 @@ export function instrument(code, tracer = "__t") {
     allowAwaitOutsideFunction: true,
   });
   const edits = [];
+  // Innermost declaration of a name decides: if the nearest scope declares it
+  // later than `pos`, the outer binding is shadowed and reading it would hit
+  // the temporal dead zone, so the name is left out entirely.
   const visible = (scopes, pos) => {
-    const names = new Set();
+    const decided = new Map();
+    for (let i = scopes.length - 1; i >= 0; i--)
+      for (const v of scopes[i])
+        if (!decided.has(v.name))
+          decided.set(v.name, v.hoisted || v.end <= pos);
+    decided.delete(tracer);
+    decided.delete("arguments");
+    // Outer-to-inner order keeps snapshots stable for the visualizer.
+    const names = [];
     for (const scope of scopes)
-      for (const v of scope) if (v.hoisted || v.end <= pos) names.add(v.name);
-    names.delete(tracer);
-    names.delete("arguments");
-    return [...names];
+      for (const v of scope)
+        if (decided.get(v.name) && !names.includes(v.name)) names.push(v.name);
+    return names;
   };
   const thunk = (scopes, pos) => {
     const names = visible(scopes, pos);
@@ -107,21 +117,31 @@ export function instrument(code, tracer = "__t") {
   }
   function visitStatements(list, scopes) {
     const scope = scopes.at(-1);
+    // Block-scoped names are known from block entry so that an outer binding
+    // they shadow is never captured before the inner declaration runs.
+    for (const stmt of list) {
+      if (stmt.type === "VariableDeclaration" && stmt.kind !== "var")
+        for (const d of stmt.declarations)
+          for (const name of patternNames(d.id))
+            scope.push({ name, hoisted: false, end: stmt.end });
+      else if (stmt.type === "ClassDeclaration" && stmt.id)
+        scope.push({ name: stmt.id.name, hoisted: false, end: stmt.end });
+    }
     for (const stmt of list) visitStatement(stmt, scopes, scope, true);
   }
   // `wrap` is false when the statement is the lone body of if/for/while without
   // braces; then the tracer call is added together with surrounding braces.
-  function visitStatement(stmt, scopes, scope, inList) {
-    const skip = [
-      "FunctionDeclaration",
-      "ClassDeclaration",
-      "EmptyStatement",
-    ].includes(stmt.type);
+  function visitStatement(stmt, scopes, scope, inList, noTrace = false) {
+    const skip =
+      noTrace ||
+      ["FunctionDeclaration", "ClassDeclaration", "EmptyStatement"].includes(
+        stmt.type,
+      );
     if (!skip && stmt.type !== "ReturnStatement") {
       if (inList) edits.push({ pos: stmt.start, text: call(stmt, scopes) });
       else {
         edits.push({ pos: stmt.start, text: "{" + call(stmt, scopes) });
-        edits.push({ pos: stmt.end, text: "}" });
+        edits.push({ pos: stmt.end, text: "}", closer: true });
       }
     }
     switch (stmt.type) {
@@ -142,7 +162,7 @@ export function instrument(code, tracer = "__t") {
           });
         if (!inList) {
           edits.push({ pos: stmt.start, text: "{" });
-          edits.push({ pos: stmt.end, text: "}" });
+          edits.push({ pos: stmt.end, text: "}", closer: true });
         }
         break;
       }
@@ -151,7 +171,8 @@ export function instrument(code, tracer = "__t") {
         if (stmt.kind !== "var")
           for (const d of stmt.declarations)
             for (const name of patternNames(d.id))
-              scope.push({ name, hoisted: false, end: stmt.end });
+              if (!scope.some((v) => v.name === name && v.end === stmt.end))
+                scope.push({ name, hoisted: false, end: stmt.end });
         break;
       case "FunctionDeclaration":
         visitFunction(stmt, scopes);
@@ -219,15 +240,16 @@ export function instrument(code, tracer = "__t") {
         break;
       case "SwitchStatement": {
         visitExpression(stmt.discriminant, scopes);
-        const inner = [...scopes, []];
         for (const c of stmt.cases) {
-          visitExpression(c.test, inner);
-          visitStatements(c.consequent, inner);
+          visitExpression(c.test, scopes);
+          visitStatements(c.consequent, [...scopes, []]);
         }
         break;
       }
       case "LabeledStatement":
-        visitSingle(stmt.body, scopes);
+        // The tracer call already precedes the label; the loop itself must
+        // stay directly under the label for `break`/`continue label` to work.
+        visitStatement(stmt.body, scopes, scope, true, true);
         break;
       default:
         visitExpression(stmt, scopes);
@@ -248,7 +270,11 @@ export function instrument(code, tracer = "__t") {
         for (const name of patternNames(d.id))
           program.push({ name, hoisted: true, end: 0 });
   }
-  edits.sort((a, b) => b.pos - a.pos);
+  // Later positions first; at the same position a closing brace must end up
+  // before the next statement's tracer call, so it is inserted last.
+  edits.sort(
+    (a, b) => b.pos - a.pos || (a.closer ? 1 : 0) - (b.closer ? 1 : 0),
+  );
   let out = code;
   for (const e of edits) out = out.slice(0, e.pos) + e.text + out.slice(e.pos);
   return out;
@@ -409,9 +435,14 @@ export function runJavascriptTrace(
         `Define ${suite.method} using the supplied starter code.`,
       );
     const result = fn(...args);
-    const actual = suite.output.startsWith("argument:")
-      ? args[Number(suite.output.split(":")[1])]
-      : encode(result, suite.output);
+    const argIndex = suite.output.startsWith("argument:")
+      ? Number(suite.output.split(":")[1])
+      : -1;
+    const actual = safeValue(
+      argIndex >= 0
+        ? encode(args[argIndex], suite.arguments[argIndex])
+        : encode(result, suite.output),
+    );
     tracer.flush();
     return {
       ok: matches(actual, testCase.expected, suite.comparison),
