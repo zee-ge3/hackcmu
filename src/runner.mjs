@@ -1,4 +1,4 @@
-export function runCode(code, language) {
+export function runCode(code, language, suite = null) {
   return new Promise((resolve) => {
     const worker = new Worker(new URL("./runner.worker.js", import.meta.url), {
       type: "module",
@@ -20,6 +20,6 @@ export function runCode(code, language) {
       worker.terminate();
       resolve({ ok: false, output: e.message });
     };
-    worker.postMessage({ code, language });
+    worker.postMessage({ code, language, suite });
   });
 }

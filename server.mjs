@@ -1,5 +1,5 @@
 import express from "express";
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
 import { randomUUID, randomBytes } from "node:crypto";
 import sanitizeHtml from "sanitize-html";
 import { createServer as createViteServer } from "vite";
@@ -15,9 +15,20 @@ import {
 const app = express();
 const port = Number(process.env.PORT || 3000);
 const origin = `http://localhost:${port}`;
+const suites = new Map();
+for (const file of await readdir(
+  new URL("./data/test-suites/", import.meta.url),
+)) {
+  if (file.endsWith(".json")) {
+    const suite = JSON.parse(
+      await readFile(new URL("./data/test-suites/" + file, import.meta.url)),
+    );
+    suites.set(suite.slug, suite);
+  }
+}
 const catalog = JSON.parse(
   await readFile(new URL("./data/leetcode.json", import.meta.url)),
-);
+).map((p) => ({ ...p, testCount: suites.get(p.slug)?.cases.length || 0 }));
 const sessions = new Map();
 const owners = new Set();
 app.use(express.json({ limit: "1mb" }));
@@ -124,7 +135,11 @@ app.post("/api/interviews", async (req, res) => {
   const problems = await Promise.all(
     pool
       .slice(0, count)
-      .map(async (p) => ({ ...p, ...(await detail(p.slug)) })),
+      .map(async (p) => ({
+        ...p,
+        ...(await detail(p.slug)),
+        testSuite: suites.get(p.slug) || null,
+      })),
   );
   const s = {
     id: randomUUID(),
@@ -280,6 +295,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
         content: JSON.stringify({
           problem: {
             title: problem.title,
+            preparedTests: problem.testCount,
             statement: sanitizeHtml(problem.content, {
               allowedTags: [],
               allowedAttributes: {},
@@ -309,7 +325,7 @@ app.post("/api/interviews/:id/agent", async (req, res) => {
       ),
       tool(
         "run_code",
-        "Ask the browser to execute the current editor. Add runnable example calls or assertions first if needed. Execution results arrive in a later request; do not claim success now.",
+        "Run the prepared test suite in the browser when available; otherwise execute the file as a scratchpad. Prepared suites are loaded from disk, never generated during the interview. No need to add calls to the editor for prepared tests. Results arrive after this response; do not claim success until you receive them.",
         {},
       ),
     ];

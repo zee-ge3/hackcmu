@@ -8,7 +8,9 @@
     "build": "vite build",
     "test": "node --test tests/*.test.mjs",
     "test:browser": "node tests/browser-smoke.mjs",
-    "start": "NODE_ENV=production node --env-file=.env server.mjs"
+    "start": "NODE_ENV=production node --env-file=.env server.mjs",
+    "tests:generate": "node scripts/generate-test-suites.mjs",
+    "test:judge": "node tests/judge-browser.mjs"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",

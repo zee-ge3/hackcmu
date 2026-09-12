@@ -1,0 +1,464 @@
+{
+  "version": 1,
+  "slug": "valid-anagram",
+  "method": "isAnagram",
+  "arguments": [
+    "json",
+    "json"
+  ],
+  "output": "json",
+  "comparison": "exact",
+  "provenance": "Deterministic offline cases. Expected values cross-checked between an independent oracle and reference implementation.",
+  "cases": [
+    {
+      "id": "case-1",
+      "name": "Example / boundary 1",
+      "kind": "example",
+      "input": [
+        "anagram",
+        "nagaram"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-2",
+      "name": "Example / boundary 2",
+      "kind": "example",
+      "input": [
+        "rat",
+        "car"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-3",
+      "name": "Example / boundary 3",
+      "kind": "example",
+      "input": [
+        "a",
+        "a"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-4",
+      "name": "Example / boundary 4",
+      "kind": "example",
+      "input": [
+        "ab",
+        "a"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-5",
+      "name": "Generated case 1",
+      "kind": "generated",
+      "input": [
+        "edcdcbedebcbcdcdedcfeba",
+        "abefcdedcdcbcbedebcdcde"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-6",
+      "name": "Generated case 2",
+      "kind": "generated",
+      "input": [
+        "dcfcfcfafcbedabedcdafa",
+        "afadcdebadebcfafcfcfcd"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-7",
+      "name": "Generated case 3",
+      "kind": "generated",
+      "input": [
+        "dcd",
+        "afcdcfafcfadabcfededaf"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-8",
+      "name": "Generated case 4",
+      "kind": "generated",
+      "input": [
+        "bcdcfcdadadefcb",
+        "ab"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-9",
+      "name": "Generated case 5",
+      "kind": "generated",
+      "input": [
+        "bcbcbcfebefabcbcfa",
+        "afcbcbafebefcbcbcb"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-10",
+      "name": "Generated case 6",
+      "kind": "generated",
+      "input": [
+        "dedefedad",
+        "afe"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-11",
+      "name": "Generated case 7",
+      "kind": "generated",
+      "input": [
+        "ebcdededc",
+        "cdededcbe"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-12",
+      "name": "Generated case 8",
+      "kind": "generated",
+      "input": [
+        "dcfabefedadebadc",
+        "cdabedadefebafcd"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-13",
+      "name": "Generated case 9",
+      "kind": "generated",
+      "input": [
+        "fafafe",
+        "efafaf"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-14",
+      "name": "Generated case 10",
+      "kind": "generated",
+      "input": [
+        "badaf",
+        "efedcfafcbaba"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-15",
+      "name": "Generated case 11",
+      "kind": "generated",
+      "input": [
+        "ebabcdefcfcfabcd",
+        "eb"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-16",
+      "name": "Generated case 12",
+      "kind": "generated",
+      "input": [
+        "bcbafede",
+        "edefabcb"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-17",
+      "name": "Generated case 13",
+      "kind": "generated",
+      "input": [
+        "fcbcbabcbadcbedebcbebabeb",
+        "abebcfebafebabadedcd"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-18",
+      "name": "Generated case 14",
+      "kind": "generated",
+      "input": [
+        "fcdababebed",
+        "adebcfcdefadabedad"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-19",
+      "name": "Generated case 15",
+      "kind": "generated",
+      "input": [
+        "febc",
+        "cbef"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-20",
+      "name": "Generated case 16",
+      "kind": "generated",
+      "input": [
+        "dabcbedabefebefebcfad",
+        "cfedebebedafadcfadedcbcfc"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-21",
+      "name": "Generated case 17",
+      "kind": "generated",
+      "input": [
+        "adededcbad",
+        "afcba"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-22",
+      "name": "Generated case 18",
+      "kind": "generated",
+      "input": [
+        "ebcfcda",
+        "adcfcbe"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-23",
+      "name": "Generated case 19",
+      "kind": "generated",
+      "input": [
+        "babafcbabedefabab",
+        "abcbef"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-24",
+      "name": "Generated case 20",
+      "kind": "generated",
+      "input": [
+        "bafedcbefebabed",
+        "af"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-25",
+      "name": "Generated case 21",
+      "kind": "generated",
+      "input": [
+        "dcdebcdababadedabcfadaf",
+        "afefcbaba"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-26",
+      "name": "Generated case 22",
+      "kind": "generated",
+      "input": [
+        "efebed",
+        "ebaded"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-27",
+      "name": "Generated case 23",
+      "kind": "generated",
+      "input": [
+        "fcbadabefcfcf",
+        "cdcfafedede"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-28",
+      "name": "Generated case 24",
+      "kind": "generated",
+      "input": [
+        "cdcbcfafcba",
+        "abcfafcbcdc"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-29",
+      "name": "Generated case 25",
+      "kind": "generated",
+      "input": [
+        "fcbcfcfcdefcbcdefcbcfeba",
+        "abefcbcfedcbcfedcfcfcbcf"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-30",
+      "name": "Generated case 26",
+      "kind": "generated",
+      "input": [
+        "fedafafafcfefafebebe",
+        "ebebefafefcfafafadef"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-31",
+      "name": "Generated case 27",
+      "kind": "generated",
+      "input": [
+        "fade",
+        "edaf"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-32",
+      "name": "Generated case 28",
+      "kind": "generated",
+      "input": [
+        "d",
+        "cde"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-33",
+      "name": "Generated case 29",
+      "kind": "generated",
+      "input": [
+        "afefcfc",
+        "cfcfefa"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-34",
+      "name": "Generated case 30",
+      "kind": "generated",
+      "input": [
+        "fa",
+        "af"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-35",
+      "name": "Generated case 31",
+      "kind": "generated",
+      "input": [
+        "dadcfcdcbcfedcbe",
+        "ebcdefcbcdcfcdad"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-36",
+      "name": "Generated case 32",
+      "kind": "generated",
+      "input": [
+        "bafafafadaf",
+        "abeb"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-37",
+      "name": "Generated case 33",
+      "kind": "generated",
+      "input": [
+        "defcfcdcbebafefcdedebaba",
+        "ababededcfefabebcdcfcfed"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-38",
+      "name": "Generated case 34",
+      "kind": "generated",
+      "input": [
+        "baf",
+        "edeb"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-39",
+      "name": "Generated case 35",
+      "kind": "generated",
+      "input": [
+        "dcfebefebefefcfed",
+        "efafefcdcdadabefabe"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-40",
+      "name": "Generated case 36",
+      "kind": "generated",
+      "input": [
+        "eb",
+        "abebcfcbcbcbefefababcbebc"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-41",
+      "name": "Generated case 37",
+      "kind": "generated",
+      "input": [
+        "cbcbabebcbcde",
+        "edcbcbebabcbc"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-42",
+      "name": "Generated case 38",
+      "kind": "generated",
+      "input": [
+        "fedafcbada",
+        "adabcfadef"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-43",
+      "name": "Generated case 39",
+      "kind": "generated",
+      "input": [
+        "bebafefedcdededafaba",
+        "abafadededcdefefabeb"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-44",
+      "name": "Generated case 40",
+      "kind": "generated",
+      "input": [
+        "bebabedcdede",
+        "ededcdebabeb"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-45",
+      "name": "Large input 1",
+      "kind": "large",
+      "input": [
+        "abcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabcabc",
+        "cbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacbacba"
+      ],
+      "expected": true
+    }
+  ]
+}

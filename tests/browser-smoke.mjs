@@ -109,6 +109,17 @@ try {
       document.querySelector(".console-heading>span")?.textContent !== "Ready",
   );
   assert.ok((await page.locator(".console pre").innerText()).includes("[0,1]"));
+  await page.getByRole("button", { name: "Run tests", exact: false }).click();
+  await page.waitForFunction(
+    () =>
+      document.querySelector(".console-heading>span")?.textContent ===
+      "44/44 passed",
+  );
+  assert.ok(
+    (await page.locator(".console pre").innerText()).includes(
+      "44/44 tests passed",
+    ),
+  );
   const python = await page.evaluate(async () => {
     const { runCode } = await import("/src/runner.mjs");
     return runCode("print(sum([1,2,3]))", "python3");
@@ -176,7 +187,12 @@ try {
         ),
       ),
     );
-  if(liveTest)assert.equal(await page.locator('.room-error').count(),0,(await page.locator('.room-error').allTextContents()).join(' '));
+  if (liveTest)
+    assert.equal(
+      await page.locator(".room-error").count(),
+      0,
+      (await page.locator(".room-error").allTextContents()).join(" "),
+    );
   await page.screenshot({ path: "/tmp/pairwise-feedback.png", fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.screenshot({

@@ -1,0 +1,445 @@
+{
+  "version": 1,
+  "slug": "valid-parentheses",
+  "method": "isValid",
+  "arguments": [
+    "json"
+  ],
+  "output": "json",
+  "comparison": "exact",
+  "provenance": "Deterministic offline cases. Expected values cross-checked between an independent oracle and reference implementation.",
+  "cases": [
+    {
+      "id": "case-1",
+      "name": "Example / boundary 1",
+      "kind": "example",
+      "input": [
+        "()"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-2",
+      "name": "Example / boundary 2",
+      "kind": "example",
+      "input": [
+        "()[]{}"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-3",
+      "name": "Example / boundary 3",
+      "kind": "example",
+      "input": [
+        "(]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-4",
+      "name": "Example / boundary 4",
+      "kind": "example",
+      "input": [
+        "([)]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-5",
+      "name": "Example / boundary 5",
+      "kind": "example",
+      "input": [
+        "{[]}"
+      ],
+      "expected": true
+    },
+    {
+      "id": "case-6",
+      "name": "Example / boundary 6",
+      "kind": "example",
+      "input": [
+        "("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-7",
+      "name": "Example / boundary 7",
+      "kind": "example",
+      "input": [
+        ")"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-8",
+      "name": "Generated case 1",
+      "kind": "generated",
+      "input": [
+        ")})]])}}})"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-9",
+      "name": "Generated case 2",
+      "kind": "generated",
+      "input": [
+        "({[("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-10",
+      "name": "Generated case 3",
+      "kind": "generated",
+      "input": [
+        ")))]}}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-11",
+      "name": "Generated case 4",
+      "kind": "generated",
+      "input": [
+        "{[(("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-12",
+      "name": "Generated case 5",
+      "kind": "generated",
+      "input": [
+        "}})]]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-13",
+      "name": "Generated case 6",
+      "kind": "generated",
+      "input": [
+        "({[([{[{("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-14",
+      "name": "Generated case 7",
+      "kind": "generated",
+      "input": [
+        "]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-15",
+      "name": "Generated case 8",
+      "kind": "generated",
+      "input": [
+        "{[{["
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-16",
+      "name": "Generated case 9",
+      "kind": "generated",
+      "input": [
+        "]}}})"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-17",
+      "name": "Generated case 10",
+      "kind": "generated",
+      "input": [
+        "{([{{("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-18",
+      "name": "Generated case 11",
+      "kind": "generated",
+      "input": [
+        "}}}})]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-19",
+      "name": "Generated case 12",
+      "kind": "generated",
+      "input": [
+        "{{{{[{{"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-20",
+      "name": "Generated case 13",
+      "kind": "generated",
+      "input": [
+        ")"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-21",
+      "name": "Generated case 14",
+      "kind": "generated",
+      "input": [
+        "(([([{"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-22",
+      "name": "Generated case 15",
+      "kind": "generated",
+      "input": [
+        "]}}}}}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-23",
+      "name": "Generated case 16",
+      "kind": "generated",
+      "input": [
+        "({{{"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-24",
+      "name": "Generated case 17",
+      "kind": "generated",
+      "input": [
+        "]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-25",
+      "name": "Generated case 18",
+      "kind": "generated",
+      "input": [
+        "[[("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-26",
+      "name": "Generated case 19",
+      "kind": "generated",
+      "input": [
+        "])}]]))"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-27",
+      "name": "Generated case 20",
+      "kind": "generated",
+      "input": [
+        "[[{[[{("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-28",
+      "name": "Generated case 21",
+      "kind": "generated",
+      "input": [
+        "]}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-29",
+      "name": "Generated case 22",
+      "kind": "generated",
+      "input": [
+        "["
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-30",
+      "name": "Generated case 23",
+      "kind": "generated",
+      "input": [
+        "})]})))"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-31",
+      "name": "Generated case 24",
+      "kind": "generated",
+      "input": [
+        "({({("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-32",
+      "name": "Generated case 25",
+      "kind": "generated",
+      "input": [
+        "]]]})]])}}])"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-33",
+      "name": "Generated case 26",
+      "kind": "generated",
+      "input": [
+        "{[[({"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-34",
+      "name": "Generated case 27",
+      "kind": "generated",
+      "input": [
+        "}]"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-35",
+      "name": "Generated case 28",
+      "kind": "generated",
+      "input": [
+        "{[({{"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-36",
+      "name": "Generated case 29",
+      "kind": "generated",
+      "input": [
+        ")]}])}]])"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-37",
+      "name": "Generated case 30",
+      "kind": "generated",
+      "input": [
+        "{([[({("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-38",
+      "name": "Generated case 31",
+      "kind": "generated",
+      "input": [
+        "}}]}])])"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-39",
+      "name": "Generated case 32",
+      "kind": "generated",
+      "input": [
+        "[("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-40",
+      "name": "Generated case 33",
+      "kind": "generated",
+      "input": [
+        ")}))}}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-41",
+      "name": "Generated case 34",
+      "kind": "generated",
+      "input": [
+        "(([("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-42",
+      "name": "Generated case 35",
+      "kind": "generated",
+      "input": [
+        ")}))})}}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-43",
+      "name": "Generated case 36",
+      "kind": "generated",
+      "input": [
+        "{[[[[((["
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-44",
+      "name": "Generated case 37",
+      "kind": "generated",
+      "input": [
+        ")}}))}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-45",
+      "name": "Generated case 38",
+      "kind": "generated",
+      "input": [
+        "({{[("
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-46",
+      "name": "Generated case 39",
+      "kind": "generated",
+      "input": [
+        "}]}]]}))]}}}"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-47",
+      "name": "Generated case 40",
+      "kind": "generated",
+      "input": [
+        "{{"
+      ],
+      "expected": false
+    },
+    {
+      "id": "case-48",
+      "name": "Large input 1",
+      "kind": "large",
+      "input": [
+        "(((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((((())))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))"
+      ],
+      "expected": true
+    }
+  ]
+}

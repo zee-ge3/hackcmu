@@ -1,4 +1,6 @@
-self.onmessage = async ({ data: { code, language } }) => {
+import { runJavascriptSuite, matches, summarize } from "./judge.mjs";
+import { pythonJudge } from "./python-judge.mjs";
+self.onmessage = async ({ data: { code, language, suite } }) => {
   const lines = [];
   const log = (...args) => {
     if (lines.join("\n").length < 50000)
@@ -17,8 +19,36 @@ self.onmessage = async ({ data: { code, language } }) => {
         stdout: log,
         stderr: log,
       });
+      if (suite) {
+        py.globals.set("__candidate_code", code);
+        py.globals.set("__suite_json", JSON.stringify(suite));
+        const raw = JSON.parse(await py.runPythonAsync(pythonJudge));
+        const results = raw.map((r, i) => ({
+          ...suite.cases[i],
+          ...r,
+          passed:
+            !r.error &&
+            matches(r.actual, suite.cases[i].expected, suite.comparison),
+        }));
+        self.postMessage(summarize(suite, results));
+        return;
+      }
       await py.runPythonAsync(code);
     } else {
+      if (suite) {
+        self.postMessage(
+          runJavascriptSuite(code, suite, {
+            log,
+            error: log,
+            warn: log,
+            assert: (value, ...args) => {
+              if (!value)
+                throw new Error("Assertion failed: " + args.join(" "));
+            },
+          }),
+        );
+        return;
+      }
       const value = await new Function("console", `"use strict";\n${code}`)({
         log,
         error: log,

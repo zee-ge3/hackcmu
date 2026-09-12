@@ -1423,3 +1423,48 @@ select {
     font-size: 9px;
   }
 }
+.test-filter {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-top: 24px;
+  font-size: 11px;
+  color: #687b54;
+  cursor: pointer;
+}
+.test-filter input {
+  accent-color: #759a4e;
+}
+.test-filter small {
+  display: block;
+  color: #98a489;
+  font-size: 9px;
+  margin-top: 4px;
+}
+.test-count {
+  font-size: 8px;
+  opacity: 0.75;
+}
+.console:has(.failed) {
+  height: 230px;
+}
+.console:has(.failed) pre {
+  max-height: 175px;
+}
+.editor-toolbar .save-state {
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .editor-toolbar .save-state {
+    display: none;
+  }
+  .editor-toolbar {
+    padding: 0 8px;
+  }
+  .editor-toolbar > div {
+    gap: 5px;
+  }
+  .editor-toolbar .run {
+    padding: 6px 8px;
+  }
+}

@@ -1,9 +1,16 @@
 export function filterProblems(
   problems,
-  { companies = [], topics = [], difficulty = "all", search = "" } = {},
+  {
+    companies = [],
+    topics = [],
+    difficulty = "all",
+    search = "",
+    testedOnly = false,
+  } = {},
 ) {
   return problems.filter(
     (p) =>
+      (!testedOnly || p.testCount > 0) &&
       (difficulty === "all" || p.difficulty === difficulty) &&
       (!companies.length ||
         companies.some((c) => Object.hasOwn(p.companies, c))) &&

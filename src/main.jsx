@@ -57,6 +57,7 @@ async function api(path, body, method = "POST") {
   return d;
 }
 const defaultFilters = {
+  testedOnly: true,
   companies: [],
   topics: [],
   difficulty: "all",
@@ -288,6 +289,21 @@ function App() {
                   </button>
                 ))}
             </div>
+            <label className="test-filter">
+              <input
+                type="checkbox"
+                checked={filters.testedOnly}
+                onChange={(e) =>
+                  setFilters({ ...filters, testedOnly: e.target.checked })
+                }
+              />
+              <span>
+                Problems with prepared tests only{" "}
+                <small>
+                  {catalog.filter((p) => p.testCount > 0).length} available
+                </small>
+              </span>
+            </label>
             <div className="two-fields">
               <div>
                 <label className="field-label" htmlFor="count">
@@ -692,7 +708,12 @@ function Workspace({ session: initial, onExit }) {
         state.current.index === target &&
         state.current.code === result.editor.code
       ) {
-        await execute(state.current.code);
+        await execute(
+          state.current.code,
+          initial.problems[state.current.index].testSuite
+            ? "tests"
+            : "scratchpad",
+        );
       }
       return message;
     } catch (e) {
@@ -749,10 +770,11 @@ function Workspace({ session: initial, onExit }) {
     live.current = connection;
     void connection.connect(base + "/live");
   }
-  async function execute(value = state.current.code) {
+  async function execute(value = state.current.code, mode = "scratchpad") {
     const target = state.current.index;
     setRunning(true);
-    const result = await runCode(value, initial.language);
+    const suite = mode === "tests" ? initial.problems[target].testSuite : null;
+    const result = await runCode(value, initial.language, suite);
     if (state.current.index === target) {
       setOutput(result);
       state.current.runResult = result.output;
@@ -910,9 +932,9 @@ function Workspace({ session: initial, onExit }) {
                   can read and edit this file.
                 </p>
                 <p>
-                  Run executes the whole file. Add calls or assertions below
-                  your solution to check examples. A successful run is not a
-                  LeetCode judge verdict.
+                  Run executes the whole file. Run tests calls your solution
+                  automatically using the prepared suite. A suite pass is not a
+                  full LeetCode judge verdict.
                 </p>
                 <p>
                   Code runs in your browser with a 15-second limit. Python may
@@ -946,6 +968,22 @@ function Workspace({ session: initial, onExit }) {
             </span>
             <div>
               <span className="save-state">{saved}</span>
+              <button
+                className="run"
+                disabled={running || !problem.testSuite}
+                title={
+                  problem.testSuite
+                    ? `${problem.testCount} prepared tests`
+                    : "No prepared suite for this problem yet"
+                }
+                onClick={() => execute(state.current.code, "tests")}
+              >
+                <Check size={13} />
+                Run tests
+                {problem.testSuite && (
+                  <span className="test-count">{problem.testCount}</span>
+                )}
+              </button>
               <button
                 className="run"
                 disabled={running}
@@ -1006,7 +1044,13 @@ function Workspace({ session: initial, onExit }) {
             <div className="console-heading">
               <Terminal size={14} /> CONSOLE
               <span>
-                {output ? (output.ok ? "Finished" : "Error") : "Ready"}
+                {output
+                  ? output.total !== undefined
+                    ? `${output.passed}/${output.total} passed`
+                    : output.ok
+                      ? "Finished"
+                      : "Error"
+                  : "Ready"}
               </span>
               <button
                 aria-label="Clear console"
