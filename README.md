@@ -1,6 +1,6 @@
 # Pairwise
 
-A local web application for practicing live technical interviews with GPT-Live-1, a shared Monaco editor, and a Responses backend that can review and edit the candidate's code.
+A local web application for speech-to-speech coding and behavioral interview practice. GPT-Live-1 conducts the conversation, with a shared Monaco editor, résumé context, drawable whiteboard, and structured feedback.
 
 ## Run
 
@@ -15,7 +15,7 @@ cp .env.example .env
 npm run dev
 ```
 
-Open http://localhost:3000. Choose company tags, difficulty, topics, problem count (1–10), and JavaScript or Python. Choose an interviewer style (Supportive coach, Realistic interview, Socratic guide, or Senior-level deep dive), optionally edit its system prompt, and enter the room. Microphone access is requested automatically; Alex greets you once connected. This is speech-to-speech only: ask for hints, reviews, tests, and edits out loud. There is no chat input.
+Open http://localhost:3000 and choose Coding or Behavioral. Each mode has its own setup page. On `/coding`, choose company tags, difficulty, topics, problem count (1–10), and JavaScript or Python. Choose an interviewer style (Supportive coach, Realistic interview, Socratic guide, or Senior-level deep dive), optionally edit its system prompt, and enter the room. Microphone access is requested automatically; Alex greets you once connected. This is speech-to-speech only: ask for hints, reviews, tests, and edits out loud. There is no chat input.
 
 ```sh
 npm run build
@@ -84,3 +84,20 @@ npm run test:browser              # Includes the Run tests UI flow; no paid API 
 ```
 
 To add a problem, define its inputs, independent oracle, reference implementation, and adapter metadata in `scripts/test-problems.mjs`, add its constraint checks and a Python reference fixture, then run generation and verification. Increment the suite version when intentionally changing an existing suite’s grading behavior. Browser timing is a coarse safeguard, not a calibrated complexity benchmark.
+
+## Behavioral practice and whiteboard
+
+On `/behavioral`, upload a PDF, DOCX, or TXT résumé (up to 5 MB). The server uses `OPENAI_CONTEXT_MODEL` (default `gpt-5.6-luna`) to extract factual experience into a structured profile. Review and correct the extracted text, select a target role and focus, and choose Story coach, Hiring manager, or Leadership deep dive. The system prompt is editable. The reviewed résumé is supplied to both the voice interviewer and reasoning backend; Alex starts with a question about your background when connected.
+
+Behavioral feedback uses story structure, ownership and judgment, impact and evidence, collaboration and learning, and communication clarity. Scores reflect observed answers; résumé claims alone do not earn a score. The behavioral room shows résumé context and a whiteboard, without coding controls.
+
+Both modes include a whiteboard with pen, arrows, labels, eraser, undo, and clear. After a 1.4-second drawing pause, a PNG snapshot goes to the context model for a short description. The voice agent receives that description silently through `session.thinking.append`; the reasoning backend also receives the image when handling a spoken request. The UI reports pending, shared, and failed states and offers retry. Revision checks discard superseded image analysis. Code and drawing survive tab switches; each coding problem has its own drawing. Finishing or advancing flushes pending drawing changes before continuing.
+
+Uploaded documents are processed by OpenAI. Parsed résumé context and canvas snapshots live in server memory, scoped to the browser's owner cookie, and disappear on server restart. They are not written to the repository. Feedback exports include reviewed résumé text and drawing strokes, so exports may contain personal information.
+
+```sh
+npm run test:modes                # Mocked résumé, voice, vision, and feedback UI checks
+LIVE_MODES=1 npm run test:modes   # Real parsing, voice greeting/audio, vision, reasoning, feedback; incurs API usage
+```
+
+The mode tests use synthetic résumé data. The coding browser test also checks code/whiteboard switching. Unit tests cover document validation and stale vision responses. API implementation references: [document inputs](https://developers.openai.com/api/docs/guides/file-inputs) and [image inputs](https://developers.openai.com/api/docs/guides/images-vision).

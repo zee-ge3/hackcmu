@@ -38,6 +38,14 @@ await page.addInitScript(() => {
   };
 });
 if (!liveTest) {
+  await page.route("**/api/interviews/*/canvas", (route) =>
+    route.fulfill({
+      json: {
+        revision: route.request().postDataJSON().revision,
+        summary: "A drawn line.",
+      },
+    }),
+  );
   await page.route("**/api/interviews/*/live", (route) =>
     route.fulfill({
       status: 503,
@@ -72,7 +80,7 @@ if (!liveTest) {
   );
 }
 try {
-  await page.goto("http://localhost:3000");
+  await page.goto("http://localhost:3000/coding");
   await page.waitForSelector(".problem-row");
   await page
     .getByRole("button", { name: "Realistic interview", exact: false })
@@ -120,6 +128,28 @@ try {
       "44/44 tests passed",
     ),
   );
+  await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
+  const box = await page.getByLabel("Shared drawing canvas").boundingBox();
+  await page.mouse.move(box.x + 40, box.y + 50);
+  await page.mouse.down();
+  await page.mouse.move(box.x + 140, box.y + 90, { steps: 5 });
+  await page.mouse.up();
+  await page.waitForSelector('[data-status="shared"]', { timeout: 120000 });
+  const drawing = await page
+    .getByLabel("Shared drawing canvas")
+    .evaluate((c) => c.toDataURL());
+  await page.getByRole("button", { name: "Code", exact: true }).click();
+  await page.waitForFunction(() =>
+    document.querySelector(".monaco-editor")?.textContent.includes("twoSum"),
+  );
+  await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
+  assert.equal(
+    await page
+      .getByLabel("Shared drawing canvas")
+      .evaluate((c) => c.toDataURL()),
+    drawing,
+  );
+  await page.getByRole("button", { name: "Code", exact: true }).click();
   const python = await page.evaluate(async () => {
     const { runCode } = await import("/src/runner.mjs");
     return runCode("print(sum([1,2,3]))", "python3");

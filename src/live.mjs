@@ -1,6 +1,6 @@
 export class LiveConnection {
-  constructor({ onStatus, onEvent, onError }) {
-    Object.assign(this, { onStatus, onEvent, onError });
+  constructor({ onStatus, onEvent, onError, greeting }) {
+    Object.assign(this, { onStatus, onEvent, onError, greeting });
     this.ready = false;
     this.closed = false;
     this.pendingAppends = new Set();
@@ -57,7 +57,8 @@ export class LiveConnection {
           this.onStatus("live");
           this.greetingId = this.send(
             "session.instructions.append",
-            "Greet the candidate immediately now, following the configured interviewer style and instructions. Briefly introduce yourself as their AI interviewer, introduce the session, and ask them to read the current problem and explain their initial approach. Do not wait for them to speak first. Then pause and listen.",
+            this.greeting ||
+              "Greet the candidate immediately now, following the configured interviewer style and instructions. Briefly introduce yourself as their AI interviewer, introduce the session, and ask them to read the current problem and explain their initial approach. Do not wait for them to speak first. Then pause and listen.",
           );
         }
         if (

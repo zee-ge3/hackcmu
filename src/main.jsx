@@ -35,6 +35,10 @@ import { filterProblems } from "./domain.mjs";
 import { LiveConnection } from "./live.mjs";
 import { runCode } from "./runner.mjs";
 import "./style.css";
+import { api } from "./api.mjs";
+import { SiteHeader, Home, BehavioralSetup, ResumePane } from "./pages.jsx";
+import { behavioralRubric } from "./behavioral.mjs";
+import Whiteboard from "./Whiteboard.jsx";
 self.MonacoEnvironment = {
   getWorker: (_moduleId, label) =>
     ["javascript", "typescript"].includes(label)
@@ -42,20 +46,6 @@ self.MonacoEnvironment = {
       : new EditorWorker(),
 };
 loader.config({ monaco });
-async function api(path, body, method = "POST") {
-  const r = await fetch(path, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
-  });
-  const d = await r.json();
-  if (!r.ok)
-    throw Object.assign(new Error(d.error || "Request failed"), {
-      status: r.status,
-      data: d,
-    });
-  return d;
-}
 const defaultFilters = {
   testedOnly: true,
   companies: [],
@@ -63,7 +53,7 @@ const defaultFilters = {
   difficulty: "all",
   search: "",
 };
-function App() {
+function CodingSetup({ onStart }) {
   const [catalog, setCatalog] = useState([]),
     [configured, setConfigured] = useState(false),
     [filters, setFilters] = useState(defaultFilters),
@@ -71,7 +61,6 @@ function App() {
     [language, setLanguage] = useState("javascript"),
     [style, setStyle] = useState(interviewerPresets[0].id),
     [prompt, setPrompt] = useState(interviewerPresets[0].prompt),
-    [session, setSession] = useState(null),
     [loading, setLoading] = useState(false),
     [error, setError] = useState(""),
     [ready, setReady] = useState(false);
@@ -89,7 +78,7 @@ function App() {
     setLoading(true);
     setError("");
     try {
-      setSession(
+      onStart(
         await api("/api/interviews", {
           ...filters,
           count,
@@ -104,8 +93,6 @@ function App() {
       setLoading(false);
     }
   }
-  if (session)
-    return <Workspace session={session} onExit={() => setSession(null)} />;
   const companies = [
     ...new Set(catalog.flatMap((p) => Object.keys(p.companies))),
   ].sort();
@@ -119,36 +106,11 @@ function App() {
     }));
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <a className="brand" href="/">
-          <span className="brand-mark">
-            <Braces size={23} />
-          </span>
-          pairwise<span className="beta">BETA</span>
-        </a>
-        <nav>
-          <span className="nav-active">Practice</span>
-          <span className="nav-note">
-            A little practice. A lot more confidence.
-          </span>
-        </nav>
-        <div className="avatar">You</div>
-      </header>
-      <main className="setup">
-        <div className="intro">
-          <div className="eyebrow">
-            <span className="live-dot" /> YOUR NEXT ROLE STARTS HERE
-          </div>
-          <h1>
-            Great interviews
-            <br />
-            start with <span>practice.</span>
-          </h1>
-          <p>
-            A real conversation. A shared editor. An interviewer
-            <br className="desktop" /> who helps you think, not just find the
-            answer.
-          </p>
+      <main className="setup coding-setup">
+        <div className="page-heading">
+          <span className="eyebrow muted">CODING PRACTICE</span>
+          <h1>Find your next challenge.</h1>
+          <p>Choose your focus. The coding room stays yours.</p>
         </div>
         <div className="setup-grid">
           <section className="config card">
@@ -438,58 +400,6 @@ function App() {
             )}
           </section>
           <aside>
-            <section className="preview-card">
-              <div className="preview-heading">
-                <span className="eyebrow">A SPACE TO THINK OUT LOUD</span>
-                <Headphones size={21} />
-              </div>
-              <div className="orb-scene">
-                <div className="orbit one" />
-                <div className="orbit two" />
-                <div className="orb">
-                  <div className="wave">
-                    {[14, 25, 39, 21, 49, 31, 19].map((h, i) => (
-                      <i key={i} style={{ height: h }} />
-                    ))}
-                  </div>
-                </div>
-                <span className="floating-label">
-                  <span className="live-dot" /> Alex · Your AI interviewer
-                </span>
-              </div>
-              <h2>More than a coding test.</h2>
-              <p>
-                Talk through your approach, ask a question, or take a moment to
-                think. Alex is right there with you.
-              </p>
-              <div className="feature">
-                <Mic size={17} />
-                <div>
-                  <strong>A conversation that flows</strong>
-                  <span>Natural voice, interruptions welcome.</span>
-                </div>
-              </div>
-              <div className="feature">
-                <Code2 size={17} />
-                <div>
-                  <strong>One editor, two perspectives</strong>
-                  <span>Write, run, and review code together.</span>
-                </div>
-              </div>
-              <div className="feature">
-                <ArrowUpRight size={17} />
-                <div>
-                  <strong>Leave with a next step</strong>
-                  <span>Feedback grounded in your actual work.</span>
-                </div>
-              </div>
-              <div className="powered">
-                <span className="live-dot" /> Powered by GPT-Live-1{" "}
-                <span>
-                  {configured ? "Ready to connect" : "API key needed"}
-                </span>
-              </div>
-            </section>
             <section className="library card">
               <div className="library-title">
                 <div>
@@ -541,10 +451,48 @@ function App() {
     </div>
   );
 }
+function App() {
+  const [path, setPath] = useState(window.location.pathname),
+    [session, setSession] = useState(null);
+  function navigate(url) {
+    window.history.pushState({}, "", url);
+    setPath(url);
+    setSession(null);
+    window.scrollTo(0, 0);
+  }
+  useEffect(() => {
+    const back = () => {
+      setPath(window.location.pathname);
+      setSession(null);
+    };
+    window.addEventListener("popstate", back);
+    return () => window.removeEventListener("popstate", back);
+  }, []);
+  if (session)
+    return <Workspace session={session} onExit={() => setSession(null)} />;
+  return (
+    <div className="app-shell">
+      <SiteHeader path={path} navigate={navigate} />
+      {path === "/coding" ? (
+        <CodingSetup onStart={setSession} />
+      ) : path === "/behavioral" ? (
+        <BehavioralSetup onStart={setSession} />
+      ) : (
+        <Home navigate={navigate} />
+      )}
+    </div>
+  );
+}
 function Workspace({ session: initial, onExit }) {
+  const isBehavioral = initial.mode === "behavioral";
+  const gradingRubric = isBehavioral ? behavioralRubric : rubric;
+  const [workspaceTab, setWorkspaceTab] = useState(
+    isBehavioral ? "canvas" : "code",
+  );
+  const boards = useRef({});
   const [index, setIndex] = useState(0),
     [editors, setEditors] = useState(initial.editors),
-    [code, setCode] = useState(initial.editors[0].code),
+    [code, setCode] = useState(initial.editors[0]?.code || ""),
     [voice, setVoice] = useState("offline"),
     [muted, setMuted] = useState(false),
     [transcript, setTranscript] = useState([]),
@@ -562,7 +510,7 @@ function Workspace({ session: initial, onExit }) {
   const state = useRef({
       index: 0,
       editors: initial.editors,
-      code: initial.editors[0].code,
+      code: initial.editors[0]?.code || "",
       transcript: [],
       busy: false,
       runResult: "",
@@ -605,6 +553,7 @@ function Workspace({ session: initial, onExit }) {
     } catch {}
   }
   function save() {
+    if (isBehavioral) return Promise.resolve();
     const target = state.current.index,
       value = state.current.code;
     const task = async () => {
@@ -661,7 +610,7 @@ function Workspace({ session: initial, onExit }) {
       if (delegationId)
         live.current?.send(
           "session.commentary.append",
-          "A code review is already in progress. Please wait for its result.",
+          "A review is already in progress. Please wait for its result.",
           delegationId,
         );
       return;
@@ -731,6 +680,16 @@ function Workspace({ session: initial, onExit }) {
   }
   function onLiveEvent(e) {
     if (
+      e.type === "session.started" &&
+      boards.current[state.current.index]?.summary
+    ) {
+      live.current?.send(
+        "session.thinking.append",
+        "Current whiteboard: " +
+          boards.current[state.current.index].summary.slice(0, 900),
+      );
+    }
+    if (
       [
         "session.input_transcript.delta",
         "session.output_transcript.delta",
@@ -754,7 +713,7 @@ function Workspace({ session: initial, onExit }) {
       e.delegation.target === "client"
     )
       void ask(
-        "Respond to the latest spoken request using the conversation and current editor.",
+        "Respond to the latest spoken request using the conversation and available interview context.",
         e.delegation.id,
       );
   }
@@ -763,6 +722,9 @@ function Workspace({ session: initial, onExit }) {
     setMuted(false);
     state.current.segment++;
     const connection = new LiveConnection({
+      greeting: isBehavioral
+        ? "Greet the candidate immediately, introduce yourself as their AI behavioral interviewer, and ask one introductory question grounded in their resume. Follow the configured style. Do not ask them to code. Then listen."
+        : undefined,
       onStatus: setVoice,
       onEvent: onLiveEvent,
       onError: setError,
@@ -794,6 +756,7 @@ function Workspace({ session: initial, onExit }) {
     if (state.current.busy) return;
     try {
       await save();
+      await boards.current[state.current.index]?.flush?.();
       const nextIndex = index + 1;
       await api(base + "/current", { index: nextIndex });
       state.current.index = nextIndex;
@@ -818,6 +781,7 @@ function Workspace({ session: initial, onExit }) {
     setError("");
     try {
       await save();
+      await boards.current[state.current.index]?.flush?.();
       await live.current?.close();
       const result = await api(base + "/feedback", {
         transcript: state.current.transcript,
@@ -836,6 +800,9 @@ function Workspace({ session: initial, onExit }) {
       [
         JSON.stringify(
           {
+            mode: initial.mode,
+            resume: initial.resume,
+            whiteboards: boards.current,
             problems: initial.problems.map((p) => p.title),
             language: initial.language,
             editors: state.current.editors,
@@ -865,8 +832,15 @@ function Workspace({ session: initial, onExit }) {
           pairwise
         </span>
         <div className="room-label">
-          PRACTICE ROOM <span>/</span> {String(index + 1).padStart(2, "0")} OF{" "}
-          {String(initial.problems.length).padStart(2, "0")}
+          {isBehavioral ? (
+            "BEHAVIORAL INTERVIEW"
+          ) : (
+            <>
+              PRACTICE ROOM <span>/</span>
+              {String(index + 1).padStart(2, "0")} OF{" "}
+              {String(initial.problems.length).padStart(2, "0")}
+            </>
+          )}
         </div>
         <div className="room-actions">
           <span className="clock">
@@ -885,186 +859,244 @@ function Workspace({ session: initial, onExit }) {
         </div>
       </header>
       <div className="room-body">
-        <section className="statement-pane">
-          <div className="pane-tabs">
-            <button
-              className={tab === "problem" ? "active" : ""}
-              onClick={() => setTab("problem")}
-            >
-              Problem
-            </button>
-            <button
-              className={tab === "notes" ? "active" : ""}
-              onClick={() => setTab("notes")}
-            >
-              Session guide
-            </button>
-          </div>
-          <div className="statement-scroll">
-            {tab === "problem" ? (
-              <>
-                <div className="eyebrow muted">
-                  PROBLEM {index + 1} / {initial.problems.length}
-                </div>
-                <h1>{problem.title}</h1>
-                <div className="problem-meta">
-                  <span className={"difficulty " + problem.difficulty}>
-                    {problem.difficulty}
-                  </span>
-                  {problem.tags.map((t) => (
-                    <span key={t}>{t}</span>
-                  ))}
-                </div>
-                <article
-                  className="statement"
-                  dangerouslySetInnerHTML={{ __html: problem.content }}
-                />
-              </>
-            ) : (
-              <>
-                <h2>Think out loud.</h2>
-                <p>
-                  Clarify the inputs. Explain your approach. Walk through an
-                  example before you start coding.
-                </p>
-                <p>
-                  Ask Alex for a hint, a code review, or an example test. Alex
-                  can read and edit this file.
-                </p>
-                <p>
-                  Run executes the whole file. Run tests calls your solution
-                  automatically using the prepared suite. A suite pass is not a
-                  full LeetCode judge verdict.
-                </p>
-                <p>
-                  Code runs in your browser with a 15-second limit. Python may
-                  take a moment to load.
-                </p>
-              </>
-            )}
-          </div>
-          <div className="problem-bottom">
-            <a
-              target="_blank"
-              rel="noreferrer"
-              href={`https://leetcode.com/problems/${problem.slug}/`}
-            >
-              View on LeetCode
-              <ArrowUpRight size={14} />
-            </a>
-            {index < initial.problems.length - 1 && (
-              <button className="quiet" onClick={next} disabled={busy}>
-                Next problem
-                <ChevronRight size={16} />
-              </button>
-            )}
-          </div>
-        </section>
-        <section className="editor-pane">
-          <div className="editor-toolbar">
-            <span>
-              <Code2 size={16} />
-              {initial.language === "python3" ? "solution.py" : "solution.js"}
-            </span>
-            <div>
-              <span className="save-state">{saved}</span>
+        {isBehavioral ? (
+          <ResumePane
+            resume={initial.resume}
+            targetRole={initial.targetRole}
+            focus={initial.focus}
+          />
+        ) : (
+          <section className="statement-pane">
+            <div className="pane-tabs">
               <button
-                className="run"
-                disabled={running || !problem.testSuite}
-                title={
-                  problem.testSuite
-                    ? `${problem.testCount} prepared tests`
-                    : "No prepared suite for this problem yet"
-                }
-                onClick={() => execute(state.current.code, "tests")}
+                className={tab === "problem" ? "active" : ""}
+                onClick={() => setTab("problem")}
               >
-                <Check size={13} />
-                Run tests
-                {problem.testSuite && (
-                  <span className="test-count">{problem.testCount}</span>
-                )}
+                Problem
               </button>
               <button
-                className="run"
-                disabled={running}
-                onClick={() => execute()}
+                className={tab === "notes" ? "active" : ""}
+                onClick={() => setTab("notes")}
               >
-                <Play size={13} />
-                {running ? "Running…" : "Run"}
+                Session guide
               </button>
             </div>
+            <div className="statement-scroll">
+              {tab === "problem" ? (
+                <>
+                  <div className="eyebrow muted">
+                    PROBLEM {index + 1} / {initial.problems.length}
+                  </div>
+                  <h1>{problem.title}</h1>
+                  <div className="problem-meta">
+                    <span className={"difficulty " + problem.difficulty}>
+                      {problem.difficulty}
+                    </span>
+                    {problem.tags.map((t) => (
+                      <span key={t}>{t}</span>
+                    ))}
+                  </div>
+                  <article
+                    className="statement"
+                    dangerouslySetInnerHTML={{ __html: problem.content }}
+                  />
+                </>
+              ) : (
+                <>
+                  <h2>Think out loud.</h2>
+                  <p>
+                    Clarify the inputs. Explain your approach. Walk through an
+                    example before you start coding.
+                  </p>
+                  <p>
+                    Ask Alex for a hint, a code review, or an example test. Alex
+                    can read and edit this file.
+                  </p>
+                  <p>
+                    Run executes the whole file. Run tests calls your solution
+                    automatically using the prepared suite. A suite pass is not
+                    a full LeetCode judge verdict.
+                  </p>
+                  <p>
+                    Code runs in your browser with a 15-second limit. Python may
+                    take a moment to load.
+                  </p>
+                </>
+              )}
+            </div>
+            <div className="problem-bottom">
+              <a
+                target="_blank"
+                rel="noreferrer"
+                href={`https://leetcode.com/problems/${problem.slug}/`}
+              >
+                View on LeetCode
+                <ArrowUpRight size={14} />
+              </a>
+              {index < initial.problems.length - 1 && (
+                <button className="quiet" onClick={next} disabled={busy}>
+                  Next problem
+                  <ChevronRight size={16} />
+                </button>
+              )}
+            </div>
+          </section>
+        )}
+        <div className="work-surface">
+          <div className="surface-tabs">
+            {!isBehavioral && (
+              <button
+                className={workspaceTab === "code" ? "active" : ""}
+                onClick={() => setWorkspaceTab("code")}
+              >
+                <Code2 size={14} />
+                Code
+              </button>
+            )}
+            <button
+              className={workspaceTab === "canvas" ? "active" : ""}
+              onClick={() => setWorkspaceTab("canvas")}
+            >
+              Whiteboard
+            </button>
+            <span>
+              {isBehavioral
+                ? "Map a project, decision, or story."
+                : "Sketch an approach alongside your code."}
+            </span>
           </div>
-          <div className="monaco">
-            <Editor
-              language={
-                initial.language === "python3" ? "python" : "javascript"
-              }
-              theme="vs-dark"
-              value={code}
-              onChange={changeCode}
-              onMount={(editor) => {
-                codeRef.current = editor;
-              }}
-              options={{
-                fontSize: 14,
-                fontFamily: '"SFMono-Regular", Consolas, monospace',
-                minimap: { enabled: false },
-                padding: { top: 24 },
-                scrollBeyondLastLine: false,
-                automaticLayout: true,
-                lineNumbersMinChars: 3,
-                wordWrap: "on",
-                tabSize: 4,
+          {!isBehavioral && (
+            <section
+              className="editor-pane"
+              style={{ display: workspaceTab === "code" ? "flex" : "none" }}
+            >
+              <div className="editor-toolbar">
+                <span>
+                  <Code2 size={16} />
+                  {initial.language === "python3"
+                    ? "solution.py"
+                    : "solution.js"}
+                </span>
+                <div>
+                  <span className="save-state">{saved}</span>
+                  <button
+                    className="run"
+                    disabled={running || !problem.testSuite}
+                    title={
+                      problem.testSuite
+                        ? `${problem.testCount} prepared tests`
+                        : "No prepared suite for this problem yet"
+                    }
+                    onClick={() => execute(state.current.code, "tests")}
+                  >
+                    <Check size={13} />
+                    Run tests
+                    {problem.testSuite && (
+                      <span className="test-count">{problem.testCount}</span>
+                    )}
+                  </button>
+                  <button
+                    className="run"
+                    disabled={running}
+                    onClick={() => execute()}
+                  >
+                    <Play size={13} />
+                    {running ? "Running…" : "Run"}
+                  </button>
+                </div>
+              </div>
+              <div className="monaco">
+                <Editor
+                  language={
+                    initial.language === "python3" ? "python" : "javascript"
+                  }
+                  theme="vs-dark"
+                  value={code}
+                  onChange={changeCode}
+                  onMount={(editor) => {
+                    codeRef.current = editor;
+                  }}
+                  options={{
+                    fontSize: 14,
+                    fontFamily: '"SFMono-Regular", Consolas, monospace',
+                    minimap: { enabled: false },
+                    padding: { top: 24 },
+                    scrollBeyondLastLine: false,
+                    automaticLayout: true,
+                    lineNumbersMinChars: 3,
+                    wordWrap: "on",
+                    tabSize: 4,
+                  }}
+                />
+              </div>
+              {pendingEdit && (
+                <div className="edit-conflict">
+                  Alex prepared an edit while you were typing. Your draft is
+                  still here.
+                  <button
+                    onClick={() => {
+                      changeCode(pendingEdit.code);
+                      setPendingEdit(null);
+                    }}
+                  >
+                    Load Alex’s edit
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPendingEdit(null);
+                      save().catch((e) => setError(e.message));
+                    }}
+                  >
+                    Keep my draft
+                  </button>
+                </div>
+              )}
+              <div className="console">
+                <div className="console-heading">
+                  <Terminal size={14} /> CONSOLE
+                  <span>
+                    {output
+                      ? output.total !== undefined
+                        ? `${output.passed}/${output.total} passed`
+                        : output.ok
+                          ? "Finished"
+                          : "Error"
+                      : "Ready"}
+                  </span>
+                  <button
+                    aria-label="Clear console"
+                    onClick={() => setOutput(null)}
+                  >
+                    <RotateCcw size={12} />
+                  </button>
+                </div>
+                <pre className={output?.ok === false ? "failed" : ""}>
+                  {output?.output ||
+                    "Run your code to see output here.\nAdd example calls or assertions below your solution."}
+                </pre>
+              </div>
+            </section>
+          )}
+          <div
+            className="board-surface"
+            style={{ display: workspaceTab === "canvas" ? "flex" : "none" }}
+          >
+            <Whiteboard
+              key={index}
+              base={base}
+              index={index}
+              store={(boards.current[index] ??= { strokes: [], revision: 0 })}
+              disabled={ending || !!feedback}
+              onContext={(summary, boardIndex) => {
+                if (state.current.index === boardIndex && !state.current.ending)
+                  live.current?.send(
+                    "session.thinking.append",
+                    `Current whiteboard: ${summary.slice(0, 900)}`,
+                  );
               }}
             />
           </div>
-          {pendingEdit && (
-            <div className="edit-conflict">
-              Alex prepared an edit while you were typing. Your draft is still
-              here.
-              <button
-                onClick={() => {
-                  changeCode(pendingEdit.code);
-                  setPendingEdit(null);
-                }}
-              >
-                Load Alex’s edit
-              </button>
-              <button
-                onClick={() => {
-                  setPendingEdit(null);
-                  save().catch((e) => setError(e.message));
-                }}
-              >
-                Keep my draft
-              </button>
-            </div>
-          )}
-          <div className="console">
-            <div className="console-heading">
-              <Terminal size={14} /> CONSOLE
-              <span>
-                {output
-                  ? output.total !== undefined
-                    ? `${output.passed}/${output.total} passed`
-                    : output.ok
-                      ? "Finished"
-                      : "Error"
-                  : "Ready"}
-              </span>
-              <button
-                aria-label="Clear console"
-                onClick={() => setOutput(null)}
-              >
-                <RotateCcw size={12} />
-              </button>
-            </div>
-            <pre className={output?.ok === false ? "failed" : ""}>
-              {output?.output ||
-                "Run your code to see output here.\nAdd example calls or assertions below your solution."}
-            </pre>
-          </div>
-        </section>
+        </div>
         <aside className="interviewer-pane">
           <div className="interviewer-title">
             <span className="eyebrow muted">YOUR INTERVIEWER</span>
@@ -1173,7 +1205,9 @@ function Workspace({ session: initial, onExit }) {
           )}
           <p className="speech-hint">
             <Mic size={13} />
-            Ask for a hint or code review out loud.
+            {isBehavioral
+              ? "Talk through an experience. Alex will follow up."
+              : "Ask for a hint or code review out loud."}
           </p>
         </aside>
       </div>
@@ -1195,7 +1229,7 @@ function Workspace({ session: initial, onExit }) {
               1 Needs work · 2 Developing · 3 Competent · 4 Strong · 5 Excellent
             </div>
             <section className="rubric-grid">
-              {rubric.map((item) => {
+              {gradingRubric.map((item) => {
                 const grade = feedback.criteria[item.id];
                 return (
                   <article className="rubric-card" key={item.id}>
