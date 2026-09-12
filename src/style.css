@@ -678,16 +678,16 @@ select {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #1e1e1e;
-  color: #bac0b5;
+  background: var(--ide-bg);
+  color: var(--ide-ink-2);
   min-width: 0;
 }
 
 .editor-toolbar {
   height: 48px;
   min-height: 48px;
-  border-bottom: 1px solid #33382e;
-  background: #222620;
+  border-bottom: 1px solid var(--ide-line);
+  background: var(--ide-bg-2);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -705,13 +705,13 @@ select {
 .run {
   padding: 6px 12px;
   font-size: var(--fs-sm);
-  background: #3d4c32;
-  border-color: #546446;
-  color: #d5e9ba;
+  background: var(--ide-run-bg);
+  border-color: var(--ide-run-line);
+  color: var(--ide-run-ink);
 }
 
 .run:hover {
-  background: #566c44;
+  background: var(--ide-run-hover);
 }
 
 .monaco {
@@ -857,8 +857,8 @@ select {
 
 .edit-conflict {
   padding: 10px;
-  background: #544a29;
-  color: #f3e3b0;
+  background: var(--ide-warn-bg);
+  color: var(--ide-warn-ink);
   font-size: 10px;
 }
 
@@ -1473,12 +1473,12 @@ select {
   min-width: 0;
   width: 100%;
   min-height: 0;
-  background: #f0f3e9;
+  background: var(--ide-bg-2);
 }
 
 .board-toolbar {
   padding: 10px;
-  border-bottom: 1px solid #dce3d5;
+  border-bottom: 1px solid var(--ide-line);
 }
 
 .board-tools {
@@ -1494,14 +1494,14 @@ select {
 }
 
 .board-tools button.active {
-  background: #dce7ce;
-  border-color: #a6ba92;
+  background: var(--ide-bg-5);
+  border-color: var(--ide-line-2);
 }
 
 .tool-divider {
   height: 20px;
   width: 1px;
-  background: #d1dbc7;
+  background: var(--ide-line);
   margin: 0 6px;
 }
 
@@ -1512,7 +1512,7 @@ select {
   padding: 0;
   border-radius: 50%;
   margin: 0 4px;
-  border: 3px solid #f0f3e9;
+  border: 3px solid var(--ide-bg-2);
 }
 
 .board-tools .ink.selected {
@@ -1523,10 +1523,10 @@ select {
   display: block;
   width: 100%;
   margin-top: 9px;
-  border: 1px solid #d1dbc7;
+  border: 1px solid var(--ide-line);
   border-radius: 5px;
   padding: var(--s2);
-  background: #fffef8;
+  background: var(--ide-paper);
   font-size: var(--fs-xs);
 }
 
@@ -1547,8 +1547,8 @@ select {
   max-height: none;
   aspect-ratio: 3 / 2;
   object-fit: fill;
-  border: 1px solid #dce3d5;
-  background: #fffef8;
+  border: 1px solid var(--ide-line);
+  background: var(--ide-paper);
   touch-action: none;
   cursor: crosshair;
 }
@@ -1581,7 +1581,7 @@ select {
 .board-status[data-status="pending"] {
   /* --warn itself is tuned for icons/dots (3:1 is enough there); this text
      is 11px, which needs 4.5:1, so darken it a notch for this usage. */
-  color: #9a641a;
+  color: var(--ide-warn-ink);
 }
 
 .board-status[data-status="error"] {
@@ -1593,7 +1593,7 @@ select {
 }
 
 .board-status[data-status="empty"] .live-dot {
-  background: #c3cbbb;
+  background: var(--ide-muted-2);
 }
 
 .board-status button {
@@ -1601,7 +1601,7 @@ select {
 }
 
 .board-error {
-  color: #9b5943;
+  color: var(--ide-bad);
   font-size: var(--fs-xs);
   padding: 0 14px 8px;
 }
@@ -1609,7 +1609,7 @@ select {
 .board-summary {
   padding: 8px 14px 12px;
   font-size: var(--fs-xs);
-  color: #728361;
+  color: var(--ide-muted);
   max-height: 140px;
   overflow: auto;
 }
@@ -1967,7 +1967,7 @@ img.avatar {
   padding: 6px 10px 0;
   /* no seam under dark bottom-panel chrome */
   border-top: 0;
-  background: #1c201a;
+  background: var(--ide-bg);
 }
 
 .bottom-tabs button {
@@ -1978,17 +1978,17 @@ img.avatar {
   font-size: var(--fs-sm);
   letter-spacing: 0;
   text-transform: none;
-  color: #78856a;
+  color: var(--ide-muted);
   gap: 7px;
 }
 
 .bottom-tabs button:hover {
   background: transparent;
-  color: #b9c8a8;
+  color: var(--ide-ink-2);
 }
 
 .bottom-tabs button.active {
-  color: #d5e9ba;
+  color: var(--ide-run-ink);
   border-bottom-color: var(--brand);
 }
 
@@ -1997,8 +1997,8 @@ img.avatar {
   min-height: 200px;
   display: flex;
   flex-direction: column;
-  background: #1c201a;
-  color: #b9c8a8;
+  background: var(--ide-bg);
+  color: var(--ide-ink-2);
 }
 
 .dbg-toolbar {
@@ -2006,9 +2006,9 @@ img.avatar {
   align-items: center;
   gap: var(--s2);
   padding: 8px 12px;
-  border-bottom: 1px solid #2c3326;
+  border-bottom: 1px solid var(--ide-line);
   font-size: 10px;
-  color: #919e82;
+  color: var(--ide-muted);
   flex-wrap: wrap;
 }
 
@@ -2017,13 +2017,13 @@ img.avatar {
   max-width: 200px;
   padding: 5px 8px;
   font-size: 10px;
-  background: #272c24;
-  border-color: #3a4233;
-  color: #c9d6b8;
+  background: var(--ide-bg-3);
+  border-color: var(--ide-line-2);
+  color: var(--ide-ink-2);
 }
 
 .dbg-status {
-  color: #8fa07d;
+  color: var(--ide-muted);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2040,12 +2040,12 @@ img.avatar {
 
 .dbg-steps button {
   padding: 4px 6px;
-  border-color: #3a4233;
-  color: #b9c8a8;
+  border-color: var(--ide-line-2);
+  color: var(--ide-ink-2);
 }
 
 .dbg-steps button:hover {
-  background: #2c3326;
+  background: var(--ide-bg-4);
 }
 
 .dbg-steps input[type="range"] {
@@ -2055,7 +2055,7 @@ img.avatar {
 
 .dbg-steps span {
   font-variant-numeric: tabular-nums;
-  color: #a6b596;
+  color: var(--ide-ink-3);
   white-space: nowrap;
 }
 
@@ -2068,7 +2068,7 @@ img.avatar {
 .dbg-empty {
   margin: 4px 0;
   font-size: var(--fs-xs);
-  color: #7b896e;
+  color: var(--ide-muted-2);
 }
 
 .dbg-row {
@@ -2081,7 +2081,7 @@ img.avatar {
 .dbg-name {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: var(--fs-xs);
-  color: #cfe0b8;
+  color: var(--ide-ink);
   min-width: 52px;
   padding-top: var(--s2);
 }
@@ -2098,9 +2098,9 @@ img.avatar {
   flex-direction: column;
   align-items: center;
   min-width: 34px;
-  border: 1px solid #3a4233;
+  border: 1px solid var(--ide-line-2);
   border-radius: var(--r-sm);
-  background: #242a21;
+  background: var(--ide-bg-3);
   padding: 3px 5px 2px;
   font-family: "SFMono-Regular", Consolas, monospace;
   transition: background 0.15s;
@@ -2118,22 +2118,22 @@ img.avatar {
 
 .dbg-cell.pointed {
   border-color: var(--brand);
-  background: #2b3a25;
+  background: var(--ide-accent-soft);
 }
 
 .dbg-cell.changed {
-  background: #3b4a2a;
-  border-color: #b9d68f;
+  background: var(--ide-changed-bg);
+  border-color: var(--ide-changed-line);
 }
 
 .dbg-index {
   font-size: 8px;
-  color: #6f7b62;
+  color: var(--ide-muted-3);
 }
 
 .dbg-value {
   font-size: var(--fs-sm);
-  color: #e6efd8;
+  color: var(--ide-ink);
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2148,15 +2148,15 @@ img.avatar {
 
 .dbg-pointers b {
   font-size: 9px;
-  color: #d4eeab;
-  background: #45592f;
+  color: var(--ide-accent-ink);
+  background: var(--ide-accent-soft-2);
   border-radius: 3px;
   padding: 0 4px;
 }
 
 .dbg-arrow {
   align-self: center;
-  color: #7b896e;
+  color: var(--ide-muted-2);
   font-size: var(--fs-base);
   padding: 0 2px;
 }
@@ -2182,10 +2182,10 @@ img.avatar {
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #2f362a;
+  border: 1px solid var(--ide-line);
   border-radius: var(--r-sm);
   padding: 4px 8px;
-  background: #22271f;
+  background: var(--ide-bg-3);
 }
 
 .dbg-var .dbg-name {
@@ -2194,7 +2194,7 @@ img.avatar {
 }
 
 .dbg-var.pointer {
-  border-color: #45592f;
+  border-color: var(--ide-accent-soft-2);
 }
 
 .dbg-var.returns {
@@ -2204,7 +2204,7 @@ img.avatar {
 .dbg-scalar {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: var(--fs-xs);
-  color: #e6efd8;
+  color: var(--ide-ink);
   max-width: 320px;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2212,23 +2212,23 @@ img.avatar {
 }
 
 .dbg-scalar.changed {
-  color: #c9e79b;
+  color: var(--ide-changed-line);
 }
 
 .dbg-scalar s {
-  color: #d99b8b;
+  color: var(--ide-bad-soft);
   margin-right: 6px;
 }
 
 .dbg-result {
   margin: 10px 0 0;
   font-size: var(--fs-xs);
-  color: #8fa07d;
+  color: var(--ide-muted);
   white-space: pre-wrap;
 }
 
 .dbg-result.failed {
-  color: #dfa495;
+  color: var(--ide-bad-soft);
 }
 
 .dbg-walk {
@@ -2237,9 +2237,9 @@ img.avatar {
   gap: 5px;
   padding: 3px 8px;
   border-radius: var(--r-pill);
-  background: #2b3a25;
-  border: 1px solid #45592f;
-  color: #d4eeab;
+  background: var(--ide-accent-soft);
+  border: 1px solid var(--ide-accent-soft-2);
+  color: var(--ide-accent-ink);
   font-size: 10px;
   white-space: nowrap;
   overflow: hidden;
@@ -2251,14 +2251,14 @@ img.avatar {
   margin: 0 0 12px;
   padding: 8px 12px;
   border-left: 3px solid var(--brand);
-  background: #242a21;
-  color: #e6efd8;
+  background: var(--ide-bg-3);
+  color: var(--ide-ink);
   font-size: var(--fs-base);
   line-height: 1.45;
 }
 
 .dbg-dim {
-  color: #7b896e;
+  color: var(--ide-muted-2);
 }
 
 .monaco-editor .debug-line {
@@ -2627,7 +2627,7 @@ img.avatar {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  background: #1e1e1e;
+  background: var(--ide-bg);
 }
 
 .notes-pane textarea {
@@ -2636,8 +2636,8 @@ img.avatar {
   border: 0;
   outline: none;
   padding: 22px 26px;
-  background: #1e1e1e;
-  color: #d9e2cf;
+  background: var(--ide-bg);
+  color: var(--ide-ink);
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 13.5px;
   line-height: 1.7;
@@ -2759,7 +2759,7 @@ img.avatar {
 }
 
 .notes-pane {
-  color: #bac0b5;
+  color: var(--ide-ink-2);
 }
 
 .probability-pane .pane-tabs > span,
@@ -2811,7 +2811,7 @@ img.avatar {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #7b896e;
+  background: var(--ide-muted-2);
   display: inline-block;
   margin-left: 2px;
 }
@@ -2821,15 +2821,15 @@ img.avatar {
 }
 
 .tab-dot.bad {
-  background: #e08a76;
+  background: var(--ide-bad);
 }
 
 .bottom-panel {
   /* height is a no-op fallback: the inline style from panelHeight always wins */
   height: 300px;
   min-height: 200px;
-  background: #1c201a;
-  color: #b9c8a8;
+  background: var(--ide-bg);
+  color: var(--ide-ink-2);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2852,7 +2852,7 @@ img.avatar {
   margin: 0;
   padding: 14px;
   font-size: 11.5px;
-  color: #7b896e;
+  color: var(--ide-muted-2);
 }
 
 .tc-tabs {
@@ -2872,21 +2872,21 @@ img.avatar {
   display: flex;
   align-items: stretch;
   border-radius: var(--r-sm);
-  background: #272c24;
+  background: var(--ide-bg-3);
 }
 
 .tc-tab:hover {
-  background: #33392f;
+  background: var(--ide-bg-5);
 }
 
 .tc-tab.active {
-  background: #3a4233;
+  background: var(--ide-line-2);
 }
 
 .tc-tab > button[role="tab"] {
   border: 0;
   background: transparent;
-  color: #a6b596;
+  color: var(--ide-ink-3);
   padding: 5px 10px;
   font-size: var(--fs-xs);
   gap: 6px;
@@ -2894,7 +2894,7 @@ img.avatar {
 }
 
 .tc-tab.active > button[role="tab"] {
-  color: #e6efd8;
+  color: var(--ide-ink);
 }
 
 .tc-tab > button:hover {
@@ -2905,7 +2905,7 @@ img.avatar {
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #7b896e;
+  background: var(--ide-muted-2);
 }
 
 .tc-tab.good .tc-dot {
@@ -2913,14 +2913,14 @@ img.avatar {
 }
 
 .tc-tab.bad .tc-dot {
-  background: #e08a76;
+  background: var(--ide-bad);
 }
 
 .tc-x {
   border: 0;
   background: transparent;
   padding: 0 7px 0 0;
-  color: #7b896e;
+  color: var(--ide-muted-2);
   opacity: 0;
   transition: opacity 0.12s;
 }
@@ -2933,19 +2933,19 @@ img.avatar {
 
 .tc-x:hover {
   background: transparent;
-  color: #f0c2b5;
+  color: var(--ide-bad-soft);
 }
 
 .tc-add {
   padding: 5px 8px;
   border: 0;
   border-radius: var(--r-sm);
-  background: #272c24;
-  color: #a6b596;
+  background: var(--ide-bg-3);
+  color: var(--ide-ink-3);
 }
 
 .tc-add:hover {
-  background: #33392f;
+  background: var(--ide-bg-5);
 }
 
 .tc-fields,
@@ -2964,7 +2964,7 @@ img.avatar {
 .tc-field > span {
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 10.5px;
-  color: #8fa07d;
+  color: var(--ide-muted);
 }
 
 .tc-field textarea,
@@ -2972,10 +2972,10 @@ img.avatar {
   margin: 0;
   width: 100%;
   min-height: 34px;
-  background: #272c24;
+  background: var(--ide-bg-3);
   border: 1px solid transparent;
   border-radius: var(--r-sm);
-  color: #e6efd8;
+  color: var(--ide-ink);
   padding: 8px 10px;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: var(--fs-sm);
@@ -2993,11 +2993,11 @@ img.avatar {
 
 .tc-field textarea:focus {
   outline: none;
-  border-color: #6a9a48;
+  border-color: var(--ide-accent);
 }
 
 .tc-field pre.bad {
-  color: #f0c2b5;
+  color: var(--ide-bad-soft);
 }
 
 .tc-problems {
@@ -3009,7 +3009,7 @@ img.avatar {
   gap: var(--s1);
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 11.5px;
-  color: #f0c2b5;
+  color: var(--ide-bad-soft);
 }
 
 .tc-status {
@@ -3021,23 +3021,23 @@ img.avatar {
   font-family: Manrope, sans-serif;
   font-weight: 700;
   font-size: var(--fs-lg);
-  color: #c9d6b8;
+  color: var(--ide-ink-2);
   animation: rise 0.18s ease-out both;
   overflow: hidden;
 }
 
 .tc-status.good {
-  color: #a9d97a;
+  color: var(--ide-good);
 }
 
 .tc-status.bad {
-  color: #f08c74;
+  color: var(--ide-bad);
 }
 
 /* Was unstyled: "Pending…", "Finished" and "No testcases" inherited the
    default and read as a pass. */
 .tc-status.neutral {
-  color: var(--d-muted);
+  color: var(--ide-muted);
 }
 
 /* A pass is the moment worth marking. */
@@ -3066,14 +3066,14 @@ img.avatar {
   font-family: "DM Sans", sans-serif;
   font-weight: 400;
   font-size: var(--fs-xs);
-  color: #8fa07d;
+  color: var(--ide-muted);
 }
 
 .tc-stdout {
   margin: 0;
   font-family: "SFMono-Regular", Consolas, monospace;
   font-size: 11.5px;
-  color: #a6b596;
+  color: var(--ide-ink-3);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   max-height: 160px;
@@ -3568,7 +3568,7 @@ button.primary:active,
   left: 25%;
   right: 25%;
   height: 1px;
-  background: #4a5443;
+  background: var(--ide-line-2);
 }
 
 .dbg-branches > div {
@@ -3587,11 +3587,11 @@ button.primary:active,
   left: 50%;
   width: 1px;
   height: 14px;
-  background: #4a5443;
+  background: var(--ide-line-2);
 }
 
 .dbg-leaf {
-  color: #3e4738;
+  color: var(--ide-muted-3);
   font-size: var(--fs-xs);
   line-height: 30px;
 }
@@ -3726,8 +3726,8 @@ select {
   flex-wrap: nowrap;
   align-items: center;
   gap: var(--s1);
-  background: var(--d-card);
-  border-bottom: 1px solid var(--d-line);
+  background: var(--ide-bg-2);
+  border-bottom: 1px solid var(--ide-line);
   padding: 0 var(--s3);
   height: 46px;
   min-height: 46px;
@@ -3740,7 +3740,7 @@ select {
   gap: 7px;
   flex-shrink: 0;
   white-space: nowrap;
-  color: #9aa48e;
+  color: var(--ide-muted);
   background: transparent;
   border: 0;
   border-radius: var(--r-sm);
@@ -3750,13 +3750,13 @@ select {
 }
 
 .surface-tabs > button:hover {
-  background: #2c3126;
-  color: #d5e0c6;
+  background: var(--ide-bg-4);
+  color: var(--ide-ink-2);
 }
 
 .surface-tabs > button.active {
-  background: #33392f;
-  color: #e6efd8;
+  background: var(--ide-bg-5);
+  color: var(--ide-ink);
 }
 
 .surface-actions {
@@ -3793,17 +3793,17 @@ select {
 
 .file-name {
   font-size: var(--fs-xs);
-  color: #78856a;
+  color: var(--ide-muted);
   margin-right: var(--s1);
 }
 
 .save-state {
   font-size: var(--fs-xs);
-  color: #78856a;
+  color: var(--ide-muted);
 }
 
 .save-state.bad {
-  color: #f08c74;
+  color: var(--ide-bad);
 }
 
 .spin {
@@ -3830,7 +3830,7 @@ select {
 }
 
 .panel-handle:hover {
-  background: #2c3326;
+  background: var(--ide-bg-4);
 }
 
 .bottom-slot {
@@ -3846,7 +3846,7 @@ select {
 
 .tc-case-name {
   font-size: var(--fs-xs);
-  color: #a6b596;
+  color: var(--ide-ink-3);
 }
 
 .skeleton.dark {
@@ -4259,13 +4259,13 @@ button.problem-row.pinned .problem-id {
   align-items: center;
   gap: 6px;
   font-size: var(--fs-xs);
-  color: #a6b596;
+  color: var(--ide-ink-3);
 }
 .reset-confirm .quiet,
 .surface-actions .reset {
   padding: 5px 8px;
-  border-color: #3a4233;
-  color: #b9c8a8;
+  border-color: var(--ide-line-2);
+  color: var(--ide-ink-2);
 }
 .surface-actions .reset:disabled {
   opacity: 0.35;
@@ -4995,4 +4995,104 @@ button.problem-row.pinned .problem-id {
   .agent-row .live-dot {
     transition: none;
   }
+}
+
+/* IDE surface: one palette for the editor, panels, notes, and whiteboard desk.
+   Dark is a green-tinted dark; .work-surface.light switches the whole surface
+   (and the Monaco theme, see ide-theme.mjs) to white. */
+:root {
+  --ide-bg: #1c201a;
+  --ide-bg-2: #222620;
+  --ide-bg-3: #272c24;
+  --ide-bg-4: #2c3126;
+  --ide-bg-5: #33392f;
+  --ide-line: #33382e;
+  --ide-line-2: #3a4233;
+  --ide-ink: #e6efd8;
+  --ide-ink-2: #b9c8a8;
+  --ide-ink-3: #a6b596;
+  --ide-muted: #8fa07d;
+  --ide-muted-2: #7b896e;
+  --ide-muted-3: #6f7b62;
+  --ide-accent: #9fba78;
+  --ide-accent-ink: #d4eeab;
+  --ide-accent-soft: #2b3a25;
+  --ide-accent-soft-2: #45592f;
+  --ide-changed-bg: #3b4a2a;
+  --ide-changed-line: #b9d68f;
+  --ide-good: #a9d97a;
+  --ide-bad: #f08c74;
+  --ide-bad-soft: #f0c2b5;
+  --ide-run-bg: #3d4c32;
+  --ide-run-line: #546446;
+  --ide-run-hover: #566c44;
+  --ide-run-ink: #d5e9ba;
+  --ide-warn-bg: #544a29;
+  --ide-warn-ink: #f3e3b0;
+  --ide-paper: #fffef8;
+}
+
+.work-surface.light {
+  --ide-bg: #ffffff;
+  --ide-bg-2: #f6f8f2;
+  --ide-bg-3: #f1f4ec;
+  --ide-bg-4: #e9eee2;
+  --ide-bg-5: #e0e7d6;
+  --ide-line: #e2e6dd;
+  --ide-line-2: #d4dccb;
+  --ide-ink: #1f2620;
+  --ide-ink-2: #3e4a35;
+  --ide-ink-3: #55634c;
+  --ide-muted: #6b7566;
+  --ide-muted-2: #8a967f;
+  --ide-muted-3: #9aa590;
+  --ide-accent: #4c7a2c;
+  --ide-accent-ink: #2f4a1e;
+  --ide-accent-soft: #e6efd9;
+  --ide-accent-soft-2: #cfe0bb;
+  --ide-changed-bg: #e9f4d6;
+  --ide-changed-line: #8ab35a;
+  --ide-good: #3f8f3f;
+  --ide-bad: #a3452f;
+  --ide-bad-soft: #b8563d;
+  --ide-run-bg: #e6efd9;
+  --ide-run-line: #c9dab4;
+  --ide-run-hover: #d8e6c6;
+  --ide-run-ink: #2f4a1e;
+  --ide-warn-bg: #f6ecd8;
+  --ide-warn-ink: #7a5410;
+  --ide-paper: #fffef8;
+}
+
+.work-surface {
+  background: var(--ide-bg);
+}
+
+.board-tools button {
+  color: var(--ide-ink-2);
+  background: transparent;
+}
+
+.board-tools button:hover {
+  background: var(--ide-bg-4);
+}
+
+.board-label {
+  color: #1f2620;
+}
+
+.surface-actions .ide-theme {
+  padding: 5px 8px;
+  border-color: var(--ide-line-2);
+  color: var(--ide-ink-2);
+  background: transparent;
+}
+
+.surface-actions .ide-theme:hover {
+  background: var(--ide-bg-4);
+}
+
+/* Ink swatches need a ring on the dark desk, where black ink disappears. */
+.board-tools .ink {
+  box-shadow: 0 0 0 1px var(--ide-line-2);
 }

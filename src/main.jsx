@@ -10,6 +10,8 @@ import {
   Check,
   ChevronRight,
   Code2,
+  Sun,
+  Moon,
   Headphones,
   Mic,
   MicOff,
@@ -41,6 +43,12 @@ import {
   checkInRequest,
 } from "./voice.mjs";
 import { lineDiff, lineOps } from "./diff.mjs";
+import {
+  defineIdeThemes,
+  monacoTheme,
+  rememberIdeTheme,
+  storedIdeTheme,
+} from "./ide-theme.mjs";
 import { DiffEditor } from "@monaco-editor/react";
 import { Bug, GitCompare } from "lucide-react";
 import { AccountProvider, useAccount, SignInGate } from "./account.jsx";
@@ -64,6 +72,7 @@ self.MonacoEnvironment = {
       : new EditorWorker(),
 };
 loader.config({ monaco });
+defineIdeThemes(monaco);
 const DEFAULT_PANEL_HEIGHT = 300;
 const MIN_PANEL_HEIGHT = 120;
 const MAX_PANEL_HEIGHT_RATIO = 0.7;
@@ -230,6 +239,9 @@ function Workspace({ session: initial, onExit }) {
     [hints, setHints] = useState({}),
     [hintsGiven, setHintsGiven] = useState({}),
     [typing, setTyping] = useState(false),
+    // Editor, panels, notes and whiteboard desk share one palette: green
+    // dark or white. Remembered per browser.
+    [ideTheme, setIdeTheme] = useState(storedIdeTheme),
     [resetArmed, setResetArmed] = useState(false),
     // Render-only: drives the agent-row waveform. Deliberately not mirrored
     // into state.current, so async closures are unaffected.
@@ -1545,7 +1557,7 @@ function Workspace({ session: initial, onExit }) {
             </div>
           </section>
         )}
-        <div className="work-surface">
+        <div className={"work-surface " + ideTheme}>
           <div className="surface-tabs">
             {hasCode && (
               <button
@@ -1573,6 +1585,23 @@ function Workspace({ session: initial, onExit }) {
               Whiteboard
             </button>
             <div className="surface-actions">
+              <button
+                className="quiet ide-theme"
+                title={ideTheme === "light" ? "Dark editor" : "Light editor"}
+                aria-label={
+                  ideTheme === "light"
+                    ? "Switch to the dark editor"
+                    : "Switch to the light editor"
+                }
+                aria-pressed={ideTheme === "light"}
+                onClick={() => {
+                  const next = ideTheme === "light" ? "dark" : "light";
+                  rememberIdeTheme(next);
+                  setIdeTheme(next);
+                }}
+              >
+                {ideTheme === "light" ? <Moon size={13} /> : <Sun size={13} />}
+              </button>
               {(hasCode || usesNotes) && workspaceTab !== "canvas" && (
                 <span
                   className={
@@ -1675,7 +1704,7 @@ function Workspace({ session: initial, onExit }) {
                   language={
                     initial.language === "python3" ? "python" : "javascript"
                   }
-                  theme="vs-dark"
+                  theme={monacoTheme(ideTheme)}
                   value={code}
                   onChange={changeCode}
                   onMount={(editor) => {
@@ -1964,7 +1993,7 @@ function Workspace({ session: initial, onExit }) {
                 language={
                   initial.language === "python3" ? "python" : "javascript"
                 }
-                theme="vs-dark"
+                theme={monacoTheme(ideTheme)}
                 options={{
                   readOnly: true,
                   renderSideBySide: true,
