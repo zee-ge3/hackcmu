@@ -112,3 +112,7 @@ test("catalog list filters narrow to Blind 75 / NeetCode 150 membership", () => 
   );
   assert.equal(filterProblems(problems, {}).length, 3);
 });
+test("answers without a numeric reference defer to the model", () => {
+  assert.equal(matchAnswer("1/3", null), null);
+  assert.equal(matchAnswer("", "1/3"), null);
+});

@@ -132,6 +132,7 @@ Uploaded documents are processed by OpenAI with your key. Parsed résumé contex
 
 ```sh
 npm run test:modes                # Mocked résumé, voice, vision, and feedback UI checks
+npm run test:rooms                # Probability and design rooms, session URLs, problem picker (mocked voice)
 LIVE_MODES=1 npm run test:modes   # Real parsing, voice greeting/audio, vision, reasoning, feedback; incurs API usage
 ```
 

@@ -120,27 +120,42 @@ export function SiteHeader({ path, navigate }) {
     </header>
   );
 }
-const modes = [
+const n = (x) => (x === undefined ? "…" : x.toLocaleString());
+const modeCards = (stats = {}) => [
   {
     url: "/coding",
     title: "Coding",
     icon: Code2,
     line: "LeetCode problems in a shared editor with your own testcases.",
-    facts: ["15 with hidden tests", "4,042 statements", "JavaScript · Python"],
+    facts: [
+      `${n(stats.tested)} with hidden tests`,
+      `${n(stats.problems)} statements`,
+      "JavaScript · Python",
+    ],
   },
   {
     url: "/probability",
     title: "Probability",
     icon: Dices,
-    line: "Quant interview questions checked against hidden answers.",
-    facts: ["679 questions", "AMC · AIME · AoPS · QuantProf", "Levels 1–10"],
+    line: "Quant interview questions checked against reference answers.",
+    facts: [
+      `${n(stats.questions)} questions`,
+      stats.firms?.length
+        ? `Asked at ${stats.firms.join(", ")}`
+        : "AMC · AIME · AoPS",
+      "Levels 1–10",
+    ],
   },
   {
     url: "/design",
     title: "System design",
     icon: Network,
     line: "A brief, a clock, and constraints that arrive as you design.",
-    facts: ["12 systems or your own", "20–45 minutes", "3 constraints"],
+    facts: [
+      `${n(stats.designs)} systems or your own`,
+      "20–45 minutes",
+      "3 constraints",
+    ],
   },
   {
     url: "/behavioral",
@@ -162,6 +177,13 @@ export function Home({ navigate }) {
   const { user, loading } = useAccount();
   const [recent, setRecent] = useState(null);
   const [insights, setInsights] = useState(null);
+  const [stats, setStats] = useState({});
+  useEffect(() => {
+    api("/api/stats", undefined, "GET")
+      .then(setStats)
+      .catch(() => {});
+  }, []);
+  const modes = modeCards(stats);
   const load = () => {
     setRecent(null);
     Promise.all([

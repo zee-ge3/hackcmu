@@ -107,12 +107,14 @@ export function ProbabilityPane({
         {done && solution && (
           <div className="solution">
             <div className="meta">{solved ? "Solved" : "Reference"}</div>
-            <MathText
-              className="solution-answer"
-              text={`Answer: $${solution.answer}$`}
-            />
+            {solution.answer && (
+              <MathText
+                className="solution-answer"
+                text={`Answer: $${solution.answer}$`}
+              />
+            )}
             {solution.solution && (
-              <details open={!solved}>
+              <details open={!solved || !solution.answer}>
                 <summary>Reference solution</summary>
                 <MathText text={solution.solution} />
               </details>
