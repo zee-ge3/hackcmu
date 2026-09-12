@@ -57,7 +57,9 @@ const origins = new Set([
     .filter(Boolean),
 ]);
 const root = (path) => fileURLToPath(new URL(path, import.meta.url));
-const store = openStore(root("./data/"));
+// DATA_DIR moves the SQLite database and its key (not the problem catalog),
+// so a dev server never writes into the production store.
+const store = openStore(root(process.env.DATA_DIR || "./data/"));
 const suites = new Map();
 for (const file of await readdir(
   new URL("./data/test-suites/", import.meta.url),
@@ -148,12 +150,23 @@ function persistSession(s, { now = false } = {}) {
     }
   };
   if (now) write();
-  else persistTimers.set(s.id, setTimeout(write, 1500).unref());
+  else persistTimers.set(s.id, setTimeout(write, 500).unref());
 }
 function remember(s) {
   sessions.set(s.id, s);
   persistSession(s, { now: true });
 }
+// A deploy stops the service with SIGTERM: write every session out first so
+// nothing typed in the last moments is lost.
+for (const signal of ["SIGTERM", "SIGINT"])
+  process.once(signal, () => {
+    for (const s of sessions.values()) {
+      try {
+        store.saveInterviewSession(s);
+      } catch {}
+    }
+    process.exit(0);
+  });
 const SESSION_IDLE_MS = 3 * 60 * 60 * 1000;
 setInterval(
   () => {

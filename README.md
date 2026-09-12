@@ -32,7 +32,7 @@ Every model call — résumé parsing, whiteboard descriptions, the voice sessio
 
 Per-account data lives in `data/pairwise.sqlite` (ignored by Git): users, sessions, parsed résumés with their reviewed text, and the feedback from finished interviews. `node scripts/set-openai-key.mjs you@example.com sk-...` stores a validated key for an address from the shell, even before that person's first sign-in. The profile page lists saved résumés and past feedback, and can delete either or the whole account. Live interviews (editor contents, transcripts, whiteboard images) stay in server memory and are discarded after three idle hours or on restart; export a session from the feedback screen to keep its code and conversation.
 
-For development and the browser tests, set `DEV_USER_EMAIL` to sign every request in as that address without Google. That user falls back to `OPENAI_API_KEY` from `.env` when no key is saved on the profile. Both are ignored when `NODE_ENV=production`.
+For development and the browser tests, set `DEV_USER_EMAIL` to sign every request in as that address without Google. That user falls back to `OPENAI_API_KEY` from `.env` when no key is saved on the profile. Both are ignored when `NODE_ENV=production`. Set `DATA_DIR` to a scratch directory for a dev server (e.g. `DATA_DIR=/tmp/pairwise-dev/`) so its users and sessions never land in the production database.
 
 ## Modes
 
