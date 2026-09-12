@@ -238,6 +238,9 @@ function Workspace({ session: initial, onExit }) {
     [stageBusy, setStageBusy] = useState(false),
     [hints, setHints] = useState({}),
     [hintsGiven, setHintsGiven] = useState({}),
+    // Worked-solution steps put on the whiteboard per question (by the
+    // candidate's Show buttons or by Alex), shown as cards until solved.
+    [stepsShown, setStepsShown] = useState({}),
     [typing, setTyping] = useState(false),
     // Editor, panels, notes and whiteboard desk share one palette: green
     // dark or white. Remembered per browser.
@@ -821,6 +824,8 @@ function Workspace({ session: initial, onExit }) {
         if (fresh.length) changeTests([...current, ...fresh], target);
         setBottomTab("testcase");
       }
+      // Alex put a prepared diagram or worked step on the whiteboard.
+      if (result.visual) applyVisual(target, result.visual);
       // Alex clears its sketch (or, when asked, the board) before drawing.
       if (result.boardClear && state.current.index === target) {
         setWorkspaceTab("canvas");
@@ -879,6 +884,40 @@ function Workspace({ session: initial, onExit }) {
       }
     }
     await finish();
+  }
+  // A prepared picture on the whiteboard: the setup diagram (step 0) or the
+  // worked solution up to a step, from the candidate's buttons or from Alex.
+  function applyVisual(target, visual) {
+    if (!visual || state.current.index !== target) return;
+    setWorkspaceTab("canvas");
+    void boardRef.current?.showPrepared(visual.shapes || []);
+    if (visual.step > 0)
+      setStepsShown((all) => {
+        const list = all[target] || [];
+        if (list.some((st) => st.step === visual.step)) return all;
+        return {
+          ...all,
+          [target]: [
+            ...list,
+            { step: visual.step, caption: visual.caption, text: visual.text },
+          ].sort((a, b) => a.step - b.step),
+        };
+      });
+  }
+  async function showVisual(target, step) {
+    setError("");
+    try {
+      const visual = await api(base + "/visual", { index: target, step });
+      applyVisual(target, visual);
+      live.current?.send(
+        "session.thinking.append",
+        step === 0
+          ? `The candidate put the setup diagram on the whiteboard: ${visual.caption}.`
+          : `The candidate revealed worked step ${step} of ${visual.stepCount} on the whiteboard: ${visual.caption}.`,
+      );
+    } catch (e) {
+      setError(e.message);
+    }
   }
   // Without voice, Alex's replies still reach the candidate: they are added
   // to the transcript as text turns and saved with it.
@@ -1073,7 +1112,11 @@ function Workspace({ session: initial, onExit }) {
       if (result.answer !== undefined)
         setSolutions((all) => ({
           ...all,
-          [target]: { answer: result.answer, solution: result.solution },
+          [target]: {
+            answer: result.answer,
+            solution: result.solution,
+            steps: result.steps,
+          },
         }));
       state.current.lastCheckInAt = Date.now();
       live.current?.send(
@@ -1098,7 +1141,11 @@ function Workspace({ session: initial, onExit }) {
       );
       setSolutions((all) => ({
         ...all,
-        [target]: { answer: result.answer, solution: result.solution },
+        [target]: {
+          answer: result.answer,
+          solution: result.solution,
+          steps: result.steps,
+        },
       }));
       live.current?.send(
         "session.thinking.append",
@@ -1564,6 +1611,8 @@ function Workspace({ session: initial, onExit }) {
             onReveal={revealAnswer}
             hints={hints[index] || 0}
             hintList={hintsGiven[index] || []}
+            shownSteps={stepsShown[index] || []}
+            onVisual={(step) => void showVisual(index, step)}
             onHint={() => void requestHint(index)}
             onNext={next}
           />

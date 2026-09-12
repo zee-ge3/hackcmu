@@ -15,7 +15,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { api } from "./api.mjs";
-import { shapeStrokes } from "./shapes.mjs";
+import { shapeStrokes, PREPARED_INK } from "./shapes.mjs";
 const Whiteboard = forwardRef(function Whiteboard(
   { base, index, store, onContext, onActivity, disabled = false },
   ref,
@@ -224,15 +224,36 @@ const Whiteboard = forwardRef(function Whiteboard(
       if (added && alive.current) changed({ agent: true });
       return added;
     },
-    // "mine" removes Alex's own strokes; "all" wipes the board (only when the
-    // candidate asked). Synced like any other change.
+    // A prepared picture (setup diagram, worked step) replaces the previous
+    // prepared one and is drawn in its own ink; the candidate's strokes and
+    // Alex's sketch stay.
+    async showPrepared(shapes) {
+      if (disabledRef.current) return 0;
+      model.current.strokes = model.current.strokes.filter(
+        (st) => st.by !== "prepared",
+      );
+      paint();
+      let added = 0;
+      for (const shape of shapes) {
+        if (!alive.current) break;
+        for (const stroke of shapeStrokes(shape, "prepared", PREPARED_INK)) {
+          model.current.strokes.push(stroke);
+          added++;
+        }
+        paint();
+        await new Promise((r) => setTimeout(r, 120));
+      }
+      if (alive.current) changed({ agent: true });
+      return added;
+    },
+    // "mine" removes the interviewer's strokes (Alex's sketch and prepared
+    // pictures); "all" wipes the board (only when the candidate asked).
+    // Synced like any other change.
     clear(scope) {
       if (disabledRef.current) return 0;
       const before = model.current.strokes.length;
       model.current.strokes =
-        scope === "all"
-          ? []
-          : model.current.strokes.filter((st) => st.by !== "alex");
+        scope === "all" ? [] : model.current.strokes.filter((st) => !st.by);
       const removed = before - model.current.strokes.length;
       if (removed) changed({ agent: true });
       return removed;

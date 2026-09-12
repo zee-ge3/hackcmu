@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { ArrowRight, Check, Search, X, Code2, Dices, Network } from "lucide-react";
+import {
+  ArrowRight,
+  Check,
+  Search,
+  X,
+  Code2,
+  Dices,
+  Network,
+} from "lucide-react";
 import { api } from "./api.mjs";
 import { useAccount } from "./account.jsx";
 import { KeyNotice } from "./pages.jsx";
@@ -378,6 +386,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
     [concepts, setConcepts] = useState([]),
     [firms, setFirms] = useState([]),
     [sources, setSources] = useState([]),
+    [pinned, setPinned] = useState([]),
     [count, setCount] = useState(2),
     [style, setStyle] = useState(probabilityPresets[0].id),
     [prompt, setPrompt] = useState(probabilityPresets[0].prompt);
@@ -416,6 +425,7 @@ export function ProbabilitySetup({ onStart, navigate }) {
           concepts,
           firms,
           sources,
+          pinned,
           interviewerStyle: style,
           interviewerPrompt: prompt,
         }),
@@ -566,19 +576,58 @@ export function ProbabilitySetup({ onStart, navigate }) {
           <section className="library card">
             <h2>
               Matches <small>{matching.length.toLocaleString()}</small>
+              <small className="hint">click to pin</small>
             </h2>
             <div className="problem-list">
-              {matching.slice(0, 30).map((q) => (
-                <div className="problem-row" key={q.id}>
-                  <span className="problem-id">
-                    {q.difficulty10 ? `L${q.difficulty10}` : "—"}
-                  </span>
-                  <span>{q.title}</span>
-                  <span className="difficulty">
-                    {sourceLabels[q.source] || q.source}
-                  </span>
-                </div>
-              ))}
+              {[
+                ...(catalog || []).filter((q) => pinned.includes(q.id)),
+                ...matching.filter((q) => !pinned.includes(q.id)),
+              ]
+                .slice(0, 30)
+                .map((q) => {
+                  const on = pinned.includes(q.id);
+                  return (
+                    <button
+                      type="button"
+                      className={"problem-row " + (on ? "pinned" : "")}
+                      key={q.id}
+                      aria-pressed={on}
+                      onClick={() =>
+                        setPinned(
+                          on
+                            ? pinned.filter((id) => id !== q.id)
+                            : pinned.length < 5
+                              ? [...pinned, q.id]
+                              : pinned,
+                        )
+                      }
+                    >
+                      <span className="problem-id">
+                        {on ? (
+                          <Check size={12} />
+                        ) : q.difficulty10 ? (
+                          `L${q.difficulty10}`
+                        ) : (
+                          "—"
+                        )}
+                      </span>
+                      <span>
+                        {q.title}
+                        {q.visual && (
+                          <span
+                            className="pin-visual"
+                            title="Has a diagram and worked solution"
+                          >
+                            ◐
+                          </span>
+                        )}
+                      </span>
+                      <span className="difficulty">
+                        {sourceLabels[q.source] || q.source}
+                      </span>
+                    </button>
+                  );
+                })}
               {catalog && !matching.length && (
                 <p className="muted">No matches.</p>
               )}

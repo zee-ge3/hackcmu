@@ -35,10 +35,59 @@ try {
   // Probability: wrong answer, reveal, notes, next question.
   await page.goto(base + "/probability");
   await page.waitForSelector(".problem-row");
+  // Pin the dice question that ships with a prepared diagram, then fill the
+  // rest from the MATH intro pool.
+  await page.getByRole("button", { name: /Increasing Dice Rolls III/ }).click();
   await page.getByRole("button", { name: "Intro", exact: true }).click();
   await page.getByRole("button", { name: /^MATH/ }).click();
   await page.getByRole("button", { name: "Start", exact: true }).click();
   await page.waitForSelector(".probability-pane .math-text");
+  assert.match(
+    await page.locator(".probability-pane h1").innerText(),
+    /Increasing Dice Rolls III/,
+    "pinned question comes first",
+  );
+  // Prepared visual: the diagram goes on the whiteboard; a worked step adds
+  // shapes and shows its text as a card.
+  await page.getByRole("button", { name: "Diagram", exact: true }).click();
+  await page.waitForFunction(() => window.__pairwise.strokes() >= 50);
+  assert.match(
+    await page.locator(".surface-tabs > button.active").innerText(),
+    /Whiteboard/,
+  );
+  const diagramStrokes = await page.evaluate(() => window.__pairwise.strokes());
+  await page.getByRole("button", { name: "Notes", exact: true }).click();
+  await page.route("**/api/interviews/*/agent", (route) =>
+    route.fulfill({
+      json: {
+        message: "Look at the cells above the diagonal.",
+        edits: [],
+        runCode: false,
+        visual: {
+          step: 1,
+          stepCount: 3,
+          caption: "Mark the favourable pairs",
+          text: "The pairs with $X_2 > X_1$ are above the diagonal.",
+          shapes: [
+            { kind: "circle", x: 40, y: 40, w: 8, h: 8, text: "" },
+            { kind: "label", x: 60, y: 40, w: 0, h: 0, text: "second > first" },
+          ],
+        },
+        index: 0,
+      },
+    }),
+  );
+  await page.evaluate(() => window.__pairwise.ask("Where do I start?"));
+  await page.unroute("**/api/interviews/*/agent");
+  assert.match(
+    await page.locator(".hints.worked li").innerText(),
+    /Step 1: Mark the favourable pairs/,
+    "worked step shown as a card",
+  );
+  await page.waitForFunction(() => window.__pairwise.strokes() === 2);
+  assert.ok(diagramStrokes >= 50, "diagram drawn first");
+  await page.getByRole("button", { name: "Whiteboard", exact: true }).click();
+  await page.getByRole("button", { name: "Notes", exact: true }).click();
   assert.match(page.url(), /\/session\/[0-9a-f-]+$/);
   assert.match(
     await page
@@ -65,7 +114,7 @@ try {
   await page.getByRole("button", { name: /^Hint/ }).click();
   await page.waitForSelector(".hints li");
   assert.match(
-    await page.locator(".hints li").innerText(),
+    await page.locator(".hints:not(.worked) li").innerText(),
     /equally likely outcomes/,
   );
   assert.match(
@@ -123,6 +172,18 @@ try {
   await page.unroute("**/api/interviews/*/agent");
   await page.getByRole("button", { name: "Reveal answer" }).click();
   await page.waitForSelector(".solution");
+  assert.equal(
+    await page.locator(".worked-steps li").count(),
+    3,
+    "worked solution listed after reveal",
+  );
+  await page
+    .locator(".worked-steps li")
+    .nth(2)
+    .getByRole("button", { name: "Show" })
+    .click();
+  await page.waitForFunction(() => window.__pairwise.strokes() > 50);
+  await page.getByRole("button", { name: "Notes", exact: true }).click();
   await page.getByRole("button", { name: "Next", exact: true }).click();
   await page.waitForFunction(() =>
     /Question 2 of 2/.test(

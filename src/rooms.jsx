@@ -6,6 +6,7 @@ import {
   Clock,
   Eye,
   Lightbulb,
+  PenTool,
   Lock,
   Send,
   X,
@@ -42,7 +43,8 @@ export function agentState({ voice, quiet, speaking, busy, reconnecting }) {
     if (busy) return "thinking";
     return "listening";
   }
-  if (voice === "connecting") return reconnecting ? "reconnecting" : "connecting";
+  if (voice === "connecting")
+    return reconnecting ? "reconnecting" : "connecting";
   if (voice === "closing") return "closing";
   if (voice === "ended") return "ended";
   if (voice === "disconnected") return "disconnected";
@@ -61,7 +63,10 @@ export function AgentStatus({ state, children }) {
         </span>
       ) : (
         <span
-          className={"live-dot " + (state === "listening" || state === "thinking" ? "on" : "")}
+          className={
+            "live-dot " +
+            (state === "listening" || state === "thinking" ? "on" : "")
+          }
           data-agent={state}
         />
       )}
@@ -85,6 +90,8 @@ export function ProbabilityPane({
   onHint,
   hints = 0,
   hintList = [],
+  shownSteps = [],
+  onVisual,
   onNext,
 }) {
   const [answer, setAnswer] = useState("");
@@ -159,6 +166,21 @@ export function ProbabilityPane({
             ))}
           </ul>
         )}
+        {shownSteps.length > 0 && !done && (
+          <ol className="hints worked" aria-label="Worked steps shown">
+            {shownSteps.map((st) => (
+              <li key={st.step}>
+                <PenTool size={13} />
+                <div>
+                  <b>
+                    Step {st.step}: {st.caption}
+                  </b>
+                  <MathText text={st.text} />
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
         {hintList.length > 0 && (
           <ol className="hints" aria-label="Hints">
             {hintList.map((h, i) => (
@@ -174,6 +196,16 @@ export function ProbabilityPane({
             <button className="quiet" onClick={onHint} disabled={busy}>
               <Lightbulb size={14} /> Hint{hints ? ` · ${hints}` : ""}
             </button>
+            {problem.visual?.hasDiagram && (
+              <button
+                className="quiet"
+                onClick={() => onVisual?.(0)}
+                disabled={busy}
+                title={problem.visual.diagramCaption || "Setup diagram"}
+              >
+                <PenTool size={14} /> Diagram
+              </button>
+            )}
             {attempts.length > 0 && (
               <button className="quiet" onClick={onReveal} disabled={busy}>
                 <Eye size={14} /> Reveal answer
@@ -183,7 +215,9 @@ export function ProbabilityPane({
         )}
         {done && solution && (
           <div className="solution">
-            <div className={"meta solution-verdict " + (solved ? "solved" : "")}>
+            <div
+              className={"meta solution-verdict " + (solved ? "solved" : "")}
+            >
               {solved ? <Check size={13} /> : null}
               {solved ? "Solved" : "Reference"}
             </div>
@@ -193,9 +227,33 @@ export function ProbabilityPane({
                 text={`Answer: $${solution.answer}$`}
               />
             )}
+            {solution.steps?.length > 0 && (
+              <ol className="worked-steps" aria-label="Worked solution">
+                {solution.steps.map((st, i) => (
+                  <li key={i}>
+                    <div className="worked-head">
+                      <b>{st.caption}</b>
+                      <button
+                        className="quiet"
+                        onClick={() => onVisual?.(i + 1)}
+                        disabled={busy}
+                        title="Draw this step on the whiteboard"
+                      >
+                        <PenTool size={12} /> Show
+                      </button>
+                    </div>
+                    <MathText text={st.text} />
+                  </li>
+                ))}
+              </ol>
+            )}
             {solution.solution && (
               <details open={!solved || !solution.answer}>
-                <summary>Reference solution</summary>
+                <summary>
+                  {solution.steps?.length
+                    ? "Full solution"
+                    : "Reference solution"}
+                </summary>
                 <MathText text={solution.solution} />
               </details>
             )}

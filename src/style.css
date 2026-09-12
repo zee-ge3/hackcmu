@@ -4214,6 +4214,12 @@ button.problem-row.pinned {
   background: var(--accent-soft);
 }
 
+.pin-visual {
+  margin-left: 6px;
+  color: #3b6d8a;
+  font-size: 10px;
+}
+
 button.problem-row.pinned .problem-id {
   color: var(--accent);
 }
@@ -4258,6 +4264,45 @@ button.problem-row.pinned .problem-id {
 
 .hints li > div {
   min-width: 0;
+}
+
+.hints.worked li > div b {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--pane-ink);
+}
+
+.worked-steps {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.worked-steps li {
+  padding: 10px 12px;
+  border: 1px solid var(--pane-card-line);
+  border-radius: 10px;
+  background: var(--pane-bg);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--pane-body);
+}
+
+.worked-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+  color: var(--pane-ink);
+}
+
+.worked-head .quiet {
+  padding: 4px 8px;
+  font-size: 11px;
 }
 .reset-confirm {
   display: inline-flex;

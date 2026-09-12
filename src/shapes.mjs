@@ -2,12 +2,13 @@
 // ordinary strokes on the 1200×800 canvas, in Alex's own ink so its drawing
 // is told apart from the candidate's.
 export const ALEX_INK = "#7a5aa6";
+export const PREPARED_INK = "#3b6d8a";
 const W = 1200,
   H = 800;
-export function shapeStrokes(shape) {
+export function shapeStrokes(shape, by = "alex", color = ALEX_INK) {
   const X = (v) => (v / 100) * W,
     Y = (v) => (v / 100) * H;
-  const base = { color: ALEX_INK, by: "alex" };
+  const base = { color, by };
   const { kind, x, y, w, h, text } = shape;
   // Text on a box or circle is drawn centred inside it (24px sans ≈ 13px per
   // character), so "a box that says 7" needs one shape, not two.

@@ -1,0 +1,581 @@
+{
+ "id": "quantprof:aemGJfNz4FhaAY9oCETM",
+ "answer": "5/12",
+ "diagram": {
+  "caption": "All 36 ordered pairs (first roll down, second roll across)",
+  "shapes": [
+   {
+    "kind": "label",
+    "x": 8,
+    "y": 12,
+    "w": 0,
+    "h": 0,
+    "text": "second roll \u2192"
+   },
+   {
+    "kind": "label",
+    "x": 2,
+    "y": 54,
+    "w": 0,
+    "h": 0,
+    "text": "first"
+   },
+   {
+    "kind": "label",
+    "x": 25,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "1"
+   },
+   {
+    "kind": "label",
+    "x": 34,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "2"
+   },
+   {
+    "kind": "label",
+    "x": 43,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "3"
+   },
+   {
+    "kind": "label",
+    "x": 52,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "4"
+   },
+   {
+    "kind": "label",
+    "x": 61,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "5"
+   },
+   {
+    "kind": "label",
+    "x": 70,
+    "y": 20,
+    "w": 0,
+    "h": 0,
+    "text": "6"
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 29,
+    "w": 0,
+    "h": 0,
+    "text": "1"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 22,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 39,
+    "w": 0,
+    "h": 0,
+    "text": "2"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 32,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 49,
+    "w": 0,
+    "h": 0,
+    "text": "3"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 42,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 59,
+    "w": 0,
+    "h": 0,
+    "text": "4"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 52,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 69,
+    "w": 0,
+    "h": 0,
+    "text": "5"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 62,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "label",
+    "x": 15,
+    "y": 79,
+    "w": 0,
+    "h": 0,
+    "text": "6"
+   },
+   {
+    "kind": "box",
+    "x": 22,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 31,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 40,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 49,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 58,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   },
+   {
+    "kind": "box",
+    "x": 67,
+    "y": 72,
+    "w": 9,
+    "h": 10,
+    "text": ""
+   }
+  ]
+ },
+ "steps": [
+  {
+   "caption": "Mark the favourable pairs",
+   "text": "Each ordered pair $(X_1, X_2)$ is equally likely, so probability is a count. The pairs with $X_2 > X_1$ are the cells above the diagonal.",
+   "shapes": [
+    {
+     "kind": "circle",
+     "x": 33,
+     "y": 24,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 42,
+     "y": 24,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 51,
+     "y": 24,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 60,
+     "y": 24,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 69,
+     "y": 24,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 42,
+     "y": 34,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 51,
+     "y": 34,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 60,
+     "y": 34,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 69,
+     "y": 34,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 51,
+     "y": 44,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 60,
+     "y": 44,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 69,
+     "y": 44,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 60,
+     "y": 54,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 69,
+     "y": 54,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "circle",
+     "x": 69,
+     "y": 64,
+     "w": 5,
+     "h": 6,
+     "text": ""
+    },
+    {
+     "kind": "label",
+     "x": 80,
+     "y": 30,
+     "w": 0,
+     "h": 0,
+     "text": "second > first"
+    },
+    {
+     "kind": "arrow",
+     "x": 79,
+     "y": 32,
+     "w": -6,
+     "h": 4,
+     "text": ""
+    }
+   ]
+  },
+  {
+   "caption": "Count them row by row",
+   "text": "Row 1 has 5 favourable cells, row 2 has 4, and so on down to row 5 with 1: $5+4+3+2+1 = 15$ favourable pairs out of $36$.",
+   "shapes": [
+    {
+     "kind": "label",
+     "x": 22,
+     "y": 90,
+     "w": 0,
+     "h": 0,
+     "text": "5 + 4 + 3 + 2 + 1 = 15 favourable of 36"
+    }
+   ]
+  },
+  {
+   "caption": "Divide",
+   "text": "$P = \\frac{15}{36} = \\frac{5}{12} \\approx 0.41667$.",
+   "shapes": [
+    {
+     "kind": "box",
+     "x": 66,
+     "y": 86,
+     "w": 30,
+     "h": 11,
+     "text": "P = 15/36 = 5/12"
+    }
+   ]
+  }
+ ]
+}
