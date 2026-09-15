@@ -2,6 +2,8 @@
 
 A local web application for speech-to-speech interview practice in four formats: coding, probability, system design, and behavioral. GPT-Live-1 conducts the conversation, with a shared Monaco editor, a step-through debugger, a notes pad, résumé context, a drawable whiteboard, and structured feedback with cross-session insights.
 
+Visit the hosted site here: https://pairwise.georgez.xyz/
+
 ## Run
 
 Requires Node.js 22.13 or newer (the account store uses the built-in `node:sqlite` module).
