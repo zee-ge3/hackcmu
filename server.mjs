@@ -25,6 +25,7 @@ import {
 import { openStore } from "./server/store.mjs";
 import { runWalkthrough } from "./server/walkthrough.mjs";
 import { addTestcases } from "./server/testcases.mjs";
+import { registerDeployHook } from "./server/deploy-hook.mjs";
 import { loadVisuals, sketchUpTo, visualSummary } from "./server/visuals.mjs";
 import express from "express";
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises";
@@ -207,6 +208,13 @@ for (const s of store.loadInterviewSessions(Date.now() - SESSION_IDLE_MS))
   sessions.set(s.id, s);
 if (sessions.size)
   console.log(`Restored ${sessions.size} interview session(s).`);
+// GitHub push webhook (continuous deployment); registered before the JSON
+// parser so the signature is checked over the raw body, and outside /api so
+// no browser origin or login applies.
+registerDeployHook(app, {
+  secret: process.env.DEPLOY_WEBHOOK_SECRET,
+  raw: express.raw({ type: "*/*", limit: "2mb" }),
+});
 app.use(express.json({ limit: "8mb" }));
 app.use((req, _res, next) => {
   if (!req.body || typeof req.body !== "object") req.body = {};

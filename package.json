@@ -12,7 +12,9 @@
     "tests:generate": "node scripts/generate-test-suites.mjs",
     "test:judge": "node tests/judge-browser.mjs",
     "test:modes": "node tests/modes-browser.mjs",
-    "test:rooms": "node tests/rooms-browser.mjs"
+    "test:rooms": "node tests/rooms-browser.mjs",
+    "deploy": "scripts/deploy.sh --here",
+    "deploy:sync": "scripts/deploy.sh"
   },
   "dependencies": {
     "@monaco-editor/react": "^4.7.0",
