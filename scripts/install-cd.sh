@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Installs continuous deployment on this machine (no sudo): a user systemd
-# timer that runs scripts/deploy.sh every two minutes, plus the one-shot
+# timer that runs scripts/deploy.sh every minute, plus the one-shot
 # service that the GitHub webhook and the timer both start.
 #
 #   scripts/install-cd.sh
@@ -32,7 +32,7 @@ Description=Poll origin/main and deploy pairwise when it moves
 
 [Timer]
 OnBootSec=2min
-OnUnitActiveSec=2min
+OnUnitActiveSec=1min
 AccuracySec=20s
 
 [Install]
