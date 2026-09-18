@@ -1,19 +1,31 @@
 #!/usr/bin/env bash
 # Deploys this checkout to the local pairwise.service.
 #
-#   scripts/deploy.sh          sync: fast-forward main to origin/main and, if it
-#                              moved, install deps if needed, run the unit tests,
-#                              build, and restart (what the timer and webhook run)
-#   scripts/deploy.sh --here   deploy the current checkout as it is (local
-#                              commits, or uncommitted edits), no fetch
-#   scripts/deploy.sh --force  like sync but rebuilds even when nothing changed
+#   scripts/deploy.sh          sync (what the timer and the webhook run): fetch
+#                              origin/main, fast-forward when it moved, and if
+#                              the checked-out commit differs from the one last
+#                              deployed: install deps if needed, run the unit
+#                              tests, build, restart
+#   scripts/deploy.sh --here   deploy the current checkout as it is, including
+#                              uncommitted edits; no fetch
+#   scripts/deploy.sh --force  sync, then rebuild even when nothing changed
 #
-# The sync mode never touches local work: a dirty tree or unpushed commits on
-# main make it stop and say so, so edits made on this box are always safe.
+# Local work is safe: a dirty tree makes the sync stop and say so; commits
+# made on this box deploy (and the sync says origin is behind until they are
+# pushed); a divergence from origin/main is reported, never resolved here.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mode=${1:-sync}
 log() { echo "[deploy $(date +%H:%M:%S)] $*"; }
+# A skip reason is printed once, not every minute the situation persists.
+skip() {
+  if [ "$(cat .deploy.state 2>/dev/null)" != "$1" ]; then
+    log "$1"
+    echo "$1" >.deploy.state
+  fi
+  exit 0
+}
+clear_state() { rm -f .deploy.state; }
 
 exec 9>.deploy.lock
 if ! flock -n 9; then
@@ -27,26 +39,26 @@ lock_before=$(git rev-parse "HEAD:package-lock.json")
 
 if [ "$mode" != "--here" ]; then
   current=$(git rev-parse --abbrev-ref HEAD)
-  if [ "$current" != "$branch" ]; then
-    log "checked out '$current', not $branch; nothing done (use --here to deploy it)"
-    exit 0
-  fi
-  if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
-    log "working tree has uncommitted changes; not syncing (commit them, or run --here)"
-    exit 0
-  fi
+  [ "$current" = "$branch" ] ||
+    skip "checked out '$current', not $branch; nothing deployed (use --here to deploy it)"
+  [ -z "$(git status --porcelain --untracked-files=no)" ] ||
+    skip "working tree has uncommitted changes; not deploying (commit them, or run: npm run deploy)"
   git fetch -q origin "$branch"
   remote=$(git rev-parse "origin/$branch")
-  if [ "$before" = "$remote" ] && [ "$mode" != "--force" ]; then
-    exit 0
-  fi
-  if ! git merge-base --is-ancestor "$before" "$remote"; then
-    log "local $branch has commits that are not on origin/$branch; push them first (git push origin $branch), or run --here"
-    exit 0
-  fi
   if [ "$before" != "$remote" ]; then
-    git merge -q --ff-only "origin/$branch"
-    log "updated $(git rev-parse --short "$before") -> $(git rev-parse --short HEAD)"
+    if git merge-base --is-ancestor "$before" "$remote"; then
+      git merge -q --ff-only "origin/$branch"
+      log "updated $(git rev-parse --short "$before") -> $(git rev-parse --short HEAD) from origin/$branch"
+    elif git merge-base --is-ancestor "$remote" "$before"; then
+      log "local $branch is ahead of origin/$branch; deploying local commits (push them when ready)"
+    else
+      skip "local $branch and origin/$branch have diverged; not deploying (pull --rebase or push, then it resumes)"
+    fi
+  fi
+  clear_state
+  deployed=$(cat .deployed 2>/dev/null || true)
+  if [ "$(git rev-parse HEAD)" = "$deployed" ] && [ "$mode" != "--force" ]; then
+    exit 0
   fi
 fi
 
@@ -72,7 +84,8 @@ mv dist-next dist
 systemctl --user restart pairwise.service
 sleep 2
 if systemctl --user is-active --quiet pairwise.service; then
-  log "deployed $(git rev-parse --short HEAD) and restarted pairwise.service"
+  git rev-parse HEAD >.deployed
+  log "deployed $(git rev-parse --short HEAD)$([ "$mode" = "--here" ] && [ -n "$(git status --porcelain --untracked-files=no)" ] && echo ' (with uncommitted edits)') and restarted pairwise.service"
 else
   log "pairwise.service is not active after restart; check: journalctl --user -u pairwise -n 50"
   exit 1
