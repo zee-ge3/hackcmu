@@ -1,3 +1,4 @@
+import { describeResponse } from "./api.mjs";
 export class LiveConnection {
   constructor({ onStatus, onEvent, onError, greeting }) {
     Object.assign(this, { onStatus, onEvent, onError, greeting });
@@ -144,7 +145,10 @@ export class LiveConnection {
         body: JSON.stringify({ sdp: this.peer.localDescription.sdp }),
         signal: AbortSignal.timeout(95000),
       });
-      const d = await r.json();
+      // A non-JSON body is a proxy page (restart, security check), not the app.
+      const d = (r.headers.get("content-type") || "").includes("json")
+        ? await r.json()
+        : { error: describeResponse(r.status, r.headers) };
       if (!r.ok) throw new Error(d.error);
       if (this.closed) return;
       this.sessionId = d.session.id;
